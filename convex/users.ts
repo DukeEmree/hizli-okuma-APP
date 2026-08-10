@@ -187,6 +187,10 @@ export const deleteMyAccount = mutation({
 
     if (!user) throw new Error('User not found');
 
+    if (user.isPremium) {
+      throw new Error('Aktif bir aboneliğiniz bulunuyor. Hesabınızı silmeden önce lütfen aboneliğinizi Play Store veya App Store üzerinden iptal ediniz.');
+    }
+
     // Re-use logic to clear stats
     // 1. Delete Exercise Sessions
     const sessions = await ctx.db

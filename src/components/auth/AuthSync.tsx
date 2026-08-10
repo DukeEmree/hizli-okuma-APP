@@ -9,6 +9,8 @@ import { useSyncStore } from '@/stores/syncStore';
 import { useStreakCacheStore } from '@/stores/streakCacheStore';
 import { useExerciseProgressStore } from '@/stores/exerciseProgressStore';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
+import { analytics } from '@/lib/analytics';
+import { setSentryUser } from '@/lib/sentry';
 
 export function AuthSync() {
   const { isSignedIn, userId, isLoaded } = useAuth();
@@ -26,8 +28,14 @@ export function AuthSync() {
       
       // Local storage izole işlemi için user id ayarla
       setActiveUserId(userId);
+      
+      // Bind identity for Observability
+      analytics.identify(userId);
+      setSentryUser(userId);
     } else {
       setActiveUserId(null);
+      analytics.identify(null);
+      setSentryUser(null);
     }
     
     // Rehydrate stores to reflect the newly active user's storage

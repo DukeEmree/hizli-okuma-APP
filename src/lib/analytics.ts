@@ -49,5 +49,16 @@ export const analytics = {
     }
 
     track(eventName, sanitizedProps);
+  },
+
+  identify: (userId: string | null) => {
+    // We must dynamically import setUserId to avoid breaking the module if it's not initialized
+    import('@amplitude/analytics-react-native').then(({ setUserId }) => {
+      if (__DEV__) {
+        console.log(`[Analytics Identify] userId: ${userId}`);
+        return;
+      }
+      setUserId(userId ?? undefined);
+    }).catch(console.error);
   }
 };

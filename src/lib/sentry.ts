@@ -43,3 +43,16 @@ export function captureException(
     });
   }
 }
+
+export function setSentryUser(userId: string | null) {
+  if (__DEV__) {
+    console.log(`[Sentry SetUser] userId: ${userId}`);
+    return;
+  }
+  
+  if (userId) {
+    Sentry.setUser({ id: userId });
+  } else {
+    Sentry.setUser(null);
+  }
+}

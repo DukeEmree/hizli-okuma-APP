@@ -1,1416 +1,476 @@
-# Expo HAS CHANGED
-
-Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
-
 # AGENTS.md
 
-# Hızlı Okuma — AI Coding Agent Guidelines
+## Project
 
-Bu repository, React Native + Expo kullanılarak geliştirilen bir hızlı okuma ve okuma becerileri geliştirme uygulamasıdır.
+Hızlı Okuma; React Native + Expo ile geliştirilen, exercise tabanlı bir speed-reading / reading-skills uygulamasıdır.
 
-Bu dosyadaki kurallar tüm coding agent işlemleri için geçerlidir.
+Goals:
+
+- Hızlı ve akıcı UX
+- Exercise tabanlı öğrenme
+- İlerleme, istatistik ve gamification
+- Guest-first kullanım
+- Clerk authentication
+- Convex cloud sync
+- RevenueCat subscriptions
 
 ---
 
-# 1. Core Stack
-
-Projede kullanılan ana teknolojiler:
+## Tech Stack
 
 - React Native
-- Expo
+- Expo SDK 57
 - Expo Router
 - TypeScript
-- Tamagui
 - Bun
-- Zustand
-- react-native-mmkv
-- Clerk
-- Convex
-- RevenueCat
-- Sentry
-- Amplitude
+- Tamagui
+- Lucide React Native
 - Victory Native
-- i18next
-- react-i18next
-- expo-localization
+- Zustand + react-native-mmkv
+- Convex + Clerk
+- RevenueCat
+- Amplitude + Sentry
+- expo-notifications
+- expo-audio
 - React Native Reanimated
-
-Backend:
-
-```text
-Convex
-```
-
-Authentication:
-
-```text
-Clerk
-```
-
-Subscriptions:
-
-```text
-RevenueCat
-```
-
-Analytics:
-
-```text
-Amplitude
-```
-
-Error monitoring:
-
-```text
-Sentry
-```
-
-Local state:
-
-```text
-Zustand + MMKV
-```
-
-Charts:
-
-```text
-Victory Native
-```
+- i18next + react-i18next + expo-localization
 
 ---
 
-# 2. Package Manager
+## Package Manager
 
-Projede **yalnızca Bun** kullanılmalıdır.
+Only Bun is allowed.
 
-Kullan:
+Use:
 
-```bash
 bun install
 bun add <package>
 bun remove <package>
 bun run <script>
-```
-
-Expo dependency kurulumu gerektiğinde:
-
-```bash
 bun expo install <package>
-```
 
-Kullanma:
+Never use npm, yarn or pnpm.
 
-```text
-npm
-yarn
-pnpm
-```
-
-Repository'de aşağıdaki lockfile'lar bulunmamalıdır:
-
-```text
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-```
-
-Ana lockfile:
-
-```text
-bun.lock
-```
-
-olmalıdır.
+Only bun.lock should be used.
 
 ---
 
-# 3. General Coding Principles
+## Core Rules
 
-## Önce mevcut kodu incele
+### Inspect Before Editing
 
-Herhangi bir değişiklik yapmadan önce ilgili:
+Before changing code:
 
-- component
-- hook
-- store
-- service
-- route
-- Convex function
-- config
+1. Read the relevant files.
+2. Understand the existing architecture.
+3. Check related stores, hooks, services and components.
+4. Make the smallest safe change.
 
-dosyalarını incele.
+Do not rewrite working code without a concrete reason.
 
-Mevcut çalışan sistemi anlamadan yeniden yazma.
+### Minimal Changes
 
----
+Avoid:
 
-## Gereksiz değişiklik yapma
+- unrelated refactors
+- unnecessary abstractions
+- dependency upgrades
+- large architectural changes
+- speculative optimizations
 
-Bir feature üzerinde çalışırken ilgisiz dosyaları değiştirme.
+Only modify files relevant to the task.
 
-Özellikle:
+### TypeScript
 
-- dependency'leri gereksiz güncelleme
-- mimariyi sebepsiz değiştirme
-- çalışan componentleri yeniden yazma
-- büyük refactor yapma
+Prefer strict typing.
 
----
+Avoid:
 
-## Küçük ve güvenli değişiklikler
+- any
+- as any
+- unsafe casts
+- unnecessary non-null assertions
+- duplicated types
 
-Değişiklikleri mümkün olduğunca küçük ve test edilebilir tut.
+Never silence errors with type hacks.
 
-Her feature:
+### Imports
 
-```text
-implement
-→ verify
-→ fix
-→ continue
-```
+Use the @/ alias.
 
-şeklinde ilerlemeli.
+Prefer:
 
----
+@/components
+@/features
+@/hooks
+@/stores
+@/services
+@/convex
+@/lib
+@/utils
 
-# 4. TypeScript
+Avoid deep relative imports such as ../../ or ../../../.
 
-Strict TypeScript kullan.
-
-`any` kullanımından kaçın.
-
-Kullanıcı verileri, exercise sonuçları, API response'ları ve backend verileri için explicit type tanımla.
-
-Tercih:
-
-```ts
-type ExerciseResult = {
-  ...
-}
-```
-
-veya uygun yerlerde:
-
-```ts
-interface ExerciseResult {
-  ...
-}
-```
+Fix deep relative imports when touching the affected file.
 
 ---
 
-## Type assertions
+## Architecture
 
-Gereksiz:
+Main structure:
 
-```ts
-value as SomeType;
-```
-
-kullanma.
-
-Önce runtime validation gerekiyorsa validation yap.
-
----
-
-## Nullability
-
-`undefined` ve `null` durumlarını doğru ele al.
-
-"Burada kesin değer var" varsayımıyla unsafe access yapma.
-
----
-
-# 5. Project Architecture
-
-Feature-based architecture kullan.
-
-Temel yapı:
-
-```text
 src/
-  app/
+├── app/ # Expo Router routes
+├── components/ # Reusable UI
+├── features/ # Domain features
+├── hooks/ # Custom hooks
+├── stores/ # Zustand + MMKV
+├── services/ # External services
+├── providers/ # Global providers
+├── lib/ # Library initialization
+├── constants/
+├── types/
+├── utils/
+└── i18n/
 
-  components/
-    ui/
-    layout/
+convex/ # Backend queries, mutations and actions
 
-  features/
-    exercises/
-      engine/
-      rsvp/
-      chunking/
-      pacer/
-      schulte/
-      scanning/
-      comprehension/
-
-    progress/
-    streak/
-    leaderboard/
-    subscription/
-    onboarding/
-
-  stores/
-  services/
-  hooks/
-  lib/
-  utils/
-  constants/
-  types/
-  i18n/
-  assets/
-```
+Keep business logic in appropriate feature, service or store layers instead of screens.
 
 ---
 
-# 6. Separation of Concerns
+## Sources of Truth
 
-UI, business logic ve data access birbirine karıştırılmamalıdır.
+- Authentication: Clerk
+- Authenticated cloud data: Convex
+- Subscriptions / entitlements: RevenueCat
+- Guest/local data: Zustand + MMKV
 
-Tercih edilen yapı:
+Guest users must be able to use exercises without authentication.
 
-```text
-UI
- ↓
-Hook / Controller
- ↓
-Service / Engine
- ↓
-Backend / Storage
-```
+Never mix data between users.
 
-Örneğin exercise componentinin içinde:
-
-- scoring algoritması
-- Convex mutation
-- analytics implementation
-- adaptive difficulty
-
-gibi logicleri doğrudan yazma.
+Never trust a client-provided user ID for authorization.
 
 ---
 
-# 7. Exercise Architecture
+## State & Sync
 
-Exercise sistemi uygulamanın en önemli mimari parçalarından biridir.
+Use Zustand for client state.
 
-Yeni bir exercise eklemek mevcut exercise'leri bozmamalıdır.
+Prefer selectors:
 
-Genel yapı:
+const value = useStore(state => state.value)
 
-```text
-ExerciseDefinition
-        ↓
-ExerciseEngine
-        ↓
-ExerciseSession
-        ↓
-ExerciseResult
-        ↓
-Scoring
-        ↓
-Adaptive Difficulty
-        ↓
-Progress
-```
+Do not subscribe to the entire store unnecessarily.
 
----
+Do not put temporary component state into global stores without a reason.
 
-## Exercise Definition
+Persist only data that needs persistence.
 
-Her exercise mümkün olduğunca aşağıdaki kavramları desteklemelidir:
+Do not persist derived state unnecessarily.
 
-```text
-id
-type
-category
-difficulty
-config
-start
-pause
-resume
-complete
-calculateResult
-calculateScore
-```
+### Guest → Auth
+
+After Clerk login, guest data may be migrated to the authenticated Convex account.
+
+Migration must protect against:
+
+- data loss
+- duplicate sync
+- repeated migration
+- partial failures
+- cross-user data leakage
+
+Logout must never expose another user's data.
 
 ---
 
-## Exercise UI ve engine ayrımı
+## Exercise Engine
 
-Yanlış:
+Exercise lifecycle:
 
-```text
-ExerciseComponent
-  ├── timer
-  ├── scoring
-  ├── Convex mutation
-  ├── analytics
-  └── adaptive algorithm
-```
+idle
+→ preparing
+→ running
+→ paused
+→ completed / cancelled
 
-Tercih edilen:
+Handle:
 
-```text
-Exercise UI
-    ↓
-Exercise Controller
-    ↓
-Exercise Engine
-    ↓
-Result
-    ↓
-Scoring
-    ↓
-Persistence
-```
+- start
+- pause
+- resume
+- completion
+- cancellation
+- restart
+- rapid navigation
+- app backgrounding
 
----
+Exercise completion must be idempotent and execute only once.
 
-# 8. Exercise Result
+Protect important async operations against:
 
-Ortak result yapısı kullanılmalıdır.
-
-Örnek:
-
-```text
-exerciseId
-exerciseType
-startedAt
-completedAt
-durationMs
-difficulty
-score
-accuracy
-completionRate
-errorRate
-reactionTime
-metrics
-algorithmVersion
-```
-
-Reading exercise'leri gerektiğinde:
-
-```text
-wpm
-comprehension
-```
-
-alanlarını kullanabilir.
+- race conditions
+- stale state
+- duplicate requests
+- double taps
+- duplicate submissions
+- unmounted components
 
 ---
 
-# 9. Scoring
+## Resources & Cleanup
 
-Scoring merkezi ve versioned olmalıdır.
+Every resource with a lifecycle must be cleaned up.
 
-Her exercise kendi scoring algoritmasına sahip olabilir ancak ortak interface kullanılmalıdır.
+Check:
 
-Her result:
-
-```text
-algorithmVersion
-```
-
-taşımalıdır.
-
-Örneğin:
-
-```text
-algorithmVersion: 1
-```
-
-Scoring değiştiğinde eski sonuçların anlamı bozulmamalıdır.
-
----
-
-# 10. Adaptive Difficulty
-
-Difficulty kullanıcı performansına göre otomatik değişebilir.
-
-Kullanılabilecek metrikler:
-
-```text
-WPM
-accuracy
-comprehension
-reactionTime
-errorRate
-score
-completionRate
-consistency
-```
-
-Önemli:
-
-Yalnızca hız üzerinden difficulty artırma.
-
-Örneğin:
-
-```text
-500 WPM
-50% comprehension
-```
-
-yüksek başarı olarak kabul edilmemelidir.
-
-Reading exercises için hız ve comprehension birlikte değerlendirilmelidir.
-
-Difficulty değişimleri aşırı agresif olmamalıdır.
-
----
-
-# 11. Timer Rules
-
-Timer kullanan exercise'lerde:
-
-- timer component'ten bağımsız yönetilmeli
-- pause desteklenmeli
-- resume desteklenmeli
-- cleanup yapılmalı
-- unmount sonrası timer çalışmamalı
-- memory leak oluşmamalı
-
-Timer'ın her tick'inde React state update yaparak gereksiz render oluşturma.
-
-Özellikle RSVP gibi yüksek frekanslı timing gerektiren exercise'lerde performansa dikkat et.
-
----
-
-# 12. React Native Performance
-
-Gereksiz renderlardan kaçın.
-
-Özellikle:
-
-- exercise ekranları
-- timer
+- timers
+- intervals
+- event listeners
+- subscriptions
+- notification listeners
+- audio players
 - animations
-- charts
-- leaderboard
-- large lists
+- AppState listeners
+- navigation listeners
+- async callbacks
 
-performans açısından dikkatle yazılmalıdır.
+Exercise screens must release timers, audio, animations and listeners when:
 
-Gerektiğinde:
+- exercise completes
+- exercise is cancelled
+- user navigates away
+- component unmounts
 
-```text
-useMemo
-useCallback
-React.memo
-```
-
-kullanılabilir.
-
-Ancak bunları her yere gereksiz şekilde ekleme.
+Prevent duplicate listeners, timers, audio players and subscriptions.
 
 ---
 
-# 13. Lists
+## Performance
 
-Uzun listelerde mümkün olduğunca:
+Performance matters.
 
-```text
-FlatList
-FlashList
-```
+Avoid:
 
-gibi uygun virtualization çözümlerini kullan.
+- unnecessary renders
+- unnecessary effects
+- unnecessary state
+- duplicate requests
+- large synchronous operations
+- expensive calculations during render
+- unnecessary serialization
+- unnecessary persistence
 
-Tüm büyük dataset'i aynı anda render etme.
+Do not blindly add useMemo, useCallback or React.memo.
 
----
-
-# 14. Tamagui
-
-UI için Tamagui kullan.
-
-Yeni UI componentlerinde mümkün olduğunca Tamagui primitive'lerini tercih et.
-
-Tema:
-
-```text
-light
-dark
-system
-```
-
-desteklemeli.
+Use them only when they solve a real performance problem.
 
 ---
 
-## Hardcoded colors
+## Audio & Notifications
 
-Mümkün olduğunca:
+### Audio
 
-```tsx
-color = "$color";
-backgroundColor = "$background";
-```
+Use expo-audio.
 
-gibi theme/token kullan.
+Prevent:
 
-Component içine rastgele hex renkler gömme.
+- duplicate players
+- duplicate playback
+- leaked audio resources
+- playback continuing after leaving an exercise
+
+Stop and clean up audio when an exercise ends or unmounts.
+
+### Notifications
+
+Use expo-notifications.
+
+Respect user notification preferences.
+
+Avoid duplicate scheduled notifications and listeners.
+
+Clean up listeners correctly.
+
+Notification deep links must not break navigation.
 
 ---
 
-# 15. Dark Mode
+## RevenueCat
 
-Tüm ekranlar:
+RevenueCat is the subscription source of truth.
+
+Use it for:
+
+- offerings
+- paywalls
+- purchases
+- restore purchases
+- entitlements
+- subscription state
+
+Do not create a separate fake/local subscription source of truth.
+
+Avoid duplicate RevenueCat listeners.
+
+Never expose RevenueCat secrets in client code.
+
+---
+
+## Clerk & Convex
+
+Use APIs compatible with the installed versions.
+
+Authentication state should not be duplicated unnecessarily in Zustand.
+
+Convex authorization must always be enforced server-side.
+
+Never trust client-provided user IDs for authorization.
+
+Keep backend business logic inside convex/.
+
+Avoid unnecessary queries, mutations and duplicate requests.
+
+---
+
+## UI
+
+Use Tamagui components and theme tokens.
+
+Support:
 
 - light
 - dark
+- system
 
-modda çalışmalıdır.
+Avoid unnecessary hardcoded colors.
 
-Yeni component eklerken iki temayı da kontrol et.
+Ensure text, backgrounds and controls remain readable in all themes.
 
-Sadece light mode'da düzgün görünen UI kabul edilmez.
-
----
-
-# 16. Accessibility
-
-Interactive componentlerde:
-
-- yeterli touch target
-- accessibilityLabel
-- accessibilityRole
-- screen reader desteği
-
-gerektiğinde kullanılmalıdır.
-
-Renk tek başına bilgi taşımasın.
+Use Safe Area handling where required.
 
 ---
 
-# 17. Internationalization
+## i18n
 
-Uygulamanın aktif dili şu anda:
+All user-facing text must use i18n.
 
-```text
-tr
-```
+Do not add new hardcoded user-facing strings.
 
-ancak mimari çoklu dile hazır olmalıdır.
+Primary language: Turkish.
 
-Kullan:
-
-```text
-i18next
-react-i18next
-expo-localization
-```
+Keep the architecture ready for additional languages.
 
 ---
 
-## Hardcoded user-facing text yasak
+## Analytics & Monitoring
 
-Yanlış:
+### Amplitude
 
-```tsx
-<Text>Egzersizi Başlat</Text>
-```
+Track meaningful user actions.
 
-Doğru:
+Do not fire analytics events on every render.
 
-```tsx
-<Text>{t("exercise.start")}</Text>
-```
+Avoid duplicate events.
 
----
+### Sentry
 
-## Translation structure
+Report meaningful errors.
 
-Translation dosyalarını domain bazında ayır:
+Never send secrets, passwords or tokens.
 
-```text
-common
-navigation
-home
-auth
-exercises
-progress
-leaderboard
-subscription
-settings
-onboarding
-errors
-```
+Remove unnecessary production console.log statements.
 
 ---
-
-# 18. Exercise Content Localization
-
-Exercise content ile UI translation birbirinden ayrılmalıdır.
-
-Örneğin:
-
-```text
-content/
-  tr/
-  en/
-  de/
-```
-
-gibi bir yapı kullanılabilir.
-
-Exercise metinlerini component içine hardcode etme.
-
----
-
-# 19. Zustand
-
-Global client state için Zustand kullan.
-
-Store'ları domain bazlı ayır.
-
-Örneğin:
-
-```text
-useSettingsStore
-useUserProgressStore
-useExerciseProgressStore
-useExerciseSessionStore
-```
-
----
-
-# 20. MMKV
-
-Persist edilmesi gereken local state için:
-
-```text
-Zustand persist + MMKV
-```
-
-kullan.
-
-Persist edilmeyecek state:
-
-- aktif timer
-- animation state
-- geçici exercise state
-- ephemeral UI state
-
-gibi verilerdir.
-
----
-
-# 21. Persistence Versioning
-
-Persisted Zustand store'larında version kullan.
-
-State schema değiştiğinde migration yaz.
-
-Eski kullanıcıların local state'i yeni sürümde uygulamayı crash ettirmemeli.
-
----
-
-# 22. User-scoped Local Data
-
-Bir cihazda farklı kullanıcılar kullanılabilir.
-
-Kullanıcı A'nın local progress'i kullanıcı B'ye gösterilmemeli.
-
-Logout/login sırasında user-scoped state kontrol edilmeli.
-
----
-
-# 23. Clerk
-
-Authentication için Clerk kullan.
-
-Convex Auth kullanma.
-
-Destek:
-
-```text
-email/password
-Google
-session persistence
-logout
-```
-
----
-
-## Authentication security
-
-Client'tan gelen:
-
-```text
-userId
-```
-
-değerine güvenme.
-
-Backend tarafında authenticated identity üzerinden kullanıcıyı belirle.
-
----
-
-# 24. Convex
-
-Backend olarak Convex kullan.
-
-Temel domainler:
-
-```text
-users
-exerciseSessions
-exerciseProgress
-streaks
-leaderboard
-subscriptions
-```
-
-gerektiğinde genişletilebilir.
-
----
-
-## Convex security
-
-Kullanıcı yalnızca yetkili olduğu verileri okuyabilmeli/değiştirebilmeli.
-
-Client'ın gönderdiği:
-
-```text
-score
-XP
-streak
-leaderboardScore
-premium
-```
-
-gibi kritik değerlere doğrudan güvenme.
-
-Server-side validation yap.
-
----
-
-# 25. Backend Validation
-
-Client validation UX içindir.
-
-Server validation güvenlik içindir.
-
-İkisini birbirine karıştırma.
-
-Örneğin client:
-
-```text
-WPM = 500
-```
-
-gönderebilir.
-
-Backend bunun mümkün olup olmadığını kontrol etmelidir.
-
----
-
-# 26. Timestamps
-
-Backend timestamp'leri UTC olarak sakla.
-
-Kullanıcıya özel:
-
-- günlük seri
-- gün
-- haftalık istatistik
-
-hesaplarında user timezone kullan.
-
----
-
-# 27. RevenueCat
-
-Subscription için RevenueCat kullan.
-
-Google Play hedef platformdur.
-
-Ana entitlement:
-
-```text
-premium
-```
-
----
-
-## Subscription security
-
-Client'ta:
-
-```ts
-isPremium = true;
-```
-
-gibi bir state subscription security değildir.
-
-RevenueCat entitlement source of truth olarak kullanılmalıdır.
-
-Gerektiğinde Convex ile subscription state synchronize edilebilir.
-
----
-
-# 28. Google Play
-
-Subscription implementasyonunda Google Play Billing gereksinimlerini dikkate al.
-
-Gerçek satın alma testlerinde development build / appropriate testing track kullan.
-
-Expo Go üzerinde native subscription davranışının çalıştığını varsayma.
-
----
-
-# 29. Sentry
-
-Sentry'yi error/crash monitoring için kullan.
-
-Track edilebilecek kritik durumlar:
-
-```text
-crashes
-exceptions
-exercise engine errors
-network failures
-critical backend errors
-```
-
-Sensitive data'yı Sentry'ye gereksiz yere gönderme.
-
----
-
-# 30. Amplitude
-
-Analytics için merkezi abstraction kullan.
-
-Componentlerde doğrudan SDK çağrıları yapma.
-
-Tercih:
-
-```ts
-analytics.track(...)
-```
-
----
-
-## Event naming
-
-Event isimleri:
-
-```text
-snake_case
-```
-
-veya projede belirlenen tek bir convention ile tutarlı olmalı.
-
-Örnek:
-
-```text
-app_opened
-exercise_started
-exercise_completed
-exercise_abandoned
-onboarding_completed
-paywall_viewed
-subscription_started
-streak_achieved
-```
-
----
-
-# 31. Analytics Privacy
-
-Analytics'e gereksiz PII gönderme.
-
-Gönderme:
-
-```text
-password
-email
-tokens
-secrets
-```
-
-Exercise analytics'te mümkün olduğunca anonim metric kullan.
-
----
-
-# 32. Streak
-
-Streak server-side hesaplanmalıdır.
-
-Client'ın gönderdiği:
-
-```text
-currentStreak = 100
-```
-
-değerine güvenme.
-
-Aynı gün birden fazla exercise streak'i birden fazla artırmamalı.
-
-Timezone edge case'lerini dikkate al.
-
----
-
-# 33. Leaderboard
-
-Leaderboard server-side oluşturulmalıdır.
-
-Client score'u doğrudan belirleyememeli.
-
-Impossible resultleri reddet.
-
-Örneğin:
-
-```text
-negative duration
-negative score
-future timestamp
-impossible WPM
-```
-
-gibi değerleri validate et.
-
----
-
-# 34. Offline
-
-Uygulama mümkün olduğunca offline çalışabilmeli.
-
-Özellikle:
-
-```text
-exercise
-local progress
-settings
-```
-
-internet olmadan kullanılabilmeli.
-
-Completed sessions gerektiğinde sync queue'ya alınabilir.
-
----
-
-# 35. Sync
-
-Offline sync için:
-
-```text
-Local
- ↓
-Pending Queue
- ↓
-Convex
- ↓
-Success
- ↓
-Remove
-```
-
-mantığı kullanılabilir.
-
-Her session unique:
-
-```text
-clientSessionId
-```
-
-taşımalıdır.
-
-Duplicate submissions engellenmelidir.
-
----
-
-# 36. Error Handling
-
-Her önemli ekran en azından şu durumları düşünmelidir:
-
-```text
-loading
-success
-empty
-error
-```
-
-Network hatalarında kullanıcıya anlaşılır feedback ver.
-
-Ham backend errorlarını doğrudan UI'a gösterme.
-
----
-
-# 37. Navigation
-
-Expo Router kullan.
-
-Navigation logic'i componentlere dağınık şekilde yazma.
-
-Authentication ve protected routes merkezi olarak kontrol edilmeli.
-
----
-
-# 38. Environment Variables
-
-Secret bilgileri repository'ye commit etme.
-
-`.env.example` oluştur ve gerekli değişkenleri dokümante et.
-
-Public Expo variables ile server secrets arasındaki farkı koru.
-
----
-
-# 39. Dependencies
-
-Yeni dependency eklemeden önce:
-
-1. Gerçekten gerekli mi?
-2. Expo ile uyumlu mu?
-3. React Native new architecture ile uyumlu mu?
-4. Bundle size etkisi nedir?
-5. Daha önce kullanılan bir dependency aynı işi yapıyor mu?
-
-kontrol et.
-
-Gereksiz dependency ekleme.
-
----
-
-# 40. Expo Compatibility
-
-Expo SDK ile uyumlu package version kullan.
-
-Native dependency eklenirse:
-
-- Expo config plugin gerekip gerekmediğini
-- development build gerekip gerekmediğini
-- Android/iOS native configuration gerekip gerekmediğini
-
-kontrol et.
-
----
-
-# 41. Bun + Native Packages
-
-Native dependency'lerde Bun'un package installation davranışını kontrol et.
-
-Sadece npm/yarn dokümantasyonundaki komutları körü körüne kullanma.
-
-Expo ve Bun uyumluluğunu koru.
-
----
-
-# 42. Testing
-
-Kritik business logic test edilmelidir.
-
-Özellikle:
-
-```text
-scoring
-adaptive difficulty
-streak
-timer
-exercise result
-WPM calculation
-comprehension
-leaderboard ranking
-subscription access
-storage migration
-offline sync
-```
-
----
-
-# 43. Date / Time Testing
-
-Date/time logic testlerinde gerçek sistem saatine bağımlı testlerden kaçın.
-
-Mümkünse injectable clock / mocked time kullan.
-
-Timezone edge case'lerini test et.
-
----
-
-# 44. Security Rules
-
-Asla client'a güvenme.
-
-Özellikle:
-
-```text
-score
-XP
-streak
-premium
-leaderboard rank
-userId
-```
-
-gibi değerler backend tarafından doğrulanmalıdır.
-
----
-
-# 45. Performance Rules
-
-Özellikle RSVP exercise'inde yüksek frekanslı state update yapma.
-
-Şunlara dikkat et:
-
-```text
-unnecessary renders
-timers
-animations
-large lists
-charts
-navigation
-memory
-```
-
----
-
-# 46. UI/UX Principles
-
-Uygulama hızlı ve sade hissettirmeli.
-
-Hızlı okuma egzersizlerinde kullanıcı dikkatini dağıtacak gereksiz UI kullanma.
-
-Exercise sırasında:
-
-- minimum chrome
-- clear progress
-- clear controls
-- readable typography
-- predictable interactions
-
-kullan.
-
----
-
-# 47. Do Not Overengineer
-
-İhtiyaç oluşmadan:
-
-- generic framework
-- complex abstraction
-- unnecessary repository pattern
-- excessive dependency injection
-- microservice architecture
-
-oluşturma.
-
-Basit kod tercih edilir.
-
----
-
-# 48. Do Not Duplicate Logic
-
-Aynı logic birden fazla componentte tekrar ediyorsa uygun bir utility/service/hook oluştur.
-
-Ancak iki benzer kodu sırf benziyor diye erken abstraction'a zorlamayın.
-
----
-
-# 49. No Magic Numbers
-
-Özellikle:
-
-- WPM
-- difficulty
-- score
-- XP
-- subscription limits
-- streak rules
-
-gibi değerleri merkezi config/constants altında tut.
-
-Örneğin:
-
-```text
-constants/
-  exercise.ts
-  scoring.ts
-  gamification.ts
-  subscription.ts
-```
-
----
-
-# 50. Logging
-
-Production'da gereksiz `console.log` bırakma.
-
-Debug logging gerekiyorsa merkezi logger abstraction kullan.
-
-Sensitive information loglama.
-
----
-
-# 51. Git Hygiene
-
-Commit'ler mantıksal değişikliklere göre küçük tutulmalı.
-
-Örneğin:
-
-```text
-feat: add RSVP exercise
-fix: correct WPM calculation
-feat: add streak calculation
-```
-
-gibi.
-
-Generated files veya secret'lar commit edilmemeli.
-
----
-
-# 52. Agent Workflow
-
-Her görevde şu sırayı takip et:
-
-```text
-1. Repository'yi incele
-2. İlgili dosyaları belirle
-3. Mevcut architecture'ı anla
-4. Küçük bir plan oluştur
-5. Implement et
-6. Typecheck
-7. Lint
-8. İlgili testleri çalıştır
-9. Runtime sorunlarını kontrol et
-10. Değişiklikleri özetle
-```
-
----
-
-# 53. Scope Discipline
-
-Kullanıcı belirli bir fazı istediyse yalnızca o fazı uygula.
-
-Örneğin kullanıcı:
-
-```text
-FAZ 5 — RSVP
-```
-
-istiyorsa:
-
-- RevenueCat yapma
-- leaderboard yapma
-- streak yapma
-- onboarding yapma
-- sonraki faza geçme
-
----
-
-# 54. Existing Code Preservation
-
-Mevcut çalışan feature'ları gereksiz yere yeniden yazma.
-
-Bir bug fix için tüm architecture'ı değiştirme.
-
-Breaking change gerekiyorsa neden gerektiğini belirt.
-
----
-
-# 55. Before Finishing
-
-Kod yazmayı bitirdikten sonra mutlaka kontrol et:
-
-```bash
-bun run lint
-bun run typecheck
-```
-
-Mevcut test command'leri varsa çalıştır.
-
-Expo dependency problemi varsa:
-
-```bash
-bun expo install --check
-```
-
-ile kontrol et.
-
----
-
-# 56. Final Response Format
-
-Her görev sonunda şu formatı kullan:
-
-## Implemented
-
-Yapılan değişiklikleri listele.
-
-## Files Changed
-
-Değişen/oluşturulan dosyaları listele.
 
 ## Dependencies
 
-Eklenen veya kaldırılan dependency'leri belirt.
+Before adding a package:
 
-## Verification
+1. Check whether an existing dependency solves the problem.
+2. Check Expo SDK compatibility.
+3. Prefer Expo-supported libraries where appropriate.
+4. Add dependencies only when justified.
 
-Çalıştırılan:
-
-```text
-lint
-typecheck
-tests
-Expo checks
-```
-
-sonuçlarını belirt.
-
-## Known Issues
-
-Varsa açıkça belirt.
-
-## Next Phase
-
-Sadece önerilen bir sonraki fazı belirt.
-
-Kullanıcı istemediyse bir sonraki fazı implement etme.
+Do not upgrade dependencies unless required for the task.
 
 ---
 
-# 57. Golden Rules
+## Code Quality
 
-En önemli kurallar:
+Remove confirmed unused:
 
-1. **Bun kullan.**
-2. **TypeScript strict kullan.**
-3. **Mevcut kodu incelemeden değiştirme.**
-4. **UI, business logic ve backend logic'i ayır.**
-5. **Exercise Engine'i generic ve extensible tasarla.**
-6. **Scoring'i versioned tut.**
-7. **Adaptive difficulty'yi merkezi hale getir.**
-8. **Client'a güvenme.**
-9. **Critical değerleri Convex'te validate et.**
-10. **Subscription için RevenueCat entitlement kullan.**
-11. **User-facing textleri i18n üzerinden göster.**
-12. **Light ve dark mode'u destekle.**
-13. **Zustand + MMKV ile local state'i kontrollü persist et.**
-14. **Timer ve animation performansına dikkat et.**
-15. **PII'yi analytics/error tracking sistemlerine gereksiz gönderme.**
-16. **Yeni dependency eklemeden önce gerekliliğini değerlendir.**
-17. **Bir faz istendiğinde yalnızca o fazı tamamla.**
-18. **Her değişiklikten sonra typecheck/lint/test çalıştır.**
-19. **Gereksiz overengineering yapma.**
-20. **Çalışan kodu sebepsiz yere yeniden yazma.**
+- imports
+- variables
+- functions
+- hooks
+- components
+- types
+- constants
+- translations
+- utilities
 
-<!-- convex-ai-start -->
+Do not delete files without verifying they are unused.
 
-This project uses [Convex](https://convex.dev) as its backend.
+Avoid duplicate implementations.
 
-When working on Convex code, **always read
-`convex/_generated/ai/guidelines.md` first** for important guidelines on
-how to correctly use Convex APIs and patterns. The file contains rules that
-override what you may have learned about Convex from training data.
+---
 
-Convex agent skills for common tasks can be installed by running
-`npx convex ai-files install`.
+## Validation
 
-<!-- convex-ai-end -->
+After meaningful changes run:
+
+bun run typecheck
+bun run lint
+
+Run relevant tests when they exist.
+
+Do not claim completion if verification fails.
+
+---
+
+## Documentation
+
+Keep project history and detailed status out of AGENTS.md.
+
+Use:
+
+- PROJECT_STATUS.md → current architecture and implementation status
+- walkthrough.md → completed work and important changes
+- task.md → current task and TODOs
+
+AGENTS.md contains rules, not project history.
+
+---
+
+## Agent Workflow
+
+For every task:
+
+1. Understand the request.
+2. Identify relevant files.
+3. Read only those files.
+4. Make minimal changes.
+5. Run validation.
+6. Fix resulting errors.
+7. Update documentation only when necessary.
+
+Do not repeatedly scan the entire repository.
+
+Do not analyze unrelated areas.
+
+Do not make speculative optimizations.
+
+### Priority
+
+P0 → crashes, data loss, security, cross-user leaks, resource leaks
+
+P1 → major bugs, race conditions, broken flows
+
+P2 → performance and maintainability
+
+P3 → cosmetic improvements and refactoring
+
+When in doubt, preserve existing behavior.

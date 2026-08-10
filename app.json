@@ -23,7 +23,8 @@
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
-        "com.android.vending.BILLING"
+        "com.android.vending.BILLING",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -40,11 +41,33 @@
           "imageWidth": 76
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#208AEF"
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "react-native-duke",
+          "project": "hizli-okuma-app"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6e8675f6-36b8-4d11-ba8a-3fe4efb3d63d"
+      }
     }
   }
 }
