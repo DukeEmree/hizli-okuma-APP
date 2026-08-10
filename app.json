@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "hizli-okuma",
+    "name": "Hızlı Okuma: Egzersizler ve Gelişim",
     "slug": "hizli-okuma",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,14 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.dukeemree.hizliokuma",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "com.android.vending.BILLING"
+      ]
     },
     "web": {
       "output": "static",
@@ -32,7 +39,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,

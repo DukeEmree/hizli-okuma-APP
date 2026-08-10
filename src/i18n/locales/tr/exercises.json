@@ -1,0 +1,70 @@
+{
+  "placeholder": "Egzersizler Placeholder",
+  "detailPlaceholder": "Egzersiz Placeholder: {{id}}",
+  "title": "Egzersizler",
+  "subtitle": "Okuma hızını, kavramanı ve odağını geliştiren egzersizler.",
+  "categories": {
+    "all": "Tümü",
+    "reading": "Hız",
+    "comprehension": "Kavrama",
+    "vision": "Görüş",
+    "memory": "Hafıza",
+    "focus": "Odak"
+  },
+  "buttons": {
+    "start": "Başla",
+    "premium": "Premium",
+    "completed": "Tamamlandı"
+  },
+  "labels": {
+    "emptyState": "Henüz kullanılabilir egzersiz yok.",
+    "best": "En İyi:",
+    "level": "Seviye",
+    "estimatedTime": "{{time}} sn",
+    "purpose": "Amacı",
+    "howItWorks": "Nasıl Çalışır?",
+    "settings": "Ayarlar"
+  },
+  "settings": {
+    "wpm": "Hız (WPM)",
+    "gridSize": "Tablo Boyutu (3-9)",
+    "timeLimitMs": "Süre Limiti",
+    "chunkSize": "Grup Büyüklüğü (Kelime)",
+    "updateIntervalMs": "Tazeleme Hızı"
+  },
+  "rsvp": {
+    "name": "Hızlı Kelime Akışı",
+    "description": "Kelimeler ekranda belirlenen hızda akar. Okuma hızını ve odaklanmayı artırır.",
+    "completed": "Tebrikler!",
+    "purpose": "Bu egzersiz, kelimeleri seslendirmeden (iç ses olmadan) hızlıca görerek anlamanızı ve gözlerinizin odaklanma süresini kısaltmayı hedefler.",
+    "howItWorks": "1. Ekrana odaklanın.\n2. Kelimeler belirlediğiniz hızda sırayla akacaktır.\n3. Kelimeleri okumak yerine sadece görmeye ve kavramaya çalışın."
+  },
+  "chunking": {
+    "name": "Kelime Gruplama",
+    "description": "Kelimeleri tek tek değil, bloklar (öbekler) halinde görmeyi ve işlemeyi öğretir.",
+    "completed": "Tebrikler, grup okumayı tamamladınız!",
+    "purpose": "Beynimizin kelimeleri tek tek değil, bloklar halinde algılama kapasitesini kullanarak göz sıçrama (sakkad) sayısını azaltmayı ve okuma hızını artırmayı hedefler.",
+    "howItWorks": "1. Ekranda kelimeler gruplar halinde belirecektir.\n2. Gözlerinizi grubun merkezine odaklayın.\n3. Tüm kelimeleri tek bakışta algılamaya çalışın."
+  },
+  "pacer": {
+    "name": "Görsel Yönlendirici",
+    "description": "Ekranda kayan bir vurgu yardımıyla okuma hızınızı ve ritminizi sabit tutar.",
+    "completed": "Tebrikler, hızınızı korudunuz!",
+    "purpose": "Gözlerin metin üzerindeki hareketlerini disipline ederek, geriye dönüşleri (regresyon) engeller ve sabit bir ritim kazandırır.",
+    "howItWorks": "1. Ekranda vurgulanan (highlight edilen) kelimeleri takip edin.\n2. Vurgunun hızından geri kalmamaya özen gösterin."
+  },
+  "schulte": {
+    "name": "Schulte Tablosu",
+    "description": "Görsel dikkati ve periferal (çevresel) görüşü geliştiren tarama egzersizidir.",
+    "completed": "Tabloyu başarıyla tamamladınız!",
+    "purpose": "Görsel alanı (periferal görüş) genişleterek tek bakışta daha fazla bilgi algılamayı ve odaklanma süresini kısaltmayı hedefler.",
+    "howItWorks": "1. Gözlerinizi tablonun tam merkezine sabitleyin.\n2. Gözlerinizi merkezden ayırmadan 1'den başlayarak sayıları sırasıyla bulun ve işaretleyin."
+  },
+  "scanning": {
+    "name": "Görsel Tarama",
+    "description": "Karmaşık bir yapı içerisinde istenen hedefi hızlıca bulmanızı sağlar.",
+    "completed": "Tüm hedefleri başarıyla buldunuz!",
+    "purpose": "Gözlerin metin içinde aranan bilgiyi hızla seçip bulabilme (tarama) yeteneğini ve dikkat seviyesini geliştirmeyi amaçlar.",
+    "howItWorks": "1. Üst kısımda verilen hedef karakteri/şekli aklınızda tutun.\n2. Tablo içerisindeki eşleşen hedefleri olabildiğince hızlı şekilde bulun ve işaretleyin."
+  }
+}

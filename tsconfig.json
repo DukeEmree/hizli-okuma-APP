@@ -3,17 +3,16 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/assets/*": [
-        "./assets/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/convex/*": ["./convex/*"],
+      "@/assets/*": ["./assets/*"]
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "convex/**/*.ts",
+    "convex/**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]
