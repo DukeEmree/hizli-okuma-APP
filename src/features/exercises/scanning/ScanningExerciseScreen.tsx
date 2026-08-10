@@ -4,6 +4,7 @@ import { YStack, XStack, Text, Button } from 'tamagui';
 import { useScanningEngine } from './useScanningEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { Play, Pause, X } from 'lucide-react-native';
 
 interface ScanningExerciseScreenProps {
   gridSize: number;
@@ -82,10 +83,10 @@ export function ScanningExerciseScreen({
             ? t('exercises.scanning.completed', 'Tüm hedefleri başarıyla buldunuz!') 
             : t('common.timeUp', 'Süre doldu!')}
         </Text>
-        <Text fontSize="$4" color="$colorSubtitle">
+        <Text fontSize="$4" color="$color11">
           Hedef: {foundCount} / {targetCount} | Hata: {errors}
         </Text>
-        <Button size="$5" theme="active" onPress={() => onComplete ? onComplete() : router.back()}>
+        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
           {t('common.done', 'Bitir')}
         </Button>
       </YStack>
@@ -101,8 +102,8 @@ export function ScanningExerciseScreen({
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit}>X</Button>
-        <Text color="$colorSubtitle" fontSize="$3">
+        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
+        <Text color="$color11" fontSize="$3">
           Hedef: <Text fontWeight="bold" color="$color">"{targetSymbol}"</Text> ({foundCount}/{targetCount})
         </Text>
       </XStack>
@@ -142,12 +143,10 @@ export function ScanningExerciseScreen({
         <Button 
           size="$6" 
           circular 
-          theme="active"
+          theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-        >
-          {session.state === 'running' ? 'Duraklat' : 'Başlat'}
-        </Button>
+         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

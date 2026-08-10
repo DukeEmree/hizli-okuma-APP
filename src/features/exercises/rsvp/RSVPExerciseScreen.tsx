@@ -4,17 +4,23 @@ import { YStack, XStack, Text, Button, Progress, Theme } from 'tamagui';
 import { useRSVPEngine } from './useRSVPEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { Play, Pause, X } from 'lucide-react-native';
+import { useMetronome } from '@/hooks/useMetronome';
+import { MetronomeControl } from '@/components/exercises/MetronomeControl';
+import { ExerciseResult } from '@/types/exercise';
 
 interface RSVPExerciseScreenProps {
   text: string;
   wpm: number;
   skipDefaultStorage?: boolean;
-  onComplete?: (result: any) => void;
+  onComplete?: (result: ExerciseResult) => void;
 }
 
 export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }: RSVPExerciseScreenProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  
+  const metronome = useMetronome();
 
   const [countdown, setCountdown] = useState<number | null>(3);
   
@@ -32,6 +38,22 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
       onComplete(result);
     }
   });
+
+  // Sync metronome with exercise session state
+  useEffect(() => {
+    if (session.state === 'running') {
+      metronome.start();
+    } else {
+      metronome.pause();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.state]);
+
+  // Stop metronome on unmount
+  useEffect(() => {
+    return () => metronome.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Countdown logic
   useEffect(() => {
@@ -74,10 +96,10 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
         <Text fontSize="$8" fontWeight="bold" color="$color">
           {t('exercises.rsvp.completed', 'Tebrikler!')}
         </Text>
-        <Text fontSize="$4" color="$colorSubtitle">
+        <Text fontSize="$4" color="$color11">
           WPM: {wpm}
         </Text>
-        <Button size="$5" theme="active" onPress={() => router.back()}>
+        <Button size="$5" theme="accent" onPress={() => router.back()}>
           {t('common.done', 'Bitir')}
         </Button>
       </YStack>
@@ -92,13 +114,13 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
         
         {/* Üst Bar: İlerleme ve Çıkış */}
         <XStack w="100%" jc="space-between" ai="center">
-          <Button size="$3" circular variant="outlined" onPress={handleExit}>X</Button>
+          <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
           <View style={{ flex: 1, marginHorizontal: 20 }}>
             <Progress value={progress * 100}>
               <Progress.Indicator />
             </Progress>
           </View>
-          <Text color="$colorSubtitle" fontSize="$3">{Math.round(progress * 100)}%</Text>
+          <Text color="$color11" fontSize="$3">{Math.round(progress * 100)}%</Text>
         </XStack>
 
         {/* Ana İçerik: Kelime veya Geri Sayım */}
@@ -114,17 +136,17 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
           )}
         </YStack>
 
+        <MetronomeControl metronome={metronome} />
+
         {/* Alt Bar: Kontroller */}
-        <XStack w="100%" jc="center" ai="center" gap="$6">
+        <XStack w="100%" jc="center" ai="center" gap="$6" mt="$4">
           <Button 
             size="$6" 
             circular 
-            theme="active"
+            theme="accent"
             onPress={handleTogglePlay}
             disabled={countdown !== null}
-          >
-            {session.state === 'running' ? 'Duraklat' : 'Başlat'}
-          </Button>
+           icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
         </XStack>
 
       </YStack>

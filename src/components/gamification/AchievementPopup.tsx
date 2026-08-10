@@ -14,7 +14,8 @@ import { analytics } from "@/lib/analytics";
 const { width } = Dimensions.get('window');
 
 export function AchievementPopupGlobal() {
-  const { pendingAchievements, removeAchievement } = useGamificationStore();
+  const pendingAchievements = useGamificationStore(state => state.pendingAchievements);
+  const removeAchievement = useGamificationStore(state => state.removeAchievement);
   const [current, setCurrent] = useState<AchievementPopupData | null>(null);
 
   const translateY = useSharedValue(-100);
@@ -69,9 +70,9 @@ export function AchievementPopupGlobal() {
     <Animated.View style={animatedStyle}>
       <Card padding="$4" borderWidth={1} borderColor="$blue7" backgroundColor="$blue3" elevation="$4">
         <XStack gap="$3" alignItems="center">
-          <Text fontSize={32}>{current.icon}</Text>
+          <Text fontSize="$10">{current.icon}</Text>
           <YStack flex={1}>
-            <Text color="$blue11" fontSize={12} fontWeight="bold">YENİ BAŞARIM KİLİDİ AÇILDI!</Text>
+            <Text color="$blue11" fontSize="$2" fontWeight="bold">YENİ BAŞARIM KİLİDİ AÇILDI!</Text>
             <H4 color="$blue11">{current.title}</H4>
           </YStack>
         </XStack>

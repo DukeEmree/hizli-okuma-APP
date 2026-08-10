@@ -1,21 +1,28 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { userScopedStorageAdapter } from './storage';
+import { DifficultyLevel } from "@/types/exercise";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { userScopedStorageAdapter } from "./storage";
 
 export interface ExerciseMetrics {
-  currentDifficulty: number;
+  currentDifficulty: DifficultyLevel;
   bestScore: number;
   bestWpm: number;
   bestAccuracy: number;
   bestComprehension: number;
   attemptCount: number;
+  consecutiveSuccesses: number;
+  consecutiveFailures: number;
+  historicalBestLevel: number;
 }
 
 export interface ExerciseProgressState {
   exercises: Record<string, ExerciseMetrics>;
 
   getExerciseMetrics: (exerciseId: string) => ExerciseMetrics;
-  updateExerciseMetrics: (exerciseId: string, metrics: Partial<ExerciseMetrics>) => void;
+  updateExerciseMetrics: (
+    exerciseId: string,
+    metrics: Partial<ExerciseMetrics>,
+  ) => void;
   incrementAttempt: (exerciseId: string) => void;
   resetAll: () => void;
 }
@@ -27,6 +34,9 @@ const defaultExerciseMetrics: ExerciseMetrics = {
   bestAccuracy: 0,
   bestComprehension: 0,
   attemptCount: 0,
+  consecutiveSuccesses: 0,
+  consecutiveFailures: 0,
+  historicalBestLevel: 1,
 };
 
 export const useExerciseProgressStore = create<ExerciseProgressState>()(
@@ -40,7 +50,9 @@ export const useExerciseProgressStore = create<ExerciseProgressState>()(
 
       updateExerciseMetrics: (exerciseId, metrics) =>
         set((state) => {
-          const current = state.exercises[exerciseId] || { ...defaultExerciseMetrics };
+          const current = state.exercises[exerciseId] || {
+            ...defaultExerciseMetrics,
+          };
           return {
             exercises: {
               ...state.exercises,
@@ -50,8 +62,14 @@ export const useExerciseProgressStore = create<ExerciseProgressState>()(
                 // Update bests automatically if provided values are higher
                 bestScore: Math.max(current.bestScore, metrics.bestScore ?? 0),
                 bestWpm: Math.max(current.bestWpm, metrics.bestWpm ?? 0),
-                bestAccuracy: Math.max(current.bestAccuracy, metrics.bestAccuracy ?? 0),
-                bestComprehension: Math.max(current.bestComprehension, metrics.bestComprehension ?? 0),
+                bestAccuracy: Math.max(
+                  current.bestAccuracy,
+                  metrics.bestAccuracy ?? 0,
+                ),
+                bestComprehension: Math.max(
+                  current.bestComprehension,
+                  metrics.bestComprehension ?? 0,
+                ),
               },
             },
           };
@@ -59,7 +77,9 @@ export const useExerciseProgressStore = create<ExerciseProgressState>()(
 
       incrementAttempt: (exerciseId) =>
         set((state) => {
-          const current = state.exercises[exerciseId] || { ...defaultExerciseMetrics };
+          const current = state.exercises[exerciseId] || {
+            ...defaultExerciseMetrics,
+          };
           return {
             exercises: {
               ...state.exercises,
@@ -74,9 +94,12 @@ export const useExerciseProgressStore = create<ExerciseProgressState>()(
       resetAll: () => set({ exercises: {} }),
     }),
     {
-      name: 'exercise-progress-store',
+      name: "exercise-progress-store",
       storage: createJSONStorage(() => userScopedStorageAdapter),
       version: 1,
-    }
-  )
+      migrate: (persistedState: any, version: number) => {
+        return persistedState as ExerciseProgressState;
+      },
+    },
+  ),
 );

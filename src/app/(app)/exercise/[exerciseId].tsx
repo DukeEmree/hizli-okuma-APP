@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
-import { YStack, XStack, H2, H4, Text, Button, Card, Slider, Separator, View, Paragraph } from 'tamagui';
+import { YStack, XStack, H2, H4, Text, Button, Card, Slider, Separator, View, Paragraph, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
-import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target } from 'lucide-react-native';
+import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock } from 'lucide-react-native';
 
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
+import { useExerciseLimits } from '@/hooks/useExerciseLimits';
+import { useAdaptiveExerciseStart } from '@/hooks/useAdaptiveExerciseStart';
 
 const CATEGORY_ICONS: Record<string, any> = {
   reading: BookOpen,
@@ -22,14 +24,43 @@ export default function ExerciseInfoScreen() {
   const router = useRouter();
   const { t } = useTranslation('exercises');
   
-  const { getExerciseConfig, updateExerciseConfig } = useExerciseSettingsStore();
+  const getExerciseConfig = useExerciseSettingsStore(state => state.getExerciseConfig);
+  const updateExerciseConfig = useExerciseSettingsStore(state => state.updateExerciseConfig);
+  const theme = useTheme();
   const exercise = exerciseRegistry.get(exerciseId as string);
+  const { canStartExercise, isLoading: isLimitsLoading } = useExerciseLimits();
+
+  // Adaptive difficulty logic
+  const { isReady: isAdaptiveReady, config: adaptiveConfig } = useAdaptiveExerciseStart(exercise);
+  const hasAppliedAdaptive = React.useRef(false);
 
   // Local state for UI settings adjustments before saving
   const [config, setConfig] = useState(() => {
     if (!exercise) return {};
     return getExerciseConfig(exercise.id, exercise.defaultConfig);
   });
+
+  // Apply adaptive config once it's ready, overriding any previously saved user overrides
+  // This ensures the system's adaptive difficulty dictates the start configuration.
+  React.useEffect(() => {
+    if (isAdaptiveReady && adaptiveConfig && !hasAppliedAdaptive.current) {
+      hasAppliedAdaptive.current = true;
+      setConfig((prev) => {
+        const merged = {
+          ...prev,
+          ...adaptiveConfig
+        };
+        // Also save to settings store so it persists if they leave without starting
+        if (exercise) {
+          updateExerciseConfig(exercise.id, merged);
+        }
+        return merged;
+      });
+    }
+  }, [isAdaptiveReady, adaptiveConfig, exercise, updateExerciseConfig]);
+
+  // Combine loading states
+  const isLoading = isLimitsLoading || !isAdaptiveReady;
 
   // Eğer bulunamazsa veya henüz yüklenmediyse
   if (!exercise) {
@@ -53,6 +84,13 @@ export default function ExerciseInfoScreen() {
   };
 
   const handleStart = () => {
+    if (isLoading) return;
+    
+    if (!canStartExercise) {
+      router.push('/paywall');
+      return;
+    }
+
     // Generate URL query parameters from config
     const queryParams = new URLSearchParams();
     Object.entries(config).forEach(([key, value]) => {
@@ -65,14 +103,14 @@ export default function ExerciseInfoScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-      <ScrollView style={{ flex: 1, backgroundColor: '$background' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
+      <ScrollView style={{ flex: 1, backgroundColor: theme.background?.val as string }}>
         <YStack padding="$4" gap="$5" paddingBottom="$10">
           
           {/* Header Section */}
           <XStack alignItems="center" gap="$3">
-            <View backgroundColor="$blue4" padding="$3" borderRadius="$4">
-              <IconComponent color="#208AEF" size={32} />
+            <View backgroundColor="$blue4" padding="$4" borderRadius="$4">
+              <IconComponent color={theme.accent10?.val} size={32} />
             </View>
             <YStack flex={1}>
               <H2 numberOfLines={2}>{t(exercise.nameKey, exercise.type)}</H2>
@@ -80,7 +118,7 @@ export default function ExerciseInfoScreen() {
             </YStack>
           </XStack>
 
-          <Paragraph color="$color12" fontSize={16} lineHeight={24}>
+          <Paragraph color="$color12" fontSize="$5" lineHeight={24}>
             {t(exercise.descriptionKey, '')}
           </Paragraph>
 
@@ -93,7 +131,7 @@ export default function ExerciseInfoScreen() {
                 <Info size={20} color="$blue10" />
                 <H4>{t('labels.purpose', 'Amacı')}</H4>
               </XStack>
-              <Paragraph color="$color11" fontSize={15} lineHeight={22}>
+              <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
                 {t(`${exercise.type}.purpose`, '')}
               </Paragraph>
             </YStack>
@@ -103,7 +141,7 @@ export default function ExerciseInfoScreen() {
                 <Target size={20} color="$green10" />
                 <H4>{t('labels.howItWorks', 'Nasıl Çalışır?')}</H4>
               </XStack>
-              <Paragraph color="$color11" fontSize={15} lineHeight={22}>
+              <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
                 {t(`${exercise.type}.howItWorks`, '')}
               </Paragraph>
             </YStack>
@@ -226,14 +264,20 @@ export default function ExerciseInfoScreen() {
       {/* Sticky Bottom Action */}
       <YStack padding="$4" paddingBottom="$6" backgroundColor="$background" borderTopWidth={1} borderColor="$borderColor">
         <Button 
-          size="$5" 
-          theme="active" 
-          icon={Play} 
+          theme="accent"
+          backgroundColor={!canStartExercise ? "$orange9" : undefined}
+          icon={isLoading ? undefined : (!canStartExercise ? Lock : Play)} 
           onPress={handleStart}
           borderRadius="$8"
           elevation={2}
+          opacity={isLoading ? 0.7 : 1}
+          disabled={isLoading}
         >
-          {t('buttons.start', 'Başla')}
+          {isLoading 
+            ? "Yükleniyor..." 
+            : (!canStartExercise 
+              ? t('buttons.limitReached', "Limit Doldu - Premium'a Geç") 
+              : t('buttons.start', 'Başla'))}
         </Button>
       </YStack>
 

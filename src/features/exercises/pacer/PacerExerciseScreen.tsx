@@ -4,6 +4,9 @@ import { YStack, XStack, Text, Button, Progress, ScrollView } from 'tamagui';
 import { usePacerEngine } from './usePacerEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { Play, Pause, X } from 'lucide-react-native';
+import { useMetronome } from '@/hooks/useMetronome';
+import { MetronomeControl } from '@/components/exercises/MetronomeControl';
 
 interface PacerExerciseScreenProps {
   text: string;
@@ -15,6 +18,8 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
   const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
+  
+  const metronome = useMetronome();
 
   const {
     session,
@@ -26,6 +31,22 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
     pause,
     resume
   } = usePacerEngine({ text, wpm, updateIntervalMs: 16 }, () => {});
+
+  // Sync metronome with exercise session state
+  useEffect(() => {
+    if (session.state === 'running') {
+      metronome.start();
+    } else {
+      metronome.pause();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.state]);
+
+  // Stop metronome on unmount
+  useEffect(() => {
+    return () => metronome.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (countdown === null) return;
@@ -61,10 +82,10 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
         <Text fontSize="$8" fontWeight="bold" color="$color">
           {t('exercises.pacer.completed', 'Tebrikler, hızınızı korudunuz!')}
         </Text>
-        <Text fontSize="$4" color="$colorSubtitle">
+        <Text fontSize="$4" color="$color11">
           WPM: {wpm}
         </Text>
-        <Button size="$5" theme="active" onPress={() => onComplete ? onComplete() : router.back()}>
+        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
           {t('common.done', 'Bitir')}
         </Button>
       </YStack>
@@ -74,13 +95,13 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit}>X</Button>
+        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
         <View style={{ flex: 1, marginHorizontal: 20 }}>
           <Progress value={progress * 100}>
             <Progress.Indicator />
           </Progress>
         </View>
-        <Text color="$colorSubtitle" fontSize="$3">{Math.round(progress * 100)}%</Text>
+        <Text color="$color11" fontSize="$3">{Math.round(progress * 100)}%</Text>
       </XStack>
 
       <YStack f={1} w="100%" jc="center" ai="center">
@@ -100,7 +121,7 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
                     key={idx}
                     fontSize="$7"
                     fontWeight="600"
-                    color={isHighlighted ? '$color' : (isPassed ? '$colorSubtitle' : '$colorSubtitle')}
+                    color={isHighlighted ? '$color' : (isPassed ? '$color11' : '$color11')}
                     backgroundColor={isHighlighted ? '$blue5' : 'transparent'}
                     borderRadius="$2"
                     paddingHorizontal="$1"
@@ -114,16 +135,16 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
         )}
       </YStack>
 
-      <XStack w="100%" jc="center" ai="center" gap="$6">
+      <MetronomeControl metronome={metronome} />
+
+      <XStack w="100%" jc="center" ai="center" gap="$6" mt="$4">
         <Button 
           size="$6" 
           circular 
-          theme="active"
+          theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-        >
-          {session.state === 'running' ? 'Duraklat' : 'Başlat'}
-        </Button>
+         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

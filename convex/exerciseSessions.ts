@@ -47,6 +47,10 @@ export const createSession = mutation({
     if (args.durationMs < 0) {
       throw new Error("Invalid duration");
     }
+    // Sessions longer than 4 hours are implausible for a single exercise rep.
+    if (args.durationMs > 4 * 60 * 60 * 1000) {
+      throw new Error("Implausible session duration. Anti-cheat triggered.");
+    }
     if (args.startedAt > args.completedAt) {
       throw new Error("startedAt cannot be after completedAt");
     }
@@ -56,6 +60,12 @@ export const createSession = mutation({
     }
     if (args.score < 0) {
       throw new Error("Score cannot be negative");
+    }
+    // Generous sanity ceiling - no legitimate single session should score
+    // this high; catches obviously forged leaderboard submissions without
+    // having to re-derive the exact client-side scoring formula server-side.
+    if (args.score > 50000) {
+      throw new Error("Implausible score. Anti-cheat triggered.");
     }
 
     // Metrics validation
@@ -85,11 +95,13 @@ export const createSession = mutation({
       throw new Error("User not found");
     }
 
-    // Check duplicate clientSessionId
+    // Check duplicate clientSessionId (scoped to this user - clientSessionId
+    // is only `${exerciseId}-${Date.now()}`, so two different users can
+    // collide on the same millisecond and must not dedupe against each other)
     const existing = await ctx.db
       .query("exerciseSessions")
-      .withIndex("by_clientSessionId", (q) =>
-        q.eq("clientSessionId", args.clientSessionId),
+      .withIndex("by_userId_and_clientSessionId", (q) =>
+        q.eq("userId", user._id).eq("clientSessionId", args.clientSessionId),
       )
       .first();
 
@@ -165,12 +177,112 @@ export const createSession = mutation({
         }
       }
     }
+    // 4. Aggregate Statistics Updates
+    // A) userStatistics
+    const existingUserStats = await ctx.db
+      .query("userStatistics")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .unique();
+    if (existingUserStats) {
+      await ctx.db.patch(existingUserStats._id, {
+        totalTrainingTimeMs: existingUserStats.totalTrainingTimeMs + args.durationMs,
+        totalSessions: existingUserStats.totalSessions + 1,
+      });
+    } else {
+      await ctx.db.insert("userStatistics", {
+        userId: user._id,
+        totalTrainingTimeMs: args.durationMs,
+        totalSessions: 1,
+      });
+    }
+
+    // B) exerciseStatistics
+    const existingExStats = await ctx.db
+      .query("exerciseStatistics")
+      .withIndex("by_userId_and_type", (q) => q.eq("userId", user._id).eq("exerciseType", args.exerciseType))
+      .unique();
+    const wpm = args.metrics?.wpm ?? 0;
+    if (existingExStats) {
+      await ctx.db.patch(existingExStats._id, {
+        bestScore: Math.max(existingExStats.bestScore, args.score),
+        scoreSum: existingExStats.scoreSum + args.score,
+        bestWpm: Math.max(existingExStats.bestWpm, wpm),
+        wpmSum: existingExStats.wpmSum + wpm,
+        attemptCount: existingExStats.attemptCount + 1,
+      });
+    } else {
+      await ctx.db.insert("exerciseStatistics", {
+        userId: user._id,
+        exerciseType: args.exerciseType,
+        bestScore: args.score,
+        scoreSum: args.score,
+        bestWpm: wpm,
+        wpmSum: wpm,
+        attemptCount: 1,
+      });
+    }
+
+    // C) dailyStatistics
+    const dateObj = new Date(args.completedAt);
+    const dateStr = dateObj.toISOString().split('T')[0];
+    const timestamp = Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+    
+    const existingDaily = await ctx.db
+      .query("dailyStatistics")
+      .withIndex("by_userId_and_date", (q) => q.eq("userId", user._id).eq("date", dateStr))
+      .unique();
+      
+    const wpmC = args.metrics?.wpm !== undefined ? 1 : 0;
+    const comp = args.metrics?.comprehensionAccuracy ?? 0;
+    const compC = args.metrics?.comprehensionAccuracy !== undefined ? 1 : 0;
+    
+    let accSum = 0;
+    let accC = 0;
+    if (args.metrics?.correctCount !== undefined && args.metrics?.errorCount !== undefined) {
+        const total = args.metrics.correctCount + args.metrics.errorCount;
+        if (total > 0) {
+          accSum = (args.metrics.correctCount / total);
+          accC = 1;
+        }
+    }
+
+    if (existingDaily) {
+      await ctx.db.patch(existingDaily._id, {
+        durationMs: existingDaily.durationMs + args.durationMs,
+        scoreSum: existingDaily.scoreSum + args.score,
+        scoreCount: existingDaily.scoreCount + 1,
+        wpmSum: existingDaily.wpmSum + wpm,
+        wpmCount: existingDaily.wpmCount + wpmC,
+        compSum: existingDaily.compSum + comp,
+        compCount: existingDaily.compCount + compC,
+        accSum: existingDaily.accSum + accSum,
+        accCount: existingDaily.accCount + accC,
+      });
+    } else {
+      await ctx.db.insert("dailyStatistics", {
+        userId: user._id,
+        date: dateStr,
+        timestamp,
+        durationMs: args.durationMs,
+        scoreSum: args.score,
+        scoreCount: 1,
+        wpmSum: wpm,
+        wpmCount: wpmC,
+        compSum: comp,
+        compCount: compC,
+        accSum: accSum,
+        accCount: accC,
+      });
+    }
+
     // 4. Gamification (XP, Level, Achievements)
-    // Find how many total sessions this user has completed today/all-time
-    const allUserSessions = await ctx.db
+    // Session count only gates exact-match achievements at 1 and 10, so a
+    // bounded read is enough - no need to collect every session a
+    // long-time user has ever done.
+    const recentUserSessions = await ctx.db
       .query("exerciseSessions")
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(11);
 
     const isDailyGoalCompleted = false; // Simplified for now, or could check total duration today
     const gamificationResult = await processGamification(
@@ -179,7 +291,7 @@ export const createSession = mutation({
       args.score,
       args.metrics?.wpm,
       args.metrics?.comprehensionAccuracy,
-      allUserSessions.length + 1, // include this session
+      recentUserSessions.length + 1, // include this session (capped at 11, only exact-match checks at 1/10 need this)
       newStreakState.currentStreak,
       isDailyGoalCompleted,
     );

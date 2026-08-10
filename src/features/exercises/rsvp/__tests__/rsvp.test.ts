@@ -1,14 +1,11 @@
 // @ts-ignore
-import { expect, test, describe, mock } from 'bun:test';
-import { renderHook, act } from '@testing-library/react-hooks';
+import { expect, test, describe } from 'bun:test';
+import { renderHook } from '@testing-library/react-hooks';
 import { useRSVPEngine } from "@/features/exercises/rsvp/useRSVPEngine";
 
-// Convex mutation mock
-mock.module('convex/react', () => {
-  return {
-    useMutation: () => () => Promise.resolve(),
-  };
-});
+// Shared mocks (convex/react, @clerk/clerk-expo, react-native-mmkv,
+// @amplitude/analytics-react-native) are registered in test-setup.ts via
+// bunfig.toml's [test].preload - see that file for why.
 
 describe('RSVPEngine', () => {
   test('should parse words correctly', () => {

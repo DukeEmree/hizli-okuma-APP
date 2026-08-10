@@ -1,0 +1,34 @@
+{
+  "dailyReminder": {
+    "title1": "Günlük Antrenman Zamanı 📖",
+    "body1": "Bugünkü egzersizini tamamlamaya hazır mısın?",
+    "title2": "Hızlı Okuma Vakti",
+    "body2": "Bugün birkaç dakika hızlı okuma çalışmaya ne dersin?"
+  },
+  "streakReminder": {
+    "title": "Serini Korumaya Az Kaldı! 🔥",
+    "body": "Bugünkü egzersizini tamamla, serin bozulmasın."
+  },
+  "inactivity3": {
+    "title": "Seni Özledik 📚",
+    "body": "Bir süredir görüşmedik. Bugün kısa bir egzersizle devam edelim."
+  },
+  "inactivity7": {
+    "title": "Antrenmana Geri Dön! 🚀",
+    "body": "Okuma antrenmanına geri dönmeye hazır mısın?"
+  },
+  "milestone": {
+    "title": "Tebrikler! 🎉",
+    "body": "Harika! {{days}} günlük seriye ulaştın. Böyle devam et!"
+  },
+  "settings": {
+    "title": "Bildirimler",
+    "enableNotifications": "Genel Bildirimler",
+    "dailyReminder": "Günlük Hatırlatma",
+    "reminderTime": "Hatırlatma Saati",
+    "streakReminder": "Seri (Streak) Hatırlatmaları",
+    "progressNotifications": "İlerleme Bildirimleri",
+    "permissionRequired": "Bildirimlere izin vermek için ayarlardan uygulamaya izin vermelisiniz.",
+    "permissionGranted": "Bildirimler başarıyla açıldı."
+  }
+}

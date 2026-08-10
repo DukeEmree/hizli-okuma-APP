@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sheet, YStack, H4, Button } from 'tamagui';
-import { Menu, ChartColumn, Trophy, TrendingUp } from 'lucide-react-native';
+import { Menu, Trophy } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,19 +50,7 @@ export function TopMenu() {
         <Sheet.Frame padding="$5" paddingBottom={insets.bottom + 20} backgroundColor="$background">
           <YStack gap="$4">
             <H4 marginBottom="$2">{t('menu')}</H4>
-            
-            <Button 
-              icon={ChartColumn} 
-              justifyContent="flex-start" 
-              size="$5"
-              backgroundColor="$background"
-              borderWidth={1}
-              borderColor="$borderColor"
-              onPress={() => handleNavigate('/(app)/(tabs)/statistics')}
-            >
-              {t('statistics')}
-            </Button>
-            
+
             <Button 
               icon={Trophy} 
               justifyContent="flex-start" 
@@ -73,18 +61,6 @@ export function TopMenu() {
               onPress={() => handleNavigate('/(app)/leaderboard')}
             >
               {t('leaderboard')}
-            </Button>
-            
-            <Button 
-              icon={TrendingUp} 
-              justifyContent="flex-start" 
-              size="$5"
-              backgroundColor="$background"
-              borderWidth={1}
-              borderColor="$borderColor"
-              onPress={() => handleNavigate('/(app)/progress')}
-            >
-              {t('progress')}
             </Button>
           </YStack>
         </Sheet.Frame>

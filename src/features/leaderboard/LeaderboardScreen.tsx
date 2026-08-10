@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { HEADER_RIGHT_SPACING } from '@/constants/layout';
+
 import { View, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { H2, H4, Text, XStack, YStack, Button, Avatar, Spinner } from 'tamagui';
@@ -9,9 +11,9 @@ import { getPeriodString, LeaderboardPeriod } from "@/utils/leaderboard";
 
 // Leaderboard Item Component
 function LeaderboardItem({ entry, rank, isMe }: { entry: any; rank: number; isMe?: boolean }) {
-  let rankColor = '$color11';
-  if (rank === 1) rankColor = '$yellow10';
-  else if (rank === 2) rankColor = '$gray9'; // silver
+  let rankColor: any = '$color';
+  if (rank === 1) rankColor = '$yellow10'; // gold
+  else if (rank === 2) rankColor = '$gray10'; // silver
   else if (rank === 3) rankColor = '$orange10'; // bronze
 
   return (
@@ -26,7 +28,7 @@ function LeaderboardItem({ entry, rank, isMe }: { entry: any; rank: number; isMe
       borderColor="$blue8"
     >
       <XStack alignItems="center" gap="$3">
-        <Text fontWeight="bold" fontSize={18} width={24} textAlign="center" color={rankColor}>
+        <Text fontWeight="bold" fontSize="$6" minWidth={32} textAlign="center" color={rankColor}>
           {rank}
         </Text>
         <Avatar circular size="$4">
@@ -63,20 +65,20 @@ export function LeaderboardScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
       <YStack flex={1} backgroundColor="$background">
         {/* Header and Tabs */}
-        <YStack padding="$4" paddingRight={48} gap="$4">
+        <YStack padding="$4" paddingRight={HEADER_RIGHT_SPACING} gap="$4">
           <H2>{t('leaderboard.title', 'Liderlik Tablosu')}</H2>
 
           <XStack gap="$2" justifyContent="space-between">
-            <Button size="$3" flex={1} theme={period === 'weekly' ? 'active' : undefined} onPress={() => setPeriod('weekly')}>
+            <Button size="$3" flex={1} theme={period === 'weekly' ? 'accent' : undefined} onPress={() => setPeriod('weekly')}>
               {t('leaderboard.weekly', 'Haftalık')}
             </Button>
-            <Button size="$3" flex={1} theme={period === 'monthly' ? 'active' : undefined} onPress={() => setPeriod('monthly')}>
+            <Button size="$3" flex={1} theme={period === 'monthly' ? 'accent' : undefined} onPress={() => setPeriod('monthly')}>
               {t('leaderboard.monthly', 'Aylık')}
             </Button>
-            <Button size="$3" flex={1} theme={period === 'allTime' ? 'active' : undefined} onPress={() => setPeriod('allTime')}>
+            <Button size="$3" flex={1} theme={period === 'allTime' ? 'accent' : undefined} onPress={() => setPeriod('allTime')}>
               {t('leaderboard.allTime', 'Tüm Zamanlar')}
             </Button>
           </XStack>
@@ -85,7 +87,7 @@ export function LeaderboardScreen() {
         {/* Sticky Personal Rank */}
         {myRank && myRank.score > 0 && (
           <YStack paddingHorizontal="$4" marginBottom="$2">
-            <H4 fontSize={14} color="$color11" marginBottom="$2">Senin Sıran</H4>
+            <H4 fontSize="$4" color="$color11" marginBottom="$2">Senin Sıran</H4>
             <LeaderboardItem 
               entry={{ nickname: t('leaderboard.you', 'Sen'), score: myRank.score }} 
               rank={myRank.rank} 

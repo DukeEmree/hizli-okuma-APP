@@ -56,16 +56,20 @@ export const getMyRank = query({
     if (!myEntry) return null;
 
     // Calculate rank by counting how many entries have a strictly higher score in this period.
-    // NOTE: For very large leaderboards, this count query might be slow.
-    // However, it's the simplest way to determine rank without materializing it.
-    const higherScoresCount = await ctx.db
+    // Bounded to avoid an unbounded scan as the leaderboard grows; beyond
+    // this cap we report the rank as "1000+" rather than reading the whole
+    // table. A @convex-dev/aggregate-backed counter is the proper fix if
+    // this cap is ever hit in practice.
+    const RANK_SCAN_CAP = 1000;
+    const higherScores = await ctx.db
       .query('leaderboardEntries')
       .withIndex('by_period_and_score', (q) => q.eq('period', args.period).gt('score', myEntry.score))
-      .collect();
+      .take(RANK_SCAN_CAP);
 
     return {
       score: myEntry.score,
-      rank: higherScoresCount.length + 1,
+      rank: higherScores.length + 1,
+      rankIsApproximate: higherScores.length >= RANK_SCAN_CAP,
     };
   }
 });

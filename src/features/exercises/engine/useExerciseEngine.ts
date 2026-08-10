@@ -14,6 +14,18 @@ export function useExerciseEngine(
   const statusRef = useRef<string | null>(null);
   const lastRenderedMs = useRef(0);
 
+  // The engine instance is created once (below) and its callbacks close over
+  // these refs rather than the onCompleteCallback/onTickCallback params
+  // directly - the params are updated on every render, but the engine's
+  // callback closures are not, so reading the params directly would freeze
+  // them to whatever was passed on the first render.
+  const onCompleteRef = useRef(onCompleteCallback);
+  const onTickRef = useRef(onTickCallback);
+  useEffect(() => {
+    onCompleteRef.current = onCompleteCallback;
+    onTickRef.current = onTickCallback;
+  });
+
   // eslint-disable-next-line react-hooks/refs
   const [engine] = useState(() => new ExerciseEngine(definition, config, {
     onStateChange: (newSession) => {
@@ -25,12 +37,10 @@ export function useExerciseEngine(
     },
     onComplete: (result) => {
       analytics.track('exercise_completed', { exerciseType: definition.type });
-      if (onCompleteCallback) onCompleteCallback(result);
+      onCompleteRef.current?.(result);
     },
     onTick: (ms) => {
-      if (onTickCallback) {
-        onTickCallback(ms);
-      }
+      onTickRef.current?.(ms);
       // Throttle React state updates to ~1000ms (1 second) to prevent UI thread blocking
       if (ms - lastRenderedMs.current >= 1000) {
         lastRenderedMs.current = ms;

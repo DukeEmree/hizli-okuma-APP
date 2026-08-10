@@ -6,7 +6,7 @@ import { ExerciseDefinition } from "@/types/exercise";
 const mockDefinition: ExerciseDefinition = {
   id: 'test-exercise',
   type: 'test',
-  category: 'reading',
+  category: 'focus',
   nameKey: 'test.name',
   descriptionKey: 'test.desc',
   defaultConfig: { initialDifficulty: 1 }
@@ -35,19 +35,25 @@ describe('ExerciseEngine', () => {
     });
 
     engine.start();
-    
-    engine.updateMetrics({ correctCount: 5, errorCount: 1 });
+
+    engine.updateMetrics({
+      correctCount: 5,
+      errorCount: 1,
+      reactionTimeMs: [100, 100, 100, 100, 100],
+    });
     engine.complete();
 
     expect(engine.getSession().state).toBe('completed');
     expect(onComplete).toHaveBeenCalled();
-    
+
     const result = onComplete.mock.calls[0][0];
     expect(result.exerciseId).toBe('test-exercise');
-    expect(result.score.rawScore).toBe(5);
-    // accuracy = 5 / 6 = 0.8333
+    // calculateAttentionScore: rawScore = round((1000 / avgReactionTimeMs) * 100)
+    // avgReactionTimeMs = 100 -> rawScore = round(10 * 100) = 1000
+    expect(result.score.rawScore).toBe(1000);
+    // accuracy = correctCount / (correctCount + errorCount) = 5 / 6 = 0.8333
     expect(result.score.accuracy).toBeCloseTo(0.833, 2);
-    
+
     engine.cleanup();
   });
 

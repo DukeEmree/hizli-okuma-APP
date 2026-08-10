@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, XStack, Input } from 'tamagui';
-import { useSignUp } from '@clerk/clerk-expo';
+import { KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { YStack, XStack, Input, useTheme } from 'tamagui';
+import { useSignUp, isClerkAPIResponseError } from '@clerk/clerk-expo';
 import { useRouter, Link } from 'expo-router';
 import { AppText } from "@/components/ui/AppText";
 import { AppButton } from "@/components/ui/AppButton";
@@ -14,10 +15,18 @@ export default function RegisterScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { t } = useTranslation('auth');
   const router = useRouter();
+  const theme = useTheme();
 
   const registerSchema = z.object({
     email: z.string().min(1, { message: t('validation.requiredEmail', 'E-posta boş bırakılamaz.') }).email({ message: t('validation.invalidEmail', 'Geçerli bir e-posta adresi girin.') }),
-    password: z.string().min(6, { message: t('validation.shortPassword', 'Şifre en az 6 karakter olmalıdır.') }),
+    password: z.string()
+      .min(9, { message: t('validation.shortPassword', 'Şifre en az 9 karakter olmalıdır.') })
+      .regex(/[A-Z]/, { message: t('validation.uppercasePassword', 'Şifre en az bir büyük harf içermelidir.') })
+      .regex(/[a-z]/, { message: t('validation.lowercasePassword', 'Şifre en az bir küçük harf içermelidir.') }),
+    passwordConfirmation: z.string().min(1, { message: t('validation.requiredPasswordConfirmation', 'Şifre tekrarı boş bırakılamaz.') }),
+  }).refine((data) => data.password === data.passwordConfirmation, {
+    message: t('validation.passwordMismatch', 'Şifreler eşleşmiyor.'),
+    path: ["passwordConfirmation"],
   });
 
   type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -27,6 +36,7 @@ export default function RegisterScreen() {
     defaultValues: {
       email: '',
       password: '',
+      passwordConfirmation: '',
     },
   });
 
@@ -56,8 +66,12 @@ export default function RegisterScreen() {
       });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
-    } catch (err: any) {
-      setErrorMsg(err.errors?.[0]?.message || t('errors.registerFailed', 'Kayıt olurken bir hata oluştu.'));
+    } catch (err: unknown) {
+      if (isClerkAPIResponseError(err)) {
+        setErrorMsg(err.errors?.[0]?.message || t('errors.registerFailed', 'Kayıt olurken bir hata oluştu.'));
+      } else {
+        setErrorMsg(t('errors.registerFailed', 'Kayıt olurken bir hata oluştu.'));
+      }
     }
   });
 
@@ -74,15 +88,24 @@ export default function RegisterScreen() {
       } else {
         console.error(JSON.stringify(completeSignUp, null, 2));
       }
-    } catch (err: any) {
-      setErrorMsg(err.errors?.[0]?.message || t('errors.invalidCode', 'Doğrulama kodu hatalı.'));
+    } catch (err: unknown) {
+      if (isClerkAPIResponseError(err)) {
+        setErrorMsg(err.errors?.[0]?.message || t('errors.invalidCode', 'Doğrulama kodu hatalı.'));
+      } else {
+        setErrorMsg(t('errors.invalidCode', 'Doğrulama kodu hatalı.'));
+      }
     }
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '$background' }} edges={['top', 'bottom']}>
-      <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
-        <YStack gap="$4">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val as string }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
+            <YStack gap="$4">
           <AppText variant="title" textAlign="center">{t('registerTitle', 'Kayıt Ol')}</AppText>
           
           {!!errorMsg && <AppText variant="caption" color="$red10">{errorMsg}</AppText>}
@@ -103,6 +126,7 @@ export default function RegisterScreen() {
                       onBlur={onBlur}
                       onChangeText={onChange}
                       placeholder={t('emailPlaceholder', 'E-posta')}
+                      placeholderTextColor="$color11"
                     />
                     {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
                   </YStack>
@@ -121,6 +145,26 @@ export default function RegisterScreen() {
                       secureTextEntry
                       textContentType="newPassword"
                       placeholder={t('passwordPlaceholder', 'Şifre')}
+                      placeholderTextColor="$color11"
+                    />
+                    {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                  </YStack>
+                )}
+              />
+
+              <Controller
+                control={registerForm.control}
+                name="passwordConfirmation"
+                render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                  <YStack gap="$2">
+                    <Input 
+                      value={value}
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      secureTextEntry
+                      textContentType="newPassword"
+                      placeholder={t('passwordConfirmationPlaceholder', 'Şifre Tekrar')}
+                      placeholderTextColor="$color11"
                     />
                     {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
                   </YStack>
@@ -158,6 +202,7 @@ export default function RegisterScreen() {
                       keyboardType="number-pad"
                       textContentType="oneTimeCode"
                       placeholder={t('codePlaceholder', 'Doğrulama Kodu')}
+                      placeholderTextColor="$color11"
                     />
                     {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
                   </YStack>
@@ -171,6 +216,8 @@ export default function RegisterScreen() {
           )}
         </YStack>
       </YStack>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

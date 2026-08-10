@@ -14,7 +14,8 @@
   "buttons": {
     "start": "Başla",
     "premium": "Premium",
-    "completed": "Tamamlandı"
+    "completed": "Tamamlandı",
+    "limitReached": "Limit Doldu - Premium'a Geç"
   },
   "labels": {
     "emptyState": "Henüz kullanılabilir egzersiz yok.",
@@ -66,5 +67,75 @@
     "completed": "Tüm hedefleri başarıyla buldunuz!",
     "purpose": "Gözlerin metin içinde aranan bilgiyi hızla seçip bulabilme (tarama) yeteneğini ve dikkat seviyesini geliştirmeyi amaçlar.",
     "howItWorks": "1. Üst kısımda verilen hedef karakteri/şekli aklınızda tutun.\n2. Tablo içerisindeki eşleşen hedefleri olabildiğince hızlı şekilde bulun ve işaretleyin."
+  },
+  "peripheral": {
+    "name": "Periferal Görüş",
+    "description": "Merkeze odaklanırken çevresel (periferal) alandaki kelimeleri algılamayı sağlar.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Görüş alanınızı genişleterek tek bakışta daha fazla kelime okumanızı sağlar.",
+    "howItWorks": "1. Kırmızı noktaya odaklanın.\n2. Çevrede beliren kelimeleri görmeye çalışın.\n3. Gördüğünüz kelimeyi alttaki seçeneklerden işaretleyin."
+  },
+  "wordRecognition": {
+    "name": "Hızlı Kelime Tanıma",
+    "description": "Çok kısa süreliğine görünen kelimeleri hızlıca tanımanızı sağlar.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Beyninizin kelimeleri bütün olarak algılama hızını artırır.",
+    "howItWorks": "1. Ekranda çok kısa süre bir kelime belirecek.\n2. Kelimeyi okuyun.\n3. Hangi kelimeyi gördüğünüzü seçeneklerden bulun."
+  },
+  "memory": {
+    "name": "Kelime Hafızası",
+    "description": "Kısa süreli görsel hafızanızı geliştirir.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Okuduğunuz kelimeleri akılda tutma kapasitenizi artırır.",
+    "howItWorks": "1. Ekranda gösterilen kelimeleri aklınızda tutun.\n2. Kelimeler kaybolduktan sonra, hatırladığınız kelimeleri seçenekler arasından seçin."
+  },
+  "sentenceMemory": {
+    "name": "Cümle Hafızası",
+    "description": "Okunan cümlenin detaylarını hızlıca kavramayı ve hatırlamayı sağlar.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Okuma hızı artarken kavrama ve hatırlama oranının düşmesini engeller.",
+    "howItWorks": "1. Ekranda bir cümle belirecek.\n2. Cümleyi okuduktan sonra size bir soru sorulacak.\n3. Doğru cevabı seçin."
+  },
+  "mainIdea": {
+    "name": "Ana Fikir Bulma",
+    "description": "Kısa bir metni hızlıca okuyup ana fikrini kavramayı geliştirir.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Hızlı okuma sırasında metnin genel bağlamını ve ana mesajını kaçırmamanızı sağlar.",
+    "howItWorks": "1. Metni olabildiğince hızlı ve anlayarak okuyun.\n2. 'Okudum' butonuna basın.\n3. Metnin ana fikrini soran soruya cevap verin."
+  },
+  "keyword": {
+    "name": "Anahtar Kelime Avı",
+    "description": "Belirli bir bilgi parçasını bulmak için metni hızlıca taramayı öğretir.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Uzun metinler içerisinde sadece aranan bilgiyi hızla bulma yeteneğini (skimming) geliştirir.",
+    "howItWorks": "1. Üstteki soruyu okuyun ve aradığınız bilgiyi aklınızda tutun.\n2. Metni hızlıca tarayarak sorunun cevabını bulun.\n3. Doğru seçeneği işaretleyin."
+  },
+  "selectiveAttention": {
+    "name": "Seçici Dikkat",
+    "description": "Belirli bir kategoriye ait kelimeleri dikkat dağıtıcılar arasından seçmeyi sağlar.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Dikkat dağıtıcı unsurlar varken hedefe odaklanma süresini ve doğruluğunu artırır.",
+    "howItWorks": "1. Hedef kategoriyi okuyun.\n2. Aşağıdaki kelime havuzundan sadece o kategoriye ait olan kelimeleri bulun ve seçin."
+  },
+  "numberScan": {
+    "name": "Sayı Taraması",
+    "description": "Sayı kalabalığı içerisinde istenen sayıyı hızlıca tespit etmeyi sağlar.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Görsel tarama hızını artırır ve detaylara odaklanma becerisini geliştirir.",
+    "howItWorks": "1. İstenen sayıyı aklınızda tutun.\n2. Aşağıdaki tablodan o sayıyı en hızlı şekilde bulun ve işaretleyin."
+  },
+  "visualSearch": {
+    "name": "Kelime Arama",
+    "description": "Kelime kalabalığı içerisinde istenen kelimeyi hızlıca tespit etmeyi sağlar.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Kelime dağarcığını kullanarak görsel algı ve tarama hızını artırır.",
+    "howItWorks": "1. İstenen kelimeyi aklınızda tutun.\n2. Aşağıdaki tablodan o kelimeyi en hızlı şekilde bulun ve işaretleyin."
+  },
+  "comprehensionSpeed": {
+    "name": "Kavrama Deparı",
+    "description": "Uzun bir metni hızla okuyup detaylı kavrama sorularını cevaplamayı gerektirir.",
+    "completed": "Egzersiz tamamlandı!",
+    "purpose": "Hem hızlı okuma (WPM) hem de okuduğunu anlama oranını (Comprehension) aynı anda maksimize eder.",
+    "howItWorks": "1. Metni olabildiğince hızlı ama anlayarak okuyun.\n2. 'Okumayı Bitirdim' butonuna basın.\n3. Ardından gelecek olan soruları cevaplayın."
   }
 }

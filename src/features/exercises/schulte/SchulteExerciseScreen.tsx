@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useSchulteEngine } from './useSchulteEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { Play, Pause, X } from 'lucide-react-native';
 
 interface SchulteExerciseScreenProps {
   gridSize: number;
@@ -15,6 +16,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
   const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
+  const { width: screenWidth } = useWindowDimensions();
 
   const {
     session,
@@ -66,10 +68,10 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
             ? t('exercises.schulte.completed', 'Tabloyu başarıyla tamamladınız!') 
             : t('common.timeUp', 'Süre doldu!')}
         </Text>
-        <Text fontSize="$4" color="$colorSubtitle">
+        <Text fontSize="$4" color="$color11">
           Hedef: {expectedNumber - 1} / {gridSize * gridSize} | Hata: {errors}
         </Text>
-        <Button size="$5" theme="active" onPress={() => onComplete ? onComplete() : router.back()}>
+        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
           {t('common.done', 'Bitir')}
         </Button>
       </YStack>
@@ -82,11 +84,18 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
     rows.push(grid.slice(i * gridSize, (i + 1) * gridSize));
   }
 
+  // Responsive calculations
+  const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
+  const GAP_SIZE = 8; // gap="$2"
+  const availableWidth = screenWidth - HORIZONTAL_PADDING - ((gridSize - 1) * GAP_SIZE);
+  const cellSize = Math.min(60, Math.floor(availableWidth / gridSize));
+  const cellFontSize = cellSize > 45 ? '$6' : '$5';
+
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit}>X</Button>
-        <Text color="$colorSubtitle" fontSize="$3">
+        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
+        <Text color="$color11" fontSize="$3">
           Sıradaki: <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
         </Text>
       </XStack>
@@ -105,13 +114,14 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
                   return (
                     <Button
                       key={`cell-${rowIndex}-${colIndex}`}
-                      width={60}
-                      height={60}
+                      width={cellSize}
+                      height={cellSize}
+                      padding={0}
                       bg={isPressed ? '$green5' : '$backgroundHover'}
                       onPress={() => handleNumberPress(num)}
                       disabled={isPressed || session.state !== 'running'}
                     >
-                      <Text fontSize="$6" fontWeight="bold" color={isPressed ? '$green11' : '$color'}>
+                      <Text fontSize={cellFontSize} fontWeight="bold" color={isPressed ? '$green11' : '$color'}>
                         {num}
                       </Text>
                     </Button>
@@ -127,12 +137,10 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
         <Button 
           size="$6" 
           circular 
-          theme="active"
+          theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-        >
-          {session.state === 'running' ? 'Duraklat' : 'Başlat'}
-        </Button>
+         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

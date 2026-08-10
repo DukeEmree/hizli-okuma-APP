@@ -11,7 +11,10 @@ type EventName =
   | 'paywall_viewed'
   | 'subscription_started'
   | 'subscription_cancelled'
-  | 'achievement_unlocked';
+  | 'achievement_unlocked'
+  | 'sync_started'
+  | 'sync_completed'
+  | 'sync_failed';
 
 export const analytics = {
   init: () => {

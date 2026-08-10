@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { Button, Card, H2, H4, Progress, Text, YStack } from "tamagui";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const REASONS = [
   "Ders çalışmak",
@@ -39,6 +40,7 @@ export function OnboardingScreen() {
   const completeOnboarding = useMutation(api.users.completeOnboarding);
 
   const [step, setStep] = useState(1);
+  const insets = useSafeAreaInsets();
   const [reason, setReason] = useState<string | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
 
@@ -114,7 +116,7 @@ export function OnboardingScreen() {
   const progress = (step / 3) * 100;
 
   return (
-    <YStack flex={1} backgroundColor="$background" padding="$4" paddingTop="$8">
+    <YStack flex={1} backgroundColor="$background" padding="$4" paddingTop={insets.top + 16} paddingBottom={insets.bottom + 16}>
       <Progress value={progress} size="$2" marginBottom="$6">
         <Progress.Indicator />
       </Progress>
@@ -163,13 +165,13 @@ export function OnboardingScreen() {
 
           <ScrollView>
             <Card padding="$4" backgroundColor="$backgroundHover">
-              <Text fontSize={18} lineHeight={28}>
+              <Text fontSize="$6" lineHeight={28}>
                 {ASSESSMENT_TEXT}
               </Text>
             </Card>
           </ScrollView>
 
-          <Button size="$5" theme="active" onPress={handleFinishReading}>
+          <Button size="$5" theme="accent" onPress={handleFinishReading}>
             <Text color="$color">Okumayı Bitirdim</Text>
           </Button>
         </YStack>
@@ -178,7 +180,7 @@ export function OnboardingScreen() {
       {step === 3 && showQuestion && (
         <YStack flex={1} gap="$4">
           <H4>Okuma Anlama Testi</H4>
-          <Text fontSize={18} marginBottom="$4">
+          <Text fontSize="$6" marginBottom="$4">
             {ASSESSMENT_QUESTION.question}
           </Text>
 

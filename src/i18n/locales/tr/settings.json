@@ -20,7 +20,9 @@
     "freeDesc": "Premium özelliklerin kilidini aç.",
     "upgrade": "Premium'a Geç",
     "premium": "Premium",
-    "premiumDesc": "Aktif aboneliğin bulunuyor."
+    "premiumDesc": "Aktif aboneliğin bulunuyor.",
+    "manage": "Aboneliği Yönet",
+    "errorCustomerCenter": "Abonelik yönetimi şu anda açılamıyor. Lütfen tekrar deneyin."
   },
   "account": {
     "title": "Hesap",

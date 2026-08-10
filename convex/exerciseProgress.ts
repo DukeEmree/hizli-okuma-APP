@@ -10,12 +10,7 @@ export const getProgress = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      return {
-        currentLevel: 1,
-        consecutiveSuccesses: 0,
-        consecutiveFailures: 0,
-        historicalBest: 1,
-      };
+      return null;
     }
 
     const user = await ctx.db
@@ -81,6 +76,23 @@ export const updateProgress = mutation({
       throw new Error('User not found');
     }
 
+    // Server-side anti-cheat validation. The adaptive algorithm
+    // (src/utils/adaptiveDifficulty.ts) only ever moves currentLevel by one
+    // step per submission, so a client-reported jump larger than that (or an
+    // out-of-range level) cannot be a legitimate progression result.
+    if (!Number.isInteger(args.currentLevel) || args.currentLevel < 1 || args.currentLevel > 10) {
+      throw new Error('Invalid difficulty level');
+    }
+    if (args.consecutiveSuccesses < 0 || args.consecutiveFailures < 0) {
+      throw new Error('Invalid progression counters');
+    }
+    if (args.score < 0) {
+      throw new Error('Score cannot be negative');
+    }
+    if (args.wpm !== undefined && (args.wpm < 0 || args.wpm > 5000)) {
+      throw new Error('Impossible WPM value. Anti-cheat triggered.');
+    }
+
     const existingProgress = await ctx.db
       .query('exerciseProgress')
       .withIndex('by_userId_and_exercise', (q) =>
@@ -89,6 +101,10 @@ export const updateProgress = mutation({
       .unique();
 
     if (existingProgress) {
+      if (Math.abs(args.currentLevel - existingProgress.currentLevel) > 1) {
+        throw new Error('Difficulty level cannot jump by more than one step. Anti-cheat triggered.');
+      }
+
       // Güncelle
       const bestScore = Math.max(existingProgress.bestScore, args.score);
       let bestWpm = existingProgress.bestWpm;
@@ -100,12 +116,18 @@ export const updateProgress = mutation({
         currentLevel: args.currentLevel,
         consecutiveSuccesses: args.consecutiveSuccesses,
         consecutiveFailures: args.consecutiveFailures,
-        historicalBest: Math.max(existingProgress.historicalBest, args.historicalBest),
+        historicalBest: Math.max(existingProgress.historicalBest, args.currentLevel),
         bestScore,
         bestWpm,
         attemptCount: existingProgress.attemptCount + 1,
       });
     } else {
+      // İlk kayıt: başlangıç seviyesi 1'dir, algoritma tek adımda en fazla
+      // 2'ye çıkarabilir - daha yükseği sahtecilik anlamına gelir.
+      if (args.currentLevel > 2) {
+        throw new Error('Invalid initial difficulty level. Anti-cheat triggered.');
+      }
+
       // Yeni yarat
       await ctx.db.insert('exerciseProgress', {
         userId: user._id,
@@ -113,7 +135,7 @@ export const updateProgress = mutation({
         currentLevel: args.currentLevel,
         consecutiveSuccesses: args.consecutiveSuccesses,
         consecutiveFailures: args.consecutiveFailures,
-        historicalBest: args.historicalBest,
+        historicalBest: args.currentLevel,
         bestScore: args.score,
         bestWpm: args.wpm,
         attemptCount: 1,

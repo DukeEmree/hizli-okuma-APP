@@ -17,6 +17,7 @@ import { analytics } from "@/lib/analytics";
 import { initSentry } from "@/lib/sentry";
 import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
 import { SyncProvider } from "@/providers/SyncProvider";
+import { AppNotificationProvider } from "@/providers/NotificationProvider";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useQuery } from "convex/react";
 
@@ -86,7 +87,10 @@ function RootNavigation() {
 
     if (!userIsOnboarded && !inOnboardingGroup) {
       router.replace("/(onboarding)");
-    } else if (userIsOnboarded && (inAuthGroup || inOnboardingGroup)) {
+    } else if (userIsOnboarded && inOnboardingGroup) {
+      router.replace("/(app)/(tabs)");
+    } else if (isSignedIn && inAuthGroup) {
+      // Already signed in, no need to be on auth screens
       router.replace("/(app)/(tabs)");
     }
   }, [
@@ -155,11 +159,13 @@ export default function RootLayout() {
                     style={activeTheme === "dark" ? "light" : "dark"}
                     animated
                   />
-                  <SyncProvider>
-                    <AuthSync />
-                    <RootNavigation />
-                    <AchievementPopupGlobal />
-                  </SyncProvider>
+                  <AppNotificationProvider>
+                    <SyncProvider>
+                      <AuthSync />
+                      <RootNavigation />
+                      <AchievementPopupGlobal />
+                    </SyncProvider>
+                  </AppNotificationProvider>
                 </ThemeProvider>
               </Theme>
             </TamaguiProvider>

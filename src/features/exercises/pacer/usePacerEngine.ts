@@ -42,32 +42,41 @@ export function usePacerEngine(config: PacerConfig, onCompleteCallback?: (result
         highlightMode: config.highlightMode || 'word',
       },
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
-    }).catch(console.error);
+    }, result).catch(console.error);
 
     if (onCompleteCallback) {
       onCompleteCallback(result);
     }
   }, [createSession, config.wpm, config.highlightMode, onCompleteCallback]);
 
-  const engine = useExerciseEngine(pacerDefinition, config, handleComplete);
-
-  useEffect(() => {
+  // Highlight index is driven directly from the raw tick `ms`, not the
+  // throttled engine.elapsedMs (which only updates ~once/second) - otherwise
+  // the word highlight jumps several words at a time instead of advancing
+  // word-by-word.
+  const handleTick = useCallback((ms: number) => {
     if (words.length === 0 || isCompleted) return;
 
     // Line modu yerine şimdilik basit 'word' akışına göre ilerliyoruz.
-    const calculatedIndex = Math.floor(engine.elapsedMs / msPerWord);
+    const calculatedIndex = Math.floor(ms / msPerWord);
 
     if (calculatedIndex >= words.length) {
       if (!isCompleted) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsCompleted(true);
-        engine.updateMetrics({ completionRate: 1, wpm: config.wpm });
-        engine.complete();
       }
     } else if (calculatedIndex !== highlightIndex) {
       setHighlightIndex(calculatedIndex);
     }
-  }, [engine.elapsedMs, msPerWord, words.length, isCompleted, highlightIndex, engine, config.wpm]);
+  }, [words.length, isCompleted, msPerWord, highlightIndex]);
+
+  const engine = useExerciseEngine(pacerDefinition, config, handleComplete, handleTick);
+
+  useEffect(() => {
+    if (isCompleted && engine.session.state === 'running') {
+      engine.updateMetrics({ completionRate: 1, wpm: config.wpm });
+      engine.complete();
+    }
+  }, [isCompleted, engine, config.wpm]);
 
   const reset = useCallback(() => {
     engine.reset();

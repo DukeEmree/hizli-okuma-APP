@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { userScopedStorageAdapter } from './storage';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { userScopedStorageAdapter } from "./storage";
 
 export interface UserProgressState {
   totalTrainingSeconds: number;
@@ -35,22 +35,29 @@ export const useUserProgressStore = create<UserProgressState>()(
     (set) => ({
       ...initialState,
       addTrainingSeconds: (seconds) =>
-        set((state) => ({ totalTrainingSeconds: state.totalTrainingSeconds + seconds })),
+        set((state) => ({
+          totalTrainingSeconds: state.totalTrainingSeconds + seconds,
+        })),
       incrementCompletedExercises: () =>
         set((state) => ({ completedExercises: state.completedExercises + 1 })),
       updateBestWpm: (wpm) =>
         set((state) => ({ bestWpm: Math.max(state.bestWpm, wpm) })),
       updateBestComprehension: (comprehension) =>
-        set((state) => ({ bestComprehension: Math.max(state.bestComprehension, comprehension) })),
+        set((state) => ({
+          bestComprehension: Math.max(state.bestComprehension, comprehension),
+        })),
       setStreaks: (current, longest) =>
         set({ currentStreakCache: current, longestStreakCache: longest }),
       setLastSyncAt: (timestamp) => set({ lastSyncAt: timestamp }),
       resetProgress: () => set(initialState),
     }),
     {
-      name: 'user-progress-store',
+      name: "user-progress-store",
       storage: createJSONStorage(() => userScopedStorageAdapter),
       version: 1,
-    }
-  )
+      migrate: (persistedState: any, version: number) => {
+        return persistedState as UserProgressState;
+      },
+    },
+  ),
 );

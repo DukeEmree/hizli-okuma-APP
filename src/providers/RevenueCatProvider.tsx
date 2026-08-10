@@ -53,12 +53,18 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (isConfigured && isLoaded) {
+      // Guards against an older logIn/logOut call resolving after a newer
+      // one (e.g. rapid account switch): only the latest run is allowed to
+      // apply its result, otherwise a slower call for the previous user can
+      // overwrite the next user's customerInfo with the wrong entitlements.
+      let isCurrent = true;
+
       const syncUser = async () => {
         try {
           if (isSignedIn && userId) {
             // Identify user in RevenueCat with Clerk ID
             const { customerInfo: info } = await Purchases.logIn(userId);
-            setCustomerInfo(info);
+            if (isCurrent) setCustomerInfo(info);
           } else {
             // Log out from RevenueCat if not anonymous
             const isAnonymous = await Purchases.isAnonymous();
@@ -66,7 +72,7 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
               await Purchases.logOut();
             }
             const info = await Purchases.getCustomerInfo();
-            setCustomerInfo(info);
+            if (isCurrent) setCustomerInfo(info);
           }
         } catch (error) {
           console.error('Failed to sync RevenueCat user', error);
@@ -74,6 +80,10 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
       };
 
       syncUser();
+
+      return () => {
+        isCurrent = false;
+      };
     }
   }, [isConfigured, isLoaded, isSignedIn, userId]);
 

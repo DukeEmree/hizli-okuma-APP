@@ -58,7 +58,7 @@ export function useChunkingEngine(config: ChunkingConfig, onCompleteCallback?: (
           chunkSize: config.chunkSize
         },
         algorithmVersion: CURRENT_ALGORITHM_VERSION,
-      }).catch(err => {
+      }, result).catch(err => {
         console.error('Failed to store chunking session in Convex', err);
       });
     }
@@ -78,7 +78,8 @@ export function useChunkingEngine(config: ChunkingConfig, onCompleteCallback?: (
     if (calculatedIndex >= chunks.length) {
       if (!isCompleted) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsCompleted(true);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsCompleted(true);
         engine.updateMetrics({ completionRate: 1, wpm: config.wpm });
         engine.complete();
       }

@@ -19,7 +19,7 @@ export default function PaywallScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background?.val || '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: theme.background?.val }}>
       {isSignedIn ? (
         <RevenueCatUI.Paywall
           onPurchaseCompleted={({ customerInfo }) => {

@@ -43,7 +43,7 @@ export function useRSVPEngine(config: RSVPConfig, onCompleteCallback?: (result: 
           wpm: config.wpm,
         },
         algorithmVersion: CURRENT_ALGORITHM_VERSION,
-      }).catch(err => {
+      }, result).catch(err => {
         console.error('Failed to store session in Convex', err);
       });
     }
@@ -60,7 +60,8 @@ export function useRSVPEngine(config: RSVPConfig, onCompleteCallback?: (result: 
     
     if (calculatedIndex >= words.length) {
       if (!isCompleted) {
-        setIsCompleted(true);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsCompleted(true);
       }
     } else if (calculatedIndex !== wordIndex) {
       setWordIndex(calculatedIndex);

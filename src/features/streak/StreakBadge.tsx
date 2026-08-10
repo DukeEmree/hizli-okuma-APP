@@ -9,7 +9,7 @@ import { useStreakCacheStore } from "@/stores/streakCacheStore";
 
 export function StreakBadge() {
   const streak = useQuery(api.streaks.getStreak);
-  const cachedStreak = useStreakCacheStore((state) => state);
+  const currentStreak = useStreakCacheStore((state) => state.currentStreak);
   const updateCache = useStreakCacheStore((state) => state.updateCache);
   const prevStreakRef = useRef<number | null>(null);
 
@@ -29,12 +29,12 @@ export function StreakBadge() {
     }
   }, [streak, updateCache]);
 
-  const displayStreak = streak ? streak.currentStreak : cachedStreak.currentStreak;
+  const displayStreak = streak ? streak.currentStreak : currentStreak;
 
   if (displayStreak === 0 && !streak) {
     return (
       <XStack alignItems="center" backgroundColor="$backgroundHover" paddingHorizontal="$3" paddingVertical="$2" borderRadius="$10" gap="$2">
-        <Text fontSize={16}>🔥</Text>
+        <Text fontSize="$5">🔥</Text>
         <Text fontWeight="bold">0</Text>
       </XStack>
     );
@@ -42,7 +42,7 @@ export function StreakBadge() {
 
   return (
     <XStack alignItems="center" backgroundColor="$orange3" paddingHorizontal="$3" paddingVertical="$2" borderRadius="$10" gap="$2">
-      <Text fontSize={16}>🔥</Text>
+      <Text fontSize="$5">🔥</Text>
       <Text fontWeight="bold" color="$orange10">{displayStreak}</Text>
     </XStack>
   );

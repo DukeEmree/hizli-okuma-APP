@@ -140,7 +140,30 @@ export const resetMyStatistics = mutation({
       await ctx.db.delete(a._id);
     }
 
-    // 6. Reset gamification and onboarding state
+    // 6. Delete Aggregate Statistics
+    const dailyStats = await ctx.db
+      .query('dailyStatistics')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const d of dailyStats) {
+      await ctx.db.delete(d._id);
+    }
+    const exStats = await ctx.db
+      .query('exerciseStatistics')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const e of exStats) {
+      await ctx.db.delete(e._id);
+    }
+    const userStats = await ctx.db
+      .query('userStatistics')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const u of userStats) {
+      await ctx.db.delete(u._id);
+    }
+
+    // 7. Reset gamification and onboarding state
     await ctx.db.patch(user._id, {
       xp: 0,
       level: 1,
@@ -208,6 +231,29 @@ export const deleteMyAccount = mutation({
       .collect();
     for (const a of achievements) {
       await ctx.db.delete(a._id);
+    }
+
+    // 6. Delete Aggregate Statistics
+    const dailyStats = await ctx.db
+      .query('dailyStatistics')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const d of dailyStats) {
+      await ctx.db.delete(d._id);
+    }
+    const exStats = await ctx.db
+      .query('exerciseStatistics')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const e of exStats) {
+      await ctx.db.delete(e._id);
+    }
+    const userStats = await ctx.db
+      .query('userStatistics')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const u of userStats) {
+      await ctx.db.delete(u._id);
     }
 
     // Finally delete the user

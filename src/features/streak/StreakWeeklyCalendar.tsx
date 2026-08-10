@@ -40,9 +40,9 @@ export function StreakWeeklyCalendar() {
               borderWidth={2}
               borderColor={day.isActive ? '$orange10' : 'transparent'}
             >
-              {day.isActive && <Text fontSize={16}>🔥</Text>}
+              {day.isActive && <Text fontSize="$5">🔥</Text>}
             </Circle>
-            <Text fontSize={12} color="$color11">{day.label}</Text>
+            <Text fontSize="$2" color="$color11">{day.label}</Text>
           </YStack>
         ))}
       </XStack>

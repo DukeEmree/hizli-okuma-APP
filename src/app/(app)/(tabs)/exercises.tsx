@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { HEADER_RIGHT_SPACING } from '@/constants/layout';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, XStack, H2, H4, Text, Button, Card, View, ScrollView } from 'tamagui';
+import { YStack, XStack, H2, H4, Text, Button, Card, View, ScrollView, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Dumbbell, Brain, Eye, Zap, Lock, BookOpen } from 'lucide-react-native';
@@ -25,7 +27,8 @@ export default function ExercisesScreen() {
   const { t } = useTranslation('exercises');
   const router = useRouter();
   const { isPremium } = useRevenueCat();
-  const { stats } = useStatisticsStore();
+  const allStats = useStatisticsStore(state => state.stats['all']);
+  const theme = useTheme();
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
@@ -46,7 +49,6 @@ export default function ExercisesScreen() {
   };
 
   const getExerciseStat = (type: string) => {
-    const allStats = stats['all'];
     if (!allStats) return null;
     return allStats.exerciseStats.find(s => s.type === type) || null;
   };
@@ -56,7 +58,7 @@ export default function ExercisesScreen() {
       <ScrollView flex={1} backgroundColor="$background">
         <YStack padding="$4" gap="$4">
           
-          <YStack gap="$2" paddingRight={48}>
+          <YStack gap="$2" paddingRight={HEADER_RIGHT_SPACING}>
             <H2>{t('title', 'Egzersizler')}</H2>
             <Text color="$color11">{t('subtitle', 'Okuma hızını, kavramanı ve odağını geliştiren egzersizler.')}</Text>
           </YStack>
@@ -68,7 +70,7 @@ export default function ExercisesScreen() {
                 <Button 
                   key={cat}
                   size="$3"
-                  theme={activeCategory === cat ? 'active' : undefined}
+                  theme={activeCategory === cat ? 'accent' : undefined}
                   variant={activeCategory === cat ? undefined : 'outlined'}
                   onPress={() => setActiveCategory(cat)}
                 >
@@ -81,7 +83,7 @@ export default function ExercisesScreen() {
           {/* Exercises List */}
           {filteredExercises.length === 0 ? (
             <YStack padding="$6" alignItems="center" justifyContent="center" gap="$3">
-              <Dumbbell size={48} color="gray" opacity={0.5} />
+              <Dumbbell size={48} color={theme.color11?.val as string} opacity={0.5} />
               <H4>{t('labels.emptyState', 'Henüz kullanılabilir egzersiz yok.')}</H4>
             </YStack>
           ) : (
@@ -106,7 +108,7 @@ export default function ExercisesScreen() {
                       
                       {/* Icon Container */}
                       <View backgroundColor="$blue4" padding="$3" borderRadius="$3">
-                        <IconComponent color="#208AEF" size={24} />
+                        <IconComponent color={theme.accent10?.val} size={24} />
                       </View>
 
                       {/* Content Container */}
@@ -115,21 +117,21 @@ export default function ExercisesScreen() {
                           <H4 numberOfLines={1}>{t(exercise.nameKey, exercise.type)}</H4>
                           {exercise.isPremium && (
                             <View backgroundColor="$blue4" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$4">
-                              <Text fontSize={10} color="$blue11" fontWeight="bold">PRO</Text>
+                              <Text fontSize="$1" color="$blue11" fontWeight="bold">PRO</Text>
                             </View>
                           )}
                         </XStack>
-                        <Text color="$color11" fontSize={14} numberOfLines={2}>
+                        <Text color="$color11" fontSize="$4" numberOfLines={2}>
                           {t(exercise.descriptionKey, '')}
                         </Text>
                         
                         {/* Stats / Info Row */}
                         <XStack gap="$3" marginTop="$2" flexWrap="wrap">
-                          <Text fontSize={12} color="$color11">
+                          <Text fontSize="$2" color="$color11">
                             {t(`categories.${exercise.category}`, exercise.category)}
                           </Text>
                           {stat && stat.bestScore > 0 && (
-                            <Text fontSize={12} color="$green10" fontWeight="bold">
+                            <Text fontSize="$2" color="$green10" fontWeight="bold">
                               {t('labels.best', 'En İyi:')} {stat.bestScore}
                             </Text>
                           )}
@@ -139,9 +141,9 @@ export default function ExercisesScreen() {
                       {/* Action Icon */}
                       <View justifyContent="center" alignItems="center" paddingTop="$1">
                         {isLocked ? (
-                          <Lock color="gray" size={20} />
+                          <Lock color={theme.color11?.val as string} size={20} />
                         ) : (
-                          <Button size="$3" theme="active" circular icon={Zap} onPress={() => handlePress(exercise)} />
+                          <Button size="$3" theme="accent" circular icon={Zap} onPress={() => handlePress(exercise)} />
                         )}
                       </View>
                       

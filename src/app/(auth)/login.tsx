@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, XStack, Input } from 'tamagui';
-import { useSignIn, useSSO } from '@clerk/clerk-expo';
+import { KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { YStack, XStack, Input, useTheme } from 'tamagui';
+import { useSignIn, useSSO, isClerkAPIResponseError } from '@clerk/clerk-expo';
 import { useRouter, Link } from 'expo-router';
 import { AppText } from "@/components/ui/AppText";
 import { AppButton } from "@/components/ui/AppButton";
@@ -20,6 +21,7 @@ export default function LoginScreen() {
   const { startSSOFlow } = useSSO();
   const { t } = useTranslation('auth');
   const router = useRouter();
+  const theme = useTheme();
 
   const loginSchema = z.object({
     email: z.string().min(1, { message: t('validation.requiredEmail', 'E-posta boş bırakılamaz.') }).email({ message: t('validation.invalidEmail', 'Geçerli bir e-posta adresi girin.') }),
@@ -53,8 +55,12 @@ export default function LoginScreen() {
       } else {
         console.error(JSON.stringify(completeSignIn, null, 2));
       }
-    } catch (err: any) {
-      setErrorMsg(err.errors?.[0]?.message || t('errors.invalidCredentials', 'Giriş başarısız. Bilgilerinizi kontrol edin.'));
+    } catch (err: unknown) {
+      if (isClerkAPIResponseError(err)) {
+        setErrorMsg(err.errors?.[0]?.message || t('errors.invalidCredentials', 'Giriş başarısız. Bilgilerinizi kontrol edin.'));
+      } else {
+        setErrorMsg(t('errors.invalidCredentials', 'Giriş başarısız. Bilgilerinizi kontrol edin.'));
+      }
     }
   });
 
@@ -68,22 +74,34 @@ export default function LoginScreen() {
         await setOAuthActive({ session: createdSessionId });
         router.replace('/(app)/(tabs)');
       }
-    } catch (err: any) {
-      if (err?.code === 'ERR_REQUEST_CANCELED' || err?.message?.toLowerCase().includes('cancel')) {
-        console.log('Kullanıcı Google girişini iptal etti');
+    } catch (err: unknown) {
+      const isCanceled =
+        (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED') ||
+        (err instanceof Error && err.message.toLowerCase().includes('cancel'));
+        
+      if (isCanceled) {
         return;
       }
       console.error('SSO error', err);
-      setErrorMsg(err?.errors?.[0]?.message || t('errors.ssoFailed', 'Google ile giriş yapılırken bir hata oluştu.'));
+      if (isClerkAPIResponseError(err)) {
+        setErrorMsg(err.errors?.[0]?.message || t('errors.ssoFailed', 'Google ile giriş yapılırken bir hata oluştu.'));
+      } else {
+        setErrorMsg(t('errors.ssoFailed', 'Google ile giriş yapılırken bir hata oluştu.'));
+      }
     } finally {
       setSsoLoading(false);
     }
   }, [startSSOFlow, router, ssoLoading, t]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '$background' }} edges={['top', 'bottom']}>
-      <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
-        <YStack gap="$4">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val as string }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
+            <YStack gap="$4">
           <AppText variant="title" textAlign="center">{t('loginTitle', 'Giriş Yap')}</AppText>
           
           {!!errorMsg && <AppText variant="caption" color="$red10">{errorMsg}</AppText>}
@@ -102,6 +120,7 @@ export default function LoginScreen() {
                   onBlur={onBlur}
                   onChangeText={onChange}
                   placeholder={t('emailPlaceholder', 'E-posta')}
+                  placeholderTextColor="$color11"
                 />
                 {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
               </YStack>
@@ -120,6 +139,7 @@ export default function LoginScreen() {
                   secureTextEntry
                   textContentType="password"
                   placeholder={t('passwordPlaceholder', 'Şifre')}
+                  placeholderTextColor="$color11"
                 />
                 {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
               </YStack>
@@ -130,7 +150,7 @@ export default function LoginScreen() {
             {form.formState.isSubmitting ? t('loading', 'Yükleniyor...') : t('loginButton', 'Giriş Yap')}
           </AppButton>
 
-          <AppButton variant="outline" onPress={onPressGoogle} disabled={ssoLoading}>
+          <AppButton btnType="outline" onPress={onPressGoogle} disabled={ssoLoading}>
             {ssoLoading ? t('loading', 'Yükleniyor...') : t('loginGoogle', 'Google ile Giriş Yap')}
           </AppButton>
 
@@ -142,6 +162,8 @@ export default function LoginScreen() {
           </XStack>
         </YStack>
       </YStack>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

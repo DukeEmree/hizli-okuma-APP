@@ -44,7 +44,7 @@ export default defineSchema({
     score: v.number(),
     metrics: v.optional(v.any()), // flexible object for specific exercise metrics
     algorithmVersion: v.optional(v.number()),
-  }).index('by_userId', ['userId']).index('by_clientSessionId', ['clientSessionId']),
+  }).index('by_userId', ['userId']).index('by_userId_and_clientSessionId', ['userId', 'clientSessionId']),
 
   exerciseProgress: defineTable({
     userId: v.id('users'),
@@ -70,4 +70,35 @@ export default defineSchema({
     period: v.string(), // "ALL_TIME", "MONTH_YYYY_MM", "WEEK_YYYY_WW"
     score: v.number(),
   }).index('by_period_and_score', ['period', 'score']).index('by_userId_and_period', ['userId', 'period']),
+
+  userStatistics: defineTable({
+    userId: v.id('users'),
+    totalTrainingTimeMs: v.number(),
+    totalSessions: v.number(),
+  }).index('by_userId', ['userId']),
+
+  exerciseStatistics: defineTable({
+    userId: v.id('users'),
+    exerciseType: v.string(),
+    bestScore: v.number(),
+    scoreSum: v.number(),
+    bestWpm: v.number(),
+    wpmSum: v.number(),
+    attemptCount: v.number(),
+  }).index('by_userId', ['userId']).index('by_userId_and_type', ['userId', 'exerciseType']),
+
+  dailyStatistics: defineTable({
+    userId: v.id('users'),
+    date: v.string(), // "2024-03-24"
+    timestamp: v.number(), // start of day timestamp
+    wpmSum: v.number(),
+    wpmCount: v.number(),
+    compSum: v.number(),
+    compCount: v.number(),
+    accSum: v.number(),
+    accCount: v.number(),
+    scoreSum: v.number(),
+    scoreCount: v.number(),
+    durationMs: v.number(),
+  }).index('by_userId', ['userId']).index('by_userId_and_date', ['userId', 'date']).index('by_userId_and_timestamp', ['userId', 'timestamp']),
 });

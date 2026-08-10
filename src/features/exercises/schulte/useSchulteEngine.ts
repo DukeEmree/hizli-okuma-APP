@@ -44,10 +44,6 @@ export function useSchulteEngine(config: SchulteConfig, onCompleteCallback?: (re
   }, [config.gridSize, config.rng]);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
-    const totalClicks = expectedNumber - 1 + errors;
-    const _accuracy = totalClicks > 0 ? (expectedNumber - 1) / totalClicks : 0;
-    const _avgReactionTime = reactionTimes.length > 0 ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length : 0;
-
     createSession({
       clientSessionId: result.exerciseId + '-' + Date.now(),
       exerciseId: result.exerciseId,
@@ -64,7 +60,7 @@ export function useSchulteEngine(config: SchulteConfig, onCompleteCallback?: (re
         correctCount: expectedNumber - 1,
       },
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
-    }).catch(err => {console.error(err)});
+    }, result).catch(err => {console.error(err)});
 
     if (onCompleteCallback) {
       onCompleteCallback(result);
@@ -79,23 +75,36 @@ export function useSchulteEngine(config: SchulteConfig, onCompleteCallback?: (re
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsTimeUp(true);
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCompleted(true);
-      engine.updateMetrics({ completionRate: (expectedNumber - 1) / totalNumbers });
+      engine.updateMetrics({
+        completionRate: (expectedNumber - 1) / totalNumbers,
+        correctCount: expectedNumber - 1,
+        errorCount: errors,
+        reactionTimeMs: reactionTimes,
+      });
       engine.complete();
     }
-  }, [engine.elapsedMs, config.timeLimitMs, isCompleted, isTimeUp, expectedNumber, totalNumbers, engine]);
+  }, [engine.elapsedMs, config.timeLimitMs, isCompleted, isTimeUp, expectedNumber, totalNumbers, engine, errors, reactionTimes]);
 
   const handleNumberPress = useCallback((num: number) => {
     if (engine.session.state !== 'running' || isCompleted) return;
 
     if (num === expectedNumber) {
       const currentReactionTime = engine.elapsedMs - lastCorrectTime;
-      setReactionTimes(prev => [...prev, currentReactionTime]);
+      const newReactionTimes = [...reactionTimes, currentReactionTime];
+      setReactionTimes(newReactionTimes);
       setLastCorrectTime(engine.elapsedMs);
 
       if (num === totalNumbers) {
-        setIsCompleted(true);
-        engine.updateMetrics({ completionRate: 1 });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsCompleted(true);
+        engine.updateMetrics({
+          completionRate: 1,
+          correctCount: expectedNumber,
+          errorCount: errors,
+          reactionTimeMs: newReactionTimes,
+        });
         engine.complete();
       } else {
         setExpectedNumber(prev => prev + 1);
@@ -103,7 +112,7 @@ export function useSchulteEngine(config: SchulteConfig, onCompleteCallback?: (re
     } else {
       setErrors(prev => prev + 1);
     }
-  }, [engine, expectedNumber, totalNumbers, isCompleted, lastCorrectTime]);
+  }, [engine, expectedNumber, totalNumbers, isCompleted, lastCorrectTime, errors, reactionTimes]);
 
   const reset = useCallback(() => {
     engine.reset();

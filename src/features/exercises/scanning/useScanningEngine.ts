@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine";
 import { scanningDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
@@ -64,16 +64,28 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
   const [lastCorrectTime, setLastCorrectTime] = useState(0);
   const [reactionTimes, setReactionTimes] = useState<number[]>([]);
 
+  // Guard against duplicate execution for rapid touches or StrictMode
+  const foundCellIds = useRef<Set<number>>(new Set());
+  const isCompletedRef = useRef(false);
+
+  // We keep refs of current values to use in onTick without stale closures
+  const stateRefs = useRef({
+    foundCount: 0,
+    errors: 0,
+    reactionTimes: [] as number[],
+  });
+  
+  // Sync state to refs for onTick
+  useEffect(() => {
+    stateRefs.current = { foundCount, errors, reactionTimes };
+  }, [foundCount, errors, reactionTimes]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGrid(generateScanningGrid(config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng));
   }, [config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng]);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
-    const totalClicks = foundCount + errors;
-    const _accuracy = totalClicks > 0 ? foundCount / totalClicks : 0;
-    const _avgReactionTime = reactionTimes.length > 0 ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length : 0;
-
     createSession({
       clientSessionId: result.exerciseId + '-' + Date.now(),
       exerciseId: result.exerciseId,
@@ -85,60 +97,79 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
       score: result.score.finalScore,
       metrics: {
         ...result.metrics,
-        reactionTimeMs: reactionTimes,
-        errorCount: errors,
-        correctCount: foundCount,
+        reactionTimeMs: stateRefs.current.reactionTimes,
+        errorCount: stateRefs.current.errors,
+        correctCount: stateRefs.current.foundCount,
       },
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
-    }).catch(err => {console.error(err);});
+    }, result).catch(err => {console.error(err);});
 
     if (onCompleteCallback) {
       onCompleteCallback(result);
     }
-  }, [createSession, foundCount, errors, reactionTimes, onCompleteCallback]);
+  }, [createSession, onCompleteCallback]);
 
   const engine = useExerciseEngine(scanningDefinition, config, handleComplete);
 
+  // Use an effect to watch the elapsed time for time limits. 
+  // The isCompletedRef guarantees this only fires once, even in StrictMode.
   useEffect(() => {
-    if (!isCompleted && !isTimeUp && engine.elapsedMs >= config.timeLimitMs) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!isCompletedRef.current && engine.elapsedMs >= config.timeLimitMs) {
+      isCompletedRef.current = true;
       setIsTimeUp(true);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCompleted(true);
-      engine.updateMetrics({ completionRate: foundCount / targetCount });
+      engine.updateMetrics({
+        completionRate: stateRefs.current.foundCount / targetCount,
+        correctCount: stateRefs.current.foundCount,
+        errorCount: stateRefs.current.errors,
+        reactionTimeMs: stateRefs.current.reactionTimes,
+      });
       engine.complete();
     }
-  }, [engine.elapsedMs, config.timeLimitMs, isCompleted, isTimeUp, foundCount, targetCount, engine]);
+  }, [engine, engine.elapsedMs, config.timeLimitMs, targetCount]);
 
   const handleCellPress = useCallback((index: number) => {
-    if (engine.session.state !== 'running' || isCompleted) return;
+    if (engine.session.state !== 'running' || isCompletedRef.current) return;
 
-    setGrid(prev => {
-      const newGrid = [...prev];
-      const cell = newGrid[index];
+    const cell = grid[index];
+    if (!cell) return;
 
-      if (cell.isFound) return prev; // Already found
+    if (cell.isTarget) {
+      if (foundCellIds.current.has(index)) return; // Prevent duplicate updates for same cell
+      foundCellIds.current.add(index);
+      const newFoundCount = foundCellIds.current.size;
 
-      if (cell.isTarget) {
-        cell.isFound = true;
-        const currentReactionTime = engine.elapsedMs - lastCorrectTime;
-        setReactionTimes(r => [...r, currentReactionTime]);
-        setLastCorrectTime(engine.elapsedMs);
-        
-        const newFoundCount = foundCount + 1;
-        setFoundCount(newFoundCount);
+      // Update grid purely
+      setGrid(prev => {
+        const newGrid = [...prev];
+        newGrid[index] = { ...newGrid[index], isFound: true };
+        return newGrid;
+      });
 
-        if (newFoundCount >= targetCount) {
-          setIsCompleted(true);
-          engine.updateMetrics({ completionRate: 1 });
-          engine.complete();
-        }
-      } else {
-        setErrors(e => e + 1);
+      // Calculate and update metrics purely
+      const currentReactionTime = engine.elapsedMs - lastCorrectTime;
+      const newReactionTimes = [...reactionTimes, currentReactionTime];
+      
+      setReactionTimes(newReactionTimes);
+      setLastCorrectTime(engine.elapsedMs);
+      setFoundCount(newFoundCount);
+
+      // Side Effect: Trigger completion if done
+      if (newFoundCount >= targetCount && targetCount > 0 && !isCompletedRef.current) {
+        isCompletedRef.current = true;
+        setIsCompleted(true);
+        engine.updateMetrics({
+          completionRate: 1,
+          correctCount: newFoundCount,
+          errorCount: errors,
+          reactionTimeMs: newReactionTimes,
+        });
+        engine.complete();
       }
-      return newGrid;
-    });
-  }, [engine, isCompleted, foundCount, targetCount, lastCorrectTime]);
+    } else {
+      setErrors(e => e + 1);
+    }
+  }, [engine, grid, lastCorrectTime, reactionTimes, errors, targetCount]);
 
   const reset = useCallback(() => {
     engine.reset();
@@ -149,6 +180,8 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
     setIsTimeUp(false);
     setLastCorrectTime(0);
     setReactionTimes([]);
+    foundCellIds.current.clear();
+    isCompletedRef.current = false;
   }, [engine, config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng]);
 
   return {
@@ -163,3 +196,4 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
     handleCellPress,
   };
 }
+

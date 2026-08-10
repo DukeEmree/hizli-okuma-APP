@@ -1,4 +1,6 @@
 import React from 'react';
+import { HEADER_RIGHT_SPACING } from '@/constants/layout';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, YStack, XStack, Card, H2, H4, Button, Progress, Spinner, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
@@ -17,9 +19,10 @@ export default function HomeScreen() {
   const { isPremium } = useRevenueCat();
   const { isLoaded, isSignedIn } = useAuth();
   
-  const { totalTrainingSeconds, bestWpm, bestComprehension } = useUserProgressStore();
-  const { dailyGoalMinutes } = useSettingsStore();
-  const { pendingSessions } = useSyncStore();
+  const bestWpm = useUserProgressStore(state => state.bestWpm);
+  const bestComprehension = useUserProgressStore(state => state.bestComprehension);
+  const dailyGoalMinutes = useSettingsStore(state => state.dailyGoalMinutes);
+  const pendingSessions = useSyncStore(state => state.pendingSessions);
 
   const shouldFetch = isLoaded && isSignedIn;
   const queryResult = useQuery(api.home.getDashboardData, shouldFetch ? undefined : 'skip');
@@ -57,6 +60,12 @@ export default function HomeScreen() {
       }
     }
 
+    // Guests never sync (SyncProvider only runs when signed in), so the
+    // full pending queue is effectively this guest's whole local history -
+    // sum it directly rather than a separate "total training seconds"
+    // counter that's never actually incremented anywhere in the app.
+    const totalTrainingMs = pendingSessions.reduce((sum, s) => sum + s.durationMs, 0);
+
     data = {
       user: {
         displayName: 'Misafir',
@@ -66,7 +75,7 @@ export default function HomeScreen() {
       stats: {
         avgWpm: wpmCount > 0 ? Math.round(totalWpm / wpmCount) : (bestWpm || null),
         avgComp: compCount > 0 ? Math.round(totalComp / compCount) : (bestComprehension || null),
-        totalDurationMs: totalTrainingSeconds * 1000
+        totalDurationMs: totalTrainingMs
       },
       recentSessions: pendingSessions.slice().sort((a, b) => b.completedAt - a.completedAt).slice(0, 5).map(s => ({
         _id: s.clientSessionId,
@@ -85,7 +94,7 @@ export default function HomeScreen() {
         <YStack padding="$4" gap="$5">
           
           {/* Header & Streak */}
-          <XStack justifyContent="space-between" alignItems="center" marginRight={48}>
+          <XStack justifyContent="space-between" alignItems="center" marginRight={HEADER_RIGHT_SPACING}>
             <YStack flex={1}>
               <H2>Merhaba {user.displayName ? user.displayName.split(' ')[0] : ''} 👋</H2>
               <Text color="$color11">Hoş geldin, hazır mısın?</Text>
@@ -103,7 +112,7 @@ export default function HomeScreen() {
               <Progress value={progressPercent} size="$2">
                 <Progress.Indicator />
               </Progress>
-              <Text color="$color11" fontSize={12}>
+              <Text color="$color11" fontSize="$2">
                 {Math.floor(todayTrainingMs / 60000)} / {user.trainingGoalMins} dakika tamamlandı
               </Text>
             </YStack>
@@ -112,7 +121,7 @@ export default function HomeScreen() {
           {/* Main CTA */}
           <Button 
             size="$5" 
-            theme="active" 
+            theme="accent" 
             fontWeight="bold"
             onPress={() => router.push('/(app)/(tabs)/exercises')}
           >
@@ -122,16 +131,16 @@ export default function HomeScreen() {
           {/* Stats Row */}
           <XStack gap="$3" justifyContent="space-between">
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
-              <Text color="$color11" fontSize={12} marginBottom="$1">Ort. Hız</Text>
-              <Text fontSize={20} fontWeight="bold">{stats.avgWpm || '-'} <Text fontSize={12}>WPM</Text></Text>
+              <Text color="$color11" fontSize="$2" marginBottom="$1">Ort. Hız</Text>
+              <Text fontSize="$7" fontWeight="bold">{stats.avgWpm || '-'} <Text fontSize="$2">WPM</Text></Text>
             </Card>
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
-              <Text color="$color11" fontSize={12} marginBottom="$1">Kavrama</Text>
-              <Text fontSize={20} fontWeight="bold">{stats.avgComp ? `${stats.avgComp}%` : '-'}</Text>
+              <Text color="$color11" fontSize="$2" marginBottom="$1">Kavrama</Text>
+              <Text fontSize="$7" fontWeight="bold">{stats.avgComp ? `${stats.avgComp}%` : '-'}</Text>
             </Card>
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
-              <Text color="$color11" fontSize={12} marginBottom="$1">Çalışma</Text>
-              <Text fontSize={20} fontWeight="bold">{Math.floor((stats.totalDurationMs || 0) / 60000)}<Text fontSize={12}> dk</Text></Text>
+              <Text color="$color11" fontSize="$2" marginBottom="$1">Çalışma</Text>
+              <Text fontSize="$7" fontWeight="bold">{Math.floor((stats.totalDurationMs || 0) / 60000)}<Text fontSize="$2"> dk</Text></Text>
             </Card>
           </XStack>
 
@@ -141,7 +150,7 @@ export default function HomeScreen() {
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack flex={1}>
                   <H4 color="$blue11">Premium'a Geç</H4>
-                  <Text color="$blue11" fontSize={12}>Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.</Text>
+                  <Text color="$blue11" fontSize="$2">Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.</Text>
                 </YStack>
                 <Button size="$3" theme="blue" onPress={() => router.push('/paywall')}>İncele</Button>
               </XStack>
@@ -161,12 +170,12 @@ export default function HomeScreen() {
                     <XStack justifyContent="space-between" alignItems="center">
                       <YStack>
                         <Text fontWeight="bold" textTransform="capitalize">{session.exerciseType}</Text>
-                        <Text color="$color11" fontSize={12}>{dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                        <Text color="$color11" fontSize="$2">{dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                       </YStack>
                       <YStack alignItems="flex-end">
                         <Text fontWeight="bold" color="$green10">Skor: {session.score}</Text>
                         {session.metrics?.wpm && (
-                          <Text fontSize={12} color="$color11">{session.metrics.wpm} WPM</Text>
+                          <Text fontSize="$2" color="$color11">{session.metrics.wpm} WPM</Text>
                         )}
                       </YStack>
                     </XStack>

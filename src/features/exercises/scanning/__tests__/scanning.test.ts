@@ -1,13 +1,11 @@
 // @ts-ignore
-import { expect, test, describe, mock } from 'bun:test';
+import { expect, test, describe } from 'bun:test';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useScanningEngine, generateScanningGrid } from "@/features/exercises/scanning/useScanningEngine";
 
-mock.module('convex/react', () => {
-  return {
-    useMutation: () => () => Promise.resolve(),
-  };
-});
+// Shared mocks (convex/react, @clerk/clerk-expo, react-native-mmkv,
+// @amplitude/analytics-react-native) are registered in test-setup.ts via
+// bunfig.toml's [test].preload - see that file for why.
 
 describe('ScanningEngine', () => {
   test('should generate grid with specific target count', () => {

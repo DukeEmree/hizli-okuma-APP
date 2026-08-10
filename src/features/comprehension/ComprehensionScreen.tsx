@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { YStack, Text, Button, XStack, ScrollView, Progress, Card } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useComprehensionStore } from "@/stores/useComprehensionStore";
@@ -7,12 +7,15 @@ import { calculateReadingScore, CURRENT_ALGORITHM_VERSION } from "@/utils/scorin
 
 export function ComprehensionScreen() {
   const router = useRouter();
-  const { activeText, pendingResult, clearComprehensionContext } = useComprehensionStore();
+  const activeText = useComprehensionStore(state => state.activeText);
+  const pendingResult = useComprehensionStore(state => state.pendingResult);
+  const clearComprehensionContext = useComprehensionStore(state => state.clearComprehensionContext);
   const createSession = useCreateSession();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  const isAnsweringRef = useRef(false);
 
   // Eğer store'da veri yoksa hata ekranı göster
   if (!activeText || !pendingResult) {
@@ -33,11 +36,20 @@ export function ComprehensionScreen() {
   const progress = (currentQuestionIndex / questions.length) * 100;
 
   const handleAnswer = (optionIndex: number) => {
+    // Guards against a rapid double-tap firing this twice before the
+    // re-render that would normally disable/advance past these buttons -
+    // without it, two taps on the last question create two exercise
+    // sessions, and two taps on an earlier question silently drop one
+    // answer (both calls read the same stale `answers` closure).
+    if (isAnsweringRef.current) return;
+    isAnsweringRef.current = true;
+
     const newAnswers = [...answers, optionIndex];
     setAnswers(newAnswers);
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      isAnsweringRef.current = false;
     } else {
       finishComprehension(newAnswers);
     }
@@ -89,7 +101,7 @@ export function ComprehensionScreen() {
         score: finalResult.score.finalScore,
         metrics: finalResult.metrics,
         algorithmVersion: finalResult.algorithmVersion,
-      });
+      }, finalResult);
     } catch (err) {
       console.error('Error saving comprehension result:', err);
     }
@@ -124,7 +136,7 @@ export function ComprehensionScreen() {
           <Text fontSize="$8" fontWeight="bold" color="$blue10">% {comprehensionScore}</Text>
         </Card>
         
-        <Button size="$5" mt="$4" theme="active" onPress={handleFinish}>
+        <Button size="$5" mt="$4" theme="accent" onPress={handleFinish}>
           Tamamla
         </Button>
       </YStack>
@@ -134,7 +146,7 @@ export function ComprehensionScreen() {
   return (
     <YStack f={1} bg="$background" p="$4" gap="$4">
       <XStack ai="center" jc="space-between">
-        <Text color="$colorSubtle">Soru {currentQuestionIndex + 1} / {questions.length}</Text>
+        <Text color="$color11">Soru {currentQuestionIndex + 1} / {questions.length}</Text>
         <Progress value={progress} max={100} width={150}>
           <Progress.Indicator />
         </Progress>

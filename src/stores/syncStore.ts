@@ -1,8 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { userScopedStorageAdapter } from './storage';
-import { Id } from "@/convex/_generated/dataModel";
 import { ExerciseMetrics } from "@/types/exercise";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { userScopedStorageAdapter } from "./storage";
 
 export type PendingSession = {
   clientSessionId: string;
@@ -21,7 +20,7 @@ export type PendingSession = {
 
 interface SyncState {
   pendingSessions: PendingSession[];
-  addSession: (session: Omit<PendingSession, 'retryCount'>) => void;
+  addSession: (session: Omit<PendingSession, "retryCount">) => void;
   removeSession: (clientSessionId: string) => void;
   incrementRetryCount: (clientSessionId: string) => void;
   clearQueue: () => void;
@@ -41,7 +40,7 @@ export const useSyncStore = create<SyncState>()(
       removeSession: (clientSessionId) =>
         set((state) => ({
           pendingSessions: state.pendingSessions.filter(
-            (s) => s.clientSessionId !== clientSessionId
+            (s) => s.clientSessionId !== clientSessionId,
           ),
         })),
       incrementRetryCount: (clientSessionId) =>
@@ -49,14 +48,18 @@ export const useSyncStore = create<SyncState>()(
           pendingSessions: state.pendingSessions.map((s) =>
             s.clientSessionId === clientSessionId
               ? { ...s, retryCount: s.retryCount + 1, lastRetryAt: Date.now() }
-              : s
+              : s,
           ),
         })),
       clearQueue: () => set({ pendingSessions: [] }),
     }),
     {
-      name: 'sync-storage',
+      name: "sync-storage",
       storage: createJSONStorage(() => userScopedStorageAdapter),
-    }
-  )
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        return persistedState as SyncState;
+      },
+    },
+  ),
 );

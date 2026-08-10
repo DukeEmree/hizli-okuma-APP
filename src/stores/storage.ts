@@ -5,17 +5,14 @@ import { StateStorage } from 'zustand/middleware';
 export const mmkv = createMMKV({ id: 'hizli-okuma' });
 
 /**
- * Mevcut giriş yapmış kullanıcının ID'si.
- * Bu ID, Clerk entegrasyonu (Faz 3) yapıldığında login/logout
- * işlemlerinde güncellenecektir.
+ * Mevcut giriş yapmış kullanıcının ID'si. Clerk login/logout akışında
+ * `setActiveUserId` ile güncellenir (bkz. AuthSync.tsx).
  */
 let activeUserId: string | null = 'guest';
 
 export const setActiveUserId = (userId: string | null) => {
   activeUserId = userId;
 };
-
-export const getActiveUserId = () => activeUserId;
 
 /**
  * Global (cihaz seviyesi) ayarlar için (tema, dil vb.)

@@ -93,7 +93,10 @@ export function getScanningConfig(level: DifficultyLevel): Partial<ScanningConfi
   };
 }
 
-export function getAdaptiveConfig(type: string, level: DifficultyLevel): any {
+export function getAdaptiveConfig(
+  type: string,
+  level: DifficultyLevel
+): Partial<RSVPConfig> | Partial<ChunkingConfig> | Partial<PacerConfig> | Partial<SchulteConfig> | Partial<ScanningConfig> {
   switch (type) {
     case 'rsvp': return getRSVPConfig(level);
     case 'chunking': return getChunkingConfig(level);

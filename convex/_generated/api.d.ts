@@ -14,6 +14,7 @@ import type * as gamification from "../gamification.js";
 import type * as home from "../home.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
+import type * as migrations from "../migrations.js";
 import type * as statistics from "../statistics.js";
 import type * as streaks from "../streaks.js";
 import type * as subscriptions from "../subscriptions.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   home: typeof home;
   http: typeof http;
   leaderboard: typeof leaderboard;
+  migrations: typeof migrations;
   statistics: typeof statistics;
   streaks: typeof streaks;
   subscriptions: typeof subscriptions;

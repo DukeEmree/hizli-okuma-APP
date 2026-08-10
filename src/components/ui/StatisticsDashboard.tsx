@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView } from 'react-native';
-import { H1, H4, Text, XStack, YStack, Button, Spinner } from 'tamagui';
-import { useQuery } from 'convex/react';
-import { api } from "@/convex/_generated/api";
+import React from 'react';
+import { View } from 'react-native';
+import { H1, H4, Text, XStack, YStack, Button, Spinner, ScrollView } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 import { TimeRange } from "@/convex/statistics";
-import { useStatisticsStore } from "@/stores/useStatisticsStore";
-
 import { CartesianChart, Line } from 'victory-native';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { StreakWeeklyCalendar } from "@/features/streak/StreakWeeklyCalendar";
+import { HEADER_RIGHT_SPACING } from "@/constants/layout";
 
-function formatTime(ms: number) {
+export function formatTime(ms: number) {
   const mins = Math.floor(ms / 60000);
   if (mins < 60) return `${mins} dk`;
   const hours = Math.floor(mins / 60);
@@ -19,24 +16,22 @@ function formatTime(ms: number) {
   return `${hours} sa ${remainingMins} dk`;
 }
 
-export default function ProgressScreen() {
+interface StatisticsDashboardProps {
+  isLoading: boolean;
+  hasData: boolean;
+  timeRange: TimeRange;
+  onTimeRangeChange: (range: TimeRange) => void;
+  currentStats: any;
+}
+
+export function StatisticsDashboard({
+  isLoading,
+  hasData,
+  timeRange,
+  onTimeRangeChange,
+  currentStats
+}: StatisticsDashboardProps) {
   const { t } = useTranslation();
-  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
-  
-  const rawStats = useQuery(api.statistics.getPerformanceStats, { timeRange });
-  const { stats, setStats } = useStatisticsStore();
-
-  const currentStats = stats[timeRange];
-  
-
-
-  useEffect(() => {
-    if (rawStats) {
-      setStats(timeRange, rawStats);
-    }
-  }, [rawStats, timeRange, setStats]);
-
-  const isLoading = currentStats === null;
 
   if (isLoading) {
     return (
@@ -46,16 +41,22 @@ export default function ProgressScreen() {
     );
   }
 
-  const hasData = currentStats.totalSessions > 0;
+  const chartDataWpm: Array<{x: number, y: number}> = hasData && currentStats.dailyTrends.length > 1 
+    ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: d.avgWpm || 0 }))
+    : [];
+
+  const chartDataComp: Array<{x: number, y: number}> = hasData && currentStats.dailyTrends.length > 1
+    ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: (d.avgComprehension || 0) * 100 }))
+    : [];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '$background' }}>
+    <ScrollView flex={1} backgroundColor="$background">
       <YStack padding="$4" gap="$4">
-        <XStack justifyContent="space-between" alignItems="center">
-          <H1>{t('progress.title', 'Gelişim & İstatistikler')}</H1>
+        <XStack justifyContent="space-between" alignItems="center" paddingRight={HEADER_RIGHT_SPACING}>
+          <H1 fontSize="$8">{t('progress.title', 'Gelişim & İstatistikler')}</H1>
           <StreakBadge />
         </XStack>
-        
+
         <StreakWeeklyCalendar />
 
         {/* Time Range Selector */}
@@ -65,8 +66,8 @@ export default function ProgressScreen() {
               key={range}
               size="$3"
               flex={1}
-              theme={timeRange === range ? 'active' : undefined}
-              onPress={() => setTimeRange(range)}
+              theme={timeRange === range ? 'accent' : undefined}
+              onPress={() => onTimeRangeChange(range)}
             >
               {t(`progress.ranges.${range}`, range.toUpperCase())}
             </Button>
@@ -82,15 +83,14 @@ export default function ProgressScreen() {
           </YStack>
         ) : (
           <YStack gap="$6">
-            
             {/* Toplam Özet */}
             <XStack flexWrap="wrap" justifyContent="space-between" marginVertical="$4">
               <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" marginBottom="$3">
-                <Text color="$color11" fontSize={14}>Toplam Süre</Text>
+                <Text color="$color11" fontSize="$4">Toplam Süre</Text>
                 <H4>{formatTime(currentStats.totalTrainingTimeMs)}</H4>
               </YStack>
               <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" marginBottom="$3">
-                <Text color="$color11" fontSize={14}>Tamamlanan Seans</Text>
+                <Text color="$color11" fontSize="$4">Tamamlanan Seans</Text>
                 <H4>{currentStats.totalSessions}</H4>
               </YStack>
             </XStack>
@@ -100,9 +100,9 @@ export default function ProgressScreen() {
               <H4>Okuma Hızı (WPM) Trendi</H4>
               <View style={{ height: 250, width: '100%' }}>
                 {currentStats.dailyTrends.length > 1 ? (
-                  <CartesianChart 
-                    data={currentStats.dailyTrends.map((d, i) => ({ x: i, y: d.avgWpm || 0 }))} 
-                    xKey="x" 
+                  <CartesianChart
+                    data={chartDataWpm}
+                    xKey="x"
                     yKeys={["y"]}
                     domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                   >
@@ -121,9 +121,9 @@ export default function ProgressScreen() {
               <H4>Anlama Oranı (%)</H4>
               <View style={{ height: 250, width: '100%' }}>
                 {currentStats.dailyTrends.length > 1 ? (
-                  <CartesianChart 
-                    data={currentStats.dailyTrends.map((d, i) => ({ x: i, y: (d.avgComprehension || 0) * 100 }))} 
-                    xKey="x" 
+                  <CartesianChart
+                    data={chartDataComp}
+                    xKey="x"
                     yKeys={["y"]}
                     domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                   >
@@ -140,15 +140,15 @@ export default function ProgressScreen() {
             {/* Per-Exercise Breakdown */}
             <YStack gap="$3" marginTop="$4">
               <H4>Egzersiz İstatistikleri</H4>
-              {currentStats.exerciseStats.map(ex => (
+              {currentStats.exerciseStats.map((ex: any) => (
                 <XStack key={ex.type} backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" justifyContent="space-between" alignItems="center">
                   <YStack>
                     <Text fontWeight="bold" textTransform="capitalize">{ex.type}</Text>
-                    <Text color="$color11" fontSize={12}>{ex.attemptCount} Seans</Text>
+                    <Text color="$color11" fontSize="$2">{ex.attemptCount} Seans</Text>
                   </YStack>
                   <YStack alignItems="flex-end">
                     <Text fontWeight="bold">En İyi Skor: {ex.bestScore}</Text>
-                    {ex.bestWpm > 0 && <Text fontSize={12}>Max WPM: {ex.bestWpm}</Text>}
+                    {ex.bestWpm > 0 && <Text fontSize="$2">Max WPM: {ex.bestWpm}</Text>}
                   </YStack>
                 </XStack>
               ))}

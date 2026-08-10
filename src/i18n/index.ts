@@ -13,6 +13,7 @@ import onboarding from './locales/tr/onboarding.json';
 import progress from './locales/tr/progress.json';
 import settings from './locales/tr/settings.json';
 import subscription from './locales/tr/subscription.json';
+import notifications from './locales/tr/notifications.json';
 
 export const defaultNS = 'common';
 export const resources = {
@@ -28,6 +29,7 @@ export const resources = {
     progress,
     settings,
     subscription,
+    notifications,
   },
 } as const;
 
