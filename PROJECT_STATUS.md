@@ -125,7 +125,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - **Adaptive difficulty** — single-step progression per session, enforced client-side and re-validated server-side.
 - **Streaks** — timezone-aware, server-authoritative, with a local cache for instant display. A missed day no longer necessarily breaks the streak: one freeze is earned every 7 consecutive days (max 2) and one is spent per missed day, shown as ❄️ next to the streak badge.
 - **Gamification** — 10 XP per exercise, 100 XP per achievement, six achievements, level derived from total XP.
-- **Statistics** — daily WPM/comprehension/accuracy trends and per-exercise bests, over 7d/30d/90d/all.
+- **Statistics** — daily WPM/comprehension/accuracy trends and per-exercise bests over 7d/30d/90d/all, from Convex for premium users and from the 6-month on-device history for everyone else (`buildLocalStats` returns the same shape, so the dashboard is identical).
 - **Subscription** — RevenueCat hosted paywall and Customer Center; free tier capped at 6 exercises per day.
 - **Notifications** — local daily/streak/inactivity reminders plus server-sent push on subscription events.
 - **Onboarding** — a reading test that seeds initial WPM, comprehension and starting difficulty.
@@ -161,7 +161,6 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 | Home and statistics screens use hardcoded Turkish strings | LOW | Invisible while Turkish is the only locale; blocking for a second language |
 | Gamification (XP, levels, achievements) only runs for premium users | MEDIUM | `processGamification` runs inside `createSession`, which returns early for non-premium; free and guest users earn nothing. See the note at the top of `FEATURE_BACKLOG.md` |
 | `gamificationStore` is not persisted | LOW | A pending achievement popup is lost if the app closes before it is shown |
-| Free/guest users see an empty statistics tab | LOW (UX) | Premium gating is intentional; the empty state reads as broken |
 
 ## Production Readiness
 

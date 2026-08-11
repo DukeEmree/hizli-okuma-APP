@@ -8,7 +8,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 
 - [x] `bun run typecheck` clean
 - [x] `bun run lint` clean (0 errors, 0 warnings)
-- [x] `bun test` green — 126 tests, 19 files
+- [x] `bun test` green — 134 tests, 20 files
 - [x] `bun run i18n:check` passes
 - [x] `bunx expo export --platform android` succeeds (production bundle compiles)
 - [x] No `TODO`/`FIXME`/`HACK` markers left in `src/` or `convex/`
@@ -62,7 +62,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] Loading, empty and error states present on the main flows
 - [x] Destructive actions behind confirmation sheets
 - [x] Unified on the green brand hue (`#2DBE73`) — splash, notification colour, adaptive-icon background and all 63 `$blue*` token usages
-- [ ] Give free/guest users something on the statistics tab instead of a permanently empty state
+- [x] Free/guest users now see the full statistics dashboard, built from their 6 months of on-device history
 - [ ] Fix the "En İyi" badge on the exercises tab (reads a statistics range nothing fetches)
 - [ ] Increase `SettingsRow` vertical padding to reach the 48 dp Android touch-target minimum
 

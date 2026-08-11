@@ -231,7 +231,7 @@ This is a deliberate visual change (it also means regenerating the app icon and 
 **Open UI/UX items (not applied):**
 
 1. The home and statistics screens are the only two with hardcoded Turkish strings ("Merhaba", "Bugünkü Hedef", "Misafir", …) while 25 other files use `useTranslation`. `home.json` exists but is nearly empty. With Turkish as the only shipped locale this changes nothing visually today; it becomes a blocker the moment a second language is added.
-2. Free and guest users see a completely empty statistics tab (the Convex query is premium-gated). Consider showing local-history charts from the sync queue for them, or an explicit paywall panel rather than an empty state — an empty tab reads as a broken app.
+2. ~~Free and guest users see a completely empty statistics tab.~~ Resolved after the audit: the dashboard is now built from `localHistoryStore` (6 months on-device) for non-premium users, in the same shape the Convex query returns, so the component renders identically for both.
 3. The exercises tab shows a "En İyi" badge from `useStatisticsStore.stats['all']`, but nothing ever fetches the `'all'` time range (the statistics screen defaults to `'7d'`), so the badge never appears.
 4. Touch targets: `SettingsRow` rows are `paddingVertical="$2"` around a 20 px icon, which lands below the 48 dp Android minimum for the pressable rows. Bump to `$3`.
 5. No "Restore Purchases" entry point outside RevenueCat's hosted Customer Center. Acceptable if the Customer Center has restore enabled — VERIFY.
@@ -247,7 +247,7 @@ This is a deliberate visual change (it also means regenerating the app icon and 
 - `bun run lint`: 0 errors, 0 warnings (was 20 warnings).
 - `bunx expo export --platform android`: succeeds, producing a 15 MB Hermes bundle. This also settles the previous pass's open question about the missing `babel.config.js`/`metro.config.js` — SDK 57's defaults are sufficient and the production bundle compiles.
 - `bun run i18n:check`: passes.
-- `bun test`: 126 pass, 0 fail, 19 files. `act(...)` and `react-test-renderer is deprecated` notices are React 19 test-environment noise, not failures.
+- `bun test`: 134 pass, 0 fail, 20 files. `act(...)` and `react-test-renderer is deprecated` notices are React 19 test-environment noise, not failures.
 - `package.json` has no `test` script even though `AGENTS.md` documents `bun test`; the command works because Bun's runner needs no script. Harmless, worth adding for discoverability.
 - `eslint` is pinned to major 8 while TypeScript is 6.x and React 19.2. Lint runs clean today; flagged for future compatibility only. No upgrade performed.
 - `app.json`: `versionCode: 1`, `version: 1.0.0`, consistent bundle/package ids, `extra.eas.projectId` matches what `usePushNotificationToken` reads. `eas.json` uses `appVersionSource: remote` with `autoIncrement` on production.
