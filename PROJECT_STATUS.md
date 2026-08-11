@@ -2,7 +2,7 @@
 
 > Living documentation of the current architecture and implementation status. Everything here was verified by reading the code in this working tree; anything that could only be confirmed in an external dashboard is marked **VERIFY**.
 
-Last updated: 2026-08-11, after the second production audit pass (`PRODUCTION_AUDIT.md`).
+Last updated: 2026-08-11, after the second production audit pass (`PRODUCTION_AUDIT.md`). Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
 
 ## Overview
 
@@ -99,7 +99,7 @@ Notable properties:
 | `exerciseProgressStore` | per-user | adaptive difficulty and best-* per exercise |
 | `userProgressStore` | per-user | legacy aggregate counters — **currently has no writers** |
 | `streakCacheStore` | per-user | streak cache for instant UI |
-| `gamificationStore` | per-user | achievement popup queue |
+| `gamificationStore` | in-memory only | achievement popup queue — not persisted, so a pending popup is lost on app close |
 | `useExerciseSettingsStore` | per-user | per-exercise config overrides |
 | `useStatisticsStore` | per-user | cached Convex statistics per time range |
 | `useComprehensionStore` | per-user | in-flight comprehension quiz state |
@@ -116,7 +116,7 @@ Guest→user migration (`utils/migration.ts`) dedupes the sync queue by `clientS
 
 Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`dark`/`system` themes driven by `settingsStore`. No hardcoded hex colours anywhere in `src/`. Safe-area edges are applied per screen; Victory Native renders the progress charts.
 
-Known inconsistency: the app icon, splash background and notification colour are blue (`#208AEF`) while the Tamagui accent is green, and screens mix `$blue*` tokens with `theme="accent"`. A single-hue token mapping is proposed in `PRODUCTION_AUDIT.md` but was not applied — it is a visual decision.
+**Brand hue: green** (decided 2026-08-11). The code is not yet consistent with that decision — the app icon, splash background and notification colour are still blue (`#208AEF`), and screens still mix `$blue*` tokens with `theme="accent"`. Tracked as item 7.1 in `FEATURE_BACKLOG.md`.
 
 ## Main Features
 
@@ -156,6 +156,8 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 | Dead code: `userProgressStore` best-* fields, `SUBSCRIPTION_CONSTANTS` tier lists, the exercises-tab "En İyi" badge | LOW | Removal means deleting fields/files — awaiting sign-off |
 | Round-advance `setTimeout`s not cleared on unmount | LOW | 500 ms window, React 19 no longer warns, but it does not match the cleanup rule in AGENTS.md |
 | Home and statistics screens use hardcoded Turkish strings | LOW | Invisible while Turkish is the only locale; blocking for a second language |
+| Gamification (XP, levels, achievements) only runs for premium users | MEDIUM | `processGamification` runs inside `createSession`, which returns early for non-premium; free and guest users earn nothing. See the note at the top of `FEATURE_BACKLOG.md` |
+| `gamificationStore` is not persisted | LOW | A pending achievement popup is lost if the app closes before it is shown |
 | Free/guest users see an empty statistics tab | LOW (UX) | Premium gating is intentional; the empty state reads as broken |
 
 ## Production Readiness
@@ -187,4 +189,4 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 2. Produce a production build and smoke-test the full path on a physical device: onboarding → exercise → completion → statistics → paywall → sandbox purchase → settings.
 3. Confirm Sentry, Amplitude and Convex traffic actually arrives from that build. Amplitude in particular has never delivered a single event before this pass, so its dashboard is the fastest way to prove the fix.
 4. Then decide the two deferred design questions: the free-tier history model, and one brand hue.
-5. Retention features are proposed with full technical shape at the end of `PRODUCTION_AUDIT.md` — the daily plan and the streak freeze are the two highest-value, and the streak freeze is the cheapest to build because `calculateStreakUpdate` is already pure and unit-tested.
+5. Planned features live in `FEATURE_BACKLOG.md` — daily plan, weekly recap, interstitial paywall, RevenueCat custom paywall, and the achievement overhaul with confetti. Read the note at the top of that file first: gamification currently only runs for premium users, and that decision gates most of the list.

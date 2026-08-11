@@ -14,7 +14,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] No `TODO`/`FIXME`/`HACK` markers left in `src/` or `convex/`
 - [x] No hardcoded hex colours in `src/` — Tamagui tokens throughout
 - [x] No stray `console.log` in client code paths (remaining ones are Convex server-side or `__DEV__`-gated)
-- [ ] Remove tracked scratch files from the repo root (`test-expo-router.js`, `test-export.ts`, `test-export2.ts`, `scratch/`) — needs your sign-off, deletions were not made
+- [x] Removed the tracked scratch files from the repo root (`test-expo-router.js`, `test-export.ts`, `test-export2.ts`, `scratch/`)
 - [ ] Add a `test` script to `package.json` (`bun test` works without it, but `AGENTS.md` documents it)
 
 ## Security
@@ -53,7 +53,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] Exercise tick updates throttled to ~1/s at the React boundary
 - [x] Dead write-only state removed from two exercise engines
 - [x] Sentry trace/profile sampling reduced from 100% to 20%
-- [ ] Decide the long-term local-history model — the sync queue currently grows without bound for free users (REM-1)
+- [ ] Decide the long-term local-history model — the sync queue currently grows without bound for free users (REM-1, detailed as item 7.2 in `FEATURE_BACKLOG.md`)
 - [ ] Render-profile pass on a real low-end Android device (cannot be done statically)
 
 ## UI/UX
@@ -61,7 +61,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] Safe-area edges applied per screen
 - [x] Loading, empty and error states present on the main flows
 - [x] Destructive actions behind confirmation sheets
-- [ ] Unify the colour system — the icon/splash are blue while the Tamagui accent is green (token mapping proposed in the audit; not applied, needs your call)
+- [ ] Unify on the green brand hue — splash/notification colour and the app icon are still blue, and `$blue*` tokens are still used across screens (tracked as item 7.1 in `FEATURE_BACKLOG.md`)
 - [ ] Give free/guest users something on the statistics tab instead of a permanently empty state
 - [ ] Fix the "En İyi" badge on the exercises tab (reads a statistics range nothing fetches)
 - [ ] Increase `SettingsRow` vertical padding to reach the 48 dp Android touch-target minimum
@@ -137,12 +137,12 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 ## App Icon
 
 - [x] Adaptive icon (foreground, background, monochrome) and favicon configured in `app.json`
-- [ ] Check the monochrome icon renders correctly in the Android 13+ themed-icon style
+- [ ] Regenerate the app icon in the green palette, then check the monochrome variant in the Android 13+ themed-icon style
 
 ## Splash Screen
 
 - [x] `expo-splash-screen` configured; auto-hide prevented until fonts load
-- [ ] The splash background `#208AEF` (blue) does not match the app's green Tamagui accent — pick one (see the UI/UX section of the audit)
+- [ ] Change the splash background from `#208AEF` to the green brand colour (decided; see `FEATURE_BACKLOG.md` 7.1)
 
 ## App Store Metadata
 

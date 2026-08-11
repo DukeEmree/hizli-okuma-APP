@@ -212,12 +212,12 @@ No `useMemo`/`useCallback` was added or removed for its own sake. A render-profi
 
 **Colour system.** The palette is a neutral grey ramp (hue 0, 15% saturation) with a **green** accent (hue 120), but the app icon, splash background and notification colour are **blue** (`#208AEF`), and screens mix `$blue10`/`$blue4` (sliders, badges, secondary buttons, tab bar active tint) with `theme="accent"` (primary CTAs). The product therefore has two competing primaries.
 
-Recommended token mapping — pick blue as the single brand hue, since the icon, splash and notification colour already commit to it:
+**Decision (2026-08-11): green is the brand hue.** The icon, splash background and notification colour must move to green, and the `$blue*` usages must move onto accent tokens. Recommended mapping:
 
 | Role | Token | Suggested value |
 |---|---|---|
-| Primary | `accent9` / `accent10` | `#208AEF` ramp (replaces the green accent) |
-| Secondary | `$blue4` / `$blue11` | tinted surfaces and text on them |
+| Primary | `accent9` / `accent10` | existing green ramp — keep as is |
+| Secondary | `$green4` / `$green11` | tinted surfaces and text on them, replacing today's `$blue4`/`$blue11` |
 | Background | `$background` | existing neutral ramp step 1 |
 | Surface | `$backgroundHover` | existing ramp step 2 — already used consistently for cards |
 | Text | `$color12` | |
@@ -226,7 +226,7 @@ Recommended token mapping — pick blue as the single brand hue, since the icon,
 | Warning | `$orange9` / `$yellow10` | already used for the limit-reached button |
 | Error | `$red10` | already used for the danger zone |
 
-This is a deliberate visual change, so it was **not applied** — it needs your sign-off. Everything else below is also proposal-only.
+This is a deliberate visual change (it also means regenerating the app icon and changing the splash colour), so it was **not applied** — it is tracked as item 7.1 in `FEATURE_BACKLOG.md`. Everything else below is also proposal-only.
 
 **Open UI/UX items (not applied):**
 
@@ -252,7 +252,7 @@ This is a deliberate visual change, so it was **not applied** — it needs your 
 - `eslint` is pinned to major 8 while TypeScript is 6.x and React 19.2. Lint runs clean today; flagged for future compatibility only. No upgrade performed.
 - `app.json`: `versionCode: 1`, `version: 1.0.0`, consistent bundle/package ids, `extra.eas.projectId` matches what `usePushNotificationToken` reads. `eas.json` uses `appVersionSource: remote` with `autoIncrement` on production.
 - `.env.example` was rewritten this pass: all seven client variables plus the Convex-deployment variables (`CLERK_FRONTEND_API_URL`, `REVENUECAT_WEBHOOK_AUTH_HEADER`, `EXPO_ACCESS_TOKEN`) with placeholder values and comments on what each one breaks when missing. No real values.
-- Root housekeeping: `test-expo-router.js`, `test-export.ts`, `test-export2.ts` and `scratch/` are tracked in git but are not part of any lint, test or build path. They look like scratch files. **Not deleted** — deletions need your sign-off.
+- Root housekeeping: `test-expo-router.js`, `test-export.ts`, `test-export2.ts` and `scratch/` were tracked in git but belonged to no lint, test or build path. Deleted with your approval; they remain recoverable from git history.
 
 ---
 
@@ -308,7 +308,7 @@ Fixed in the previous pass and re-verified here: public migration mutation, miss
 
 **Shortly after release:** add `environment` and `release` tags to `Sentry.init()` so production events are separable; decide the REM-1 local-history model; unify the colour system on one brand hue.
 
-**Retention features worth building** (proposal only, none implemented):
+**Retention features worth building.** These are now tracked with full scope, UX flow, technical plan and open questions in `FEATURE_BACKLOG.md`, together with the features you added (interstitial paywall, RevenueCat custom paywall, achievement overhaul with confetti). Summary:
 
 1. **Daily plan / "Bugünün antrenmanı"** — three exercises picked from the user's weakest categories, presented as a single card on the home screen with a completion ring. Problem: the exercises tab shows fifteen equal choices and gives no reason to start today specifically. Convex: a `dailyPlans` table keyed `(userId, localDate)`, or derive it deterministically from `exerciseStatistics` with no new table. Local state: guests need the same plan derived from the local queue. Gamification: completing the plan is the natural daily-goal event that `isDailyGoalCompleted` in `processGamification` is already stubbed for and always passes as `false`. Retention impact: high — it converts an open-ended app into a daily ritual. MVP difficulty: medium.
 2. **Streak freeze / repair** — one earned "freeze" that absorbs a missed day, spendable automatically. Problem: `calculateStreakUpdate` resets a 40-day streak to 1 the moment a day is missed, which is exactly when users churn. Convex: two fields on `streaks` (`freezesAvailable`, `freezeUsedAt`) plus the reset branch of `calculateStreakUpdate`; the function is already pure and unit-tested, so the change is testable in isolation. Retention impact: high, well evidenced across the category. MVP difficulty: low.
