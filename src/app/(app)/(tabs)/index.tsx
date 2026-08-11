@@ -10,7 +10,7 @@ import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import { useAuth } from '@clerk/clerk-expo';
 import { useUserProgressStore } from '@/stores/userProgressStore';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { useSyncStore } from '@/stores/syncStore';
+import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 
 export default function HomeScreen() {
 
@@ -21,7 +21,7 @@ export default function HomeScreen() {
   const bestWpm = useUserProgressStore(state => state.bestWpm);
   const bestComprehension = useUserProgressStore(state => state.bestComprehension);
   const dailyGoalMinutes = useSettingsStore(state => state.dailyGoalMinutes);
-  const pendingSessions = useSyncStore(state => state.pendingSessions);
+  const localSessions = useLocalHistoryStore(state => state.sessions);
 
   // Dashboard cloud data is premium-only - free/guest users get the local branch below.
   const shouldFetch = isLoaded && isSignedIn && isPremium;
@@ -43,13 +43,13 @@ export default function HomeScreen() {
     // Construct local data for guest / free-tier user
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    const todaysSessions = pendingSessions.filter(s => s.completedAt >= todayStart.getTime());
+    const todaysSessions = localSessions.filter(s => s.completedAt >= todayStart.getTime());
     const todayTrainingMs = todaysSessions.reduce((sum, s) => sum + s.durationMs, 0);
 
-    // Compute basic averages for guest from pendingSessions if they exist
+    // Compute basic averages for guest from the local history if it exists
     let totalWpm = 0, wpmCount = 0;
     let totalComp = 0, compCount = 0;
-    for (const s of pendingSessions) {
+    for (const s of localSessions) {
       if (s.metrics?.wpm) {
         totalWpm += s.metrics.wpm;
         wpmCount++;
@@ -63,11 +63,11 @@ export default function HomeScreen() {
       }
     }
 
-    // Guests and free-tier users never sync (SyncProvider only runs when
-    // premium), so the full pending queue is effectively their whole local
-    // history - sum it directly rather than a separate "total training
-    // seconds" counter that's never actually incremented anywhere in the app.
-    const totalTrainingMs = pendingSessions.reduce((sum, s) => sum + s.durationMs, 0);
+    // Guests and free-tier users never sync, so the on-device history (last
+    // 6 months, see localHistoryStore) is all they have - sum it directly
+    // rather than a separate "total training seconds" counter that's never
+    // actually incremented anywhere in the app.
+    const totalTrainingMs = localSessions.reduce((sum, s) => sum + s.durationMs, 0);
 
     data = {
       user: {
@@ -83,7 +83,7 @@ export default function HomeScreen() {
           : (bestComprehension ? Math.round(bestComprehension * 100) : null),
         totalDurationMs: totalTrainingMs
       },
-      recentSessions: pendingSessions.slice().sort((a, b) => b.completedAt - a.completedAt).slice(0, 5).map(s => ({
+      recentSessions: localSessions.slice().sort((a, b) => b.completedAt - a.completedAt).slice(0, 5).map(s => ({
         _id: s.clientSessionId,
         ...s
       }))
@@ -152,13 +152,13 @@ export default function HomeScreen() {
 
           {/* Premium CTA (If free user) */}
           {!isPremium && (
-            <Card padding="$4" borderWidth={1} backgroundColor="$blue3" borderColor="$blue7" onPress={() => router.push('/paywall')}>
+            <Card padding="$4" borderWidth={1} backgroundColor="$green3" borderColor="$green7" onPress={() => router.push('/paywall')}>
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack flex={1}>
-                  <H4 color="$blue11">Premium'a Geç</H4>
-                  <Text color="$blue11" fontSize="$2">Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.</Text>
+                  <H4 color="$green11">Premium'a Geç</H4>
+                  <Text color="$green11" fontSize="$2">Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.</Text>
                 </YStack>
-                <Button size="$3" theme="blue" onPress={() => router.push('/paywall')}>İncele</Button>
+                <Button size="$3" theme="green" onPress={() => router.push('/paywall')}>İncele</Button>
               </XStack>
             </Card>
           )}

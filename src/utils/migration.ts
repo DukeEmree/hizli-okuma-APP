@@ -1,6 +1,7 @@
 import { mmkv } from '@/stores/storage';
 import type { PendingSession } from '@/stores/syncStore';
 import type { ExerciseMetrics } from '@/stores/exerciseProgressStore';
+import { pruneSessions, type LocalSession } from '@/stores/localHistoryStore';
 import { captureException } from '@/lib/sentry';
 
 // Must match the `version` declared on each store's `persist()` config -
@@ -10,6 +11,75 @@ import { captureException } from '@/lib/sentry';
 // this function is trying to preserve.
 const SYNC_STORAGE_VERSION = 1;
 const EXERCISE_PROGRESS_STORAGE_VERSION = 1;
+const LOCAL_HISTORY_STORAGE_VERSION = 1;
+
+function readSessions(raw: string | undefined): LocalSession[] {
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  return parsed?.state?.sessions ?? [];
+}
+
+function writeSessions(key: string, sessions: LocalSession[]) {
+  mmkv.set(
+    key,
+    JSON.stringify({
+      state: { sessions: pruneSessions(sessions, Date.now()) },
+      version: LOCAL_HISTORY_STORAGE_VERSION,
+    }),
+  );
+}
+
+/**
+ * One-time move of the pre-`localHistoryStore` layout, where the upload queue
+ * doubled as the only history a non-premium user had.
+ *
+ * Everything still in that queue becomes local history, and the queue is
+ * cleared. For a premium user this is not data loss: `SyncProvider`'s backfill
+ * re-queues anything still marked unsynced, and Convex dedupes by
+ * `clientSessionId` if a session had in fact already been uploaded. For a free
+ * user it is the whole point - their queue could never drain and grew forever.
+ *
+ * Runs once per storage prefix (`guest` or a Clerk user id), guarded by a flag
+ * key so a later legitimate queue is never swallowed.
+ */
+export const importLegacyQueueIntoHistory = (prefix: string) => {
+  try {
+    const flagKey = `${prefix}_local-history-imported`;
+    if (mmkv.getString(flagKey)) return;
+
+    const queueStr = mmkv.getString(`${prefix}_sync-storage`);
+    const queued: PendingSession[] = queueStr
+      ? (JSON.parse(queueStr)?.state?.pendingSessions ?? [])
+      : [];
+
+    if (queued.length > 0) {
+      const historyKey = `${prefix}_local-history-store`;
+      const existing = readSessions(mmkv.getString(historyKey));
+      const knownIds = new Set(existing.map((s) => s.clientSessionId));
+
+      const imported: LocalSession[] = queued
+        .filter((s) => !knownIds.has(s.clientSessionId))
+        .map(({ retryCount, lastRetryAt, ...session }) => ({
+          ...session,
+          synced: false,
+        }));
+
+      writeSessions(historyKey, [...existing, ...imported]);
+
+      mmkv.set(
+        `${prefix}_sync-storage`,
+        JSON.stringify({
+          state: { pendingSessions: [] },
+          version: SYNC_STORAGE_VERSION,
+        }),
+      );
+    }
+
+    mmkv.set(flagKey, '1');
+  } catch (error) {
+    captureException(error, { context: 'importLegacyQueueIntoHistory', prefix });
+  }
+};
 
 export const migrateGuestDataToUser = (userId: string) => {
   try {
@@ -177,6 +247,26 @@ export const migrateGuestDataToUser = (userId: string) => {
       }
 
       mmkv.remove('guest_exercise-progress-store');
+    }
+
+    // 5. Migrate the on-device exercise history. Deduped by clientSessionId
+    // and pruned to the retention window, so running twice is a no-op.
+    const guestHistoryStr = mmkv.getString('guest_local-history-store');
+    if (guestHistoryStr) {
+      const guestSessions = readSessions(guestHistoryStr);
+
+      if (guestSessions.length > 0) {
+        const userHistoryKey = `${userId}_local-history-store`;
+        const userSessions = readSessions(mmkv.getString(userHistoryKey));
+        const knownIds = new Set(userSessions.map((s) => s.clientSessionId));
+
+        writeSessions(userHistoryKey, [
+          ...userSessions,
+          ...guestSessions.filter((s) => !knownIds.has(s.clientSessionId)),
+        ]);
+      }
+
+      mmkv.remove('guest_local-history-store');
     }
   } catch (error) {
     captureException(error, { context: 'migrateGuestDataToUser', userId });

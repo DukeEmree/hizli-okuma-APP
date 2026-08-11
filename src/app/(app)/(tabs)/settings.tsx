@@ -29,6 +29,7 @@ import {
 import { useStreakCacheStore } from "@/stores/streakCacheStore";
 import { useStatisticsStore } from "@/stores/useStatisticsStore";
 import { useSyncStore } from "@/stores/syncStore";
+import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
 
 import {
@@ -169,6 +170,7 @@ export default function SettingsScreen() {
       // background sync re-writes the just-reset sessions/progress to
       // Convex the next time it runs.
       useSyncStore.getState().clearQueue();
+      useLocalHistoryStore.getState().clear();
 
       setResetStatsSheetOpen(false);
       Alert.alert(
@@ -209,6 +211,7 @@ export default function SettingsScreen() {
       useUserProgressStore.getState().resetProgress();
       useStreakCacheStore.getState().resetCache();
       useSyncStore.getState().clearQueue();
+      useLocalHistoryStore.getState().clear();
 
       setDeleteAccountSheetOpen(false);
       router.replace("/");
@@ -228,6 +231,7 @@ export default function SettingsScreen() {
         useUserProgressStore.getState().resetProgress();
         useStreakCacheStore.getState().resetCache();
         useSyncStore.getState().clearQueue();
+      useLocalHistoryStore.getState().clear();
         setDeleteAccountSheetOpen(false);
         Alert.alert(
           "Hesap Silindi",
@@ -677,10 +681,10 @@ function SettingsRow({
       ) : actionText ? (
         <Button
           size="$3"
-          backgroundColor="$blue10"
+          backgroundColor="$green10"
           color="white"
-          hoverStyle={{ backgroundColor: '$blue11' }}
-          pressStyle={{ backgroundColor: '$blue9' }}
+          hoverStyle={{ backgroundColor: '$green11' }}
+          pressStyle={{ backgroundColor: '$green9' }}
           onPress={onPress}
         >
           {actionText}
@@ -807,10 +811,10 @@ function ConfirmationSheet({
 
           <YStack gap="$3">
             <Button
-              backgroundColor={destructive ? "$red10" : "$blue10"}
+              backgroundColor={destructive ? "$red10" : "$green10"}
               color="white"
-              hoverStyle={{ backgroundColor: '$blue11' }}
-              pressStyle={{ backgroundColor: '$blue9' }}
+              hoverStyle={{ backgroundColor: '$green11' }}
+              pressStyle={{ backgroundColor: '$green9' }}
               onPress={onConfirm}
               disabled={isProcessing}
             >
@@ -818,11 +822,11 @@ function ConfirmationSheet({
             </Button>
             <Button
               backgroundColor="transparent"
-              color="$blue10"
+              color="$green10"
               borderWidth={1}
-              borderColor="$blue10"
-              hoverStyle={{ backgroundColor: '$blue11' }}
-              pressStyle={{ backgroundColor: '$blue9' }}
+              borderColor="$green10"
+              hoverStyle={{ backgroundColor: '$green11' }}
+              pressStyle={{ backgroundColor: '$green9' }}
               onPress={() => onOpenChange(false)}
               disabled={isProcessing}
             >

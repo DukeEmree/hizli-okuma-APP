@@ -13,6 +13,7 @@ export function StreakBadge() {
   // fall back to the last cached value (0 if they've never been premium).
   const streak = useQuery(api.streaks.getStreak, isPremium ? {} : "skip");
   const currentStreak = useStreakCacheStore((state) => state.currentStreak);
+  const cachedFreezes = useStreakCacheStore((state) => state.freezesAvailable);
   const updateCache = useStreakCacheStore((state) => state.updateCache);
   const prevStreakRef = useRef<number | null>(null);
 
@@ -28,11 +29,15 @@ export function StreakBadge() {
         currentStreak: streak.currentStreak,
         longestStreak: streak.longestStreak,
         lastActivityAt: streak.lastActivityAt,
+        freezesAvailable: streak.freezesAvailable ?? 0,
       });
     }
   }, [streak, updateCache]);
 
   const displayStreak = streak ? streak.currentStreak : currentStreak;
+  // Banked streak freezes. Showing them is what makes the safety net feel
+  // real - an invisible freeze doesn't stop anyone from giving up.
+  const displayFreezes = streak ? (streak.freezesAvailable ?? 0) : cachedFreezes;
 
   if (displayStreak === 0 && !streak) {
     return (
@@ -47,6 +52,12 @@ export function StreakBadge() {
     <XStack alignItems="center" backgroundColor="$orange3" paddingHorizontal="$3" paddingVertical="$2" borderRadius="$10" gap="$2">
       <Text fontSize="$5">🔥</Text>
       <Text fontWeight="bold" color="$orange10">{displayStreak}</Text>
+      {displayFreezes > 0 && (
+        <XStack alignItems="center" gap="$1">
+          <Text fontSize="$3">❄️</Text>
+          <Text fontSize="$2" fontWeight="bold" color="$color11">{displayFreezes}</Text>
+        </XStack>
+      )}
     </XStack>
   );
 }

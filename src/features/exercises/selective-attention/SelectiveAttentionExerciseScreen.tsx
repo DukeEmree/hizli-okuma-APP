@@ -94,7 +94,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
           <YStack f={1} w="100%" jc="center" ai="center">
             {session.state === 'running' && gridWords.length > 0 ? (
               <YStack gap="$4" ai="center" w="100%">
-                <Text fontSize="$8" fontWeight="bold" color="$blue10" fontFamily="$body">
+                <Text fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body">
                   Kategori: {targetCategoryName}
                 </Text>
                 <Text fontSize="$4" color="$color11" fontFamily="$body" mb="$2">

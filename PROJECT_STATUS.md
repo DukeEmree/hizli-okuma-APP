@@ -2,13 +2,13 @@
 
 > Living documentation of the current architecture and implementation status. Everything here was verified by reading the code in this working tree; anything that could only be confirmed in an external dashboard is marked **VERIFY**.
 
-Last updated: 2026-08-11, after the second production audit pass (`PRODUCTION_AUDIT.md`). Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
+Last updated: 2026-08-11, after the second production audit pass (`PRODUCTION_AUDIT.md`) and the local-history / streak-freeze / green-theme work that followed it. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
 
 ## Overview
 
 "Hızlı Okuma" is a Turkish speed-reading trainer built with React Native and Expo. It ships 15 exercises across five categories (reading, comprehension, vision, memory, focus), adaptive per-exercise difficulty, streaks, XP/levels and achievements, plus a premium subscription.
 
-The app is guest-first: every exercise works fully offline with no account. Signing in adds cloud sync — but **only for premium subscribers**. A signed-in free user's history stays on the device. This is deliberate (it is enforced on both the client and the server, with matching comments), but it is a product decision worth re-confirming, because "I'm logged in" usually implies "my data is backed up" to end users.
+The app is guest-first: every exercise works fully offline with no account. The data model follows the subscription: **premium users are backed up in Convex with no retention limit; everyone else keeps the last 6 months on the device** (`localHistoryStore`), which is what their dashboard, daily limit and progress charts read. Upgrading is not a fresh start — `SyncProvider` backfills the unsynced part of that local window to Convex the moment a user becomes premium.
 
 The competitive leaderboard was removed and does not exist in this tree.
 
@@ -95,10 +95,11 @@ Notable properties:
 | Store | Scope | Purpose |
 |---|---|---|
 | `settingsStore` | device-global | theme, language, reminders, metronome, daily goal, onboarding flag |
-| `syncStore` | per-user | pending session queue — also the local history for free users |
+| `syncStore` | per-user | upload queue only; filled solely for signed-in premium users and emptied as sessions reach Convex |
+| `localHistoryStore` | per-user | last 6 months of sessions on the device, for every user — the source for the dashboard, daily limit and exercise charts |
 | `exerciseProgressStore` | per-user | adaptive difficulty and best-* per exercise |
 | `userProgressStore` | per-user | legacy aggregate counters — **currently has no writers** |
-| `streakCacheStore` | per-user | streak cache for instant UI |
+| `streakCacheStore` | per-user | streak + banked freeze count, cached for instant UI |
 | `gamificationStore` | in-memory only | achievement popup queue — not persisted, so a pending popup is lost on app close |
 | `useExerciseSettingsStore` | per-user | per-exercise config overrides |
 | `useStatisticsStore` | per-user | cached Convex statistics per time range |
@@ -116,13 +117,13 @@ Guest→user migration (`utils/migration.ts`) dedupes the sync queue by `clientS
 
 Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`dark`/`system` themes driven by `settingsStore`. No hardcoded hex colours anywhere in `src/`. Safe-area edges are applied per screen; Victory Native renders the progress charts.
 
-**Brand hue: green** (decided 2026-08-11). The code is not yet consistent with that decision — the app icon, splash background and notification colour are still blue (`#208AEF`), and screens still mix `$blue*` tokens with `theme="accent"`. Tracked as item 7.1 in `FEATURE_BACKLOG.md`.
+**Brand hue: green** (`#2DBE73`, taken from the app icon). The splash background, notification colour and Android adaptive-icon background all use it, and every `$blue*` token in the app was moved to its `$green*` equivalent, so the palette is now single-hue.
 
 ## Main Features
 
 - **15 exercises** — rsvp, chunking, pacer, schulte, scanning, peripheral, word-recognition, memory, sentence-memory, main-idea, keyword, selective-attention, number-scan, visual-search, comprehension-speed. Each is a `use*Engine` hook over the shared `ExerciseEngine`/`ExerciseTimer`.
 - **Adaptive difficulty** — single-step progression per session, enforced client-side and re-validated server-side.
-- **Streaks** — timezone-aware, server-authoritative, with a local cache for instant display.
+- **Streaks** — timezone-aware, server-authoritative, with a local cache for instant display. A missed day no longer necessarily breaks the streak: one freeze is earned every 7 consecutive days (max 2) and one is spent per missed day, shown as ❄️ next to the streak badge.
 - **Gamification** — 10 XP per exercise, 100 XP per achievement, six achievements, level derived from total XP.
 - **Statistics** — daily WPM/comprehension/accuracy trends and per-exercise bests, over 7d/30d/90d/all.
 - **Subscription** — RevenueCat hosted paywall and Customer Center; free tier capped at 6 exercises per day.
@@ -140,6 +141,9 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - Account deletion and statistics reset, including the premium-subscription block and partial-failure handling
 - Observability: Sentry wired through the real failure paths; Amplitude now actually initialised
 - Timezone-correct daily buckets across streaks, statistics and the daily-goal ring
+- Local 6-month exercise history separated from the upload queue, with backfill to Convex on upgrade
+- Streak freezes (earn one per 7-day run, max 2, spent automatically on a missed day)
+- Single green brand hue across the splash, notification colour, adaptive icon background and every screen token
 - Validation: typecheck clean, lint clean, 113 tests passing, i18n check passing, production bundle export succeeds
 
 ## In Progress
@@ -150,7 +154,6 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 
 | Issue | Severity | Notes |
 |---|---|---|
-| The sync queue doubles as free-tier history and is never pruned | MEDIUM | Grows without bound in MMKV; pruning would delete user-visible history, so it needs a separate local-history store |
 | `resetMyStatistics` / `deleteMyAccount` collect every row in one transaction | MEDIUM | Latent Convex transaction-limit risk for a very heavy account; not reachable at current volumes |
 | `persist.rehydrate()` not awaited on account switch | LOW | Brief flash of the previous user's in-memory state; storage isolation is unaffected |
 | Dead code: `userProgressStore` best-* fields, `SUBSCRIPTION_CONSTANTS` tier lists, the exercises-tab "En İyi" badge | LOW | Removal means deleting fields/files — awaiting sign-off |
@@ -178,8 +181,6 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 - Deploy the schema change (the new `by_userId_and_completedAt` index) with `npx convex deploy`
 - Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
 - Add `environment`/`release` tags to `Sentry.init()`
-- Decide the local-history model for free users
-- Unify the brand colour across icon, splash and accent
 - Accessibility pass: labels on icon-only buttons, touch-target sizes, large-font layout
 - Manual device pass: background mid-exercise, double-tap completion, airplane-mode sync, account switch, account deletion
 

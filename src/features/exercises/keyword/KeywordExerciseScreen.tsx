@@ -91,7 +91,7 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
           <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
             {session.state === 'running' && currentItem ? (
               <YStack gap="$6" ai="center" px="$4">
-                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$blue10" fontFamily="$body" mb="$2">
+                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body" mb="$2">
                   Soru: {currentItem.question}
                 </Text>
 

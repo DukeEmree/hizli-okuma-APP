@@ -146,10 +146,10 @@ export default function LoginScreen() {
           />
 
           <Button
-            backgroundColor="$blue10"
+            backgroundColor="$green10"
             color="white"
-            hoverStyle={{ backgroundColor: '$blue11' }}
-            pressStyle={{ backgroundColor: '$blue9' }}
+            hoverStyle={{ backgroundColor: '$green11' }}
+            pressStyle={{ backgroundColor: '$green9' }}
             onPress={onSignInPress}
             disabled={form.formState.isSubmitting}
           >
@@ -158,11 +158,11 @@ export default function LoginScreen() {
 
           <Button
             backgroundColor="transparent"
-            color="$blue10"
+            color="$green10"
             borderWidth={1}
-            borderColor="$blue10"
-            hoverStyle={{ backgroundColor: '$blue11' }}
-            pressStyle={{ backgroundColor: '$blue9' }}
+            borderColor="$green10"
+            hoverStyle={{ backgroundColor: '$green11' }}
+            pressStyle={{ backgroundColor: '$green9' }}
             onPress={onPressGoogle}
             disabled={ssoLoading}
           >
@@ -172,7 +172,7 @@ export default function LoginScreen() {
           <XStack justifyContent="center" marginTop="$4">
             <Text fontSize="$4" color="$color" fontFamily="$body">{t('noAccount', 'Hesabın yok mu?')} </Text>
             <Link href="/(auth)/register">
-              <Text fontSize="$4" color="$blue10" fontFamily="$body">{t('registerLink', 'Kayıt Ol')}</Text>
+              <Text fontSize="$4" color="$green10" fontFamily="$body">{t('registerLink', 'Kayıt Ol')}</Text>
             </Link>
           </XStack>
         </YStack>

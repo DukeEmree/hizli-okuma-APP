@@ -36,7 +36,7 @@ export function StatisticsDashboard({
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Spinner size="large" color="$blue10" />
+        <Spinner size="large" color="$green10" />
       </View>
     );
   }
@@ -130,7 +130,7 @@ export function StatisticsDashboard({
                     domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                   >
                     {({ points }) => (
-                      <Line points={points.y} color={theme.blue10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                      <Line points={points.y} color={theme.green10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
                     )}
                   </CartesianChart>
                 ) : (

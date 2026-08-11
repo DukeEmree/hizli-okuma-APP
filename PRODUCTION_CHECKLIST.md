@@ -8,7 +8,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 
 - [x] `bun run typecheck` clean
 - [x] `bun run lint` clean (0 errors, 0 warnings)
-- [x] `bun test` green — 113 tests, 18 files
+- [x] `bun test` green — 126 tests, 19 files
 - [x] `bun run i18n:check` passes
 - [x] `bunx expo export --platform android` succeeds (production bundle compiles)
 - [x] No `TODO`/`FIXME`/`HACK` markers left in `src/` or `convex/`
@@ -43,7 +43,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] `migrations`, `subscriptions`, `revenuecatEvents`, `expoPush` are all internal-only
 - [x] Every query runs through an index; the last unindexed filter was removed this pass
 - [x] Daily statistics bucket by the user's timezone, matching streak behaviour
-- [ ] Deploy the schema change (new `by_userId_and_completedAt` index) — additive, no data migration: `npx convex deploy`
+- [ ] Deploy the schema changes (new `by_userId_and_completedAt` index and the optional `streaks.freezesAvailable` field) — both additive, no data migration: `npx convex deploy`
 - [ ] Set `CLERK_FRONTEND_API_URL` and `REVENUECAT_WEBHOOK_AUTH_HEADER` on the **production** deployment and confirm with `npx convex env list`
 - [ ] Batched deletion for `resetMyStatistics` / `deleteMyAccount` (latent limit risk, not reachable at current volumes — REM-2)
 
@@ -53,7 +53,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] Exercise tick updates throttled to ~1/s at the React boundary
 - [x] Dead write-only state removed from two exercise engines
 - [x] Sentry trace/profile sampling reduced from 100% to 20%
-- [ ] Decide the long-term local-history model — the sync queue currently grows without bound for free users (REM-1, detailed as item 7.2 in `FEATURE_BACKLOG.md`)
+- [x] Local-history model settled: `localHistoryStore` keeps 6 months per user on-device, `syncStore` is a pure upload queue filled only for premium users, and unsynced local sessions are backfilled to Convex on upgrade
 - [ ] Render-profile pass on a real low-end Android device (cannot be done statically)
 
 ## UI/UX
@@ -61,7 +61,7 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 - [x] Safe-area edges applied per screen
 - [x] Loading, empty and error states present on the main flows
 - [x] Destructive actions behind confirmation sheets
-- [ ] Unify on the green brand hue — splash/notification colour and the app icon are still blue, and `$blue*` tokens are still used across screens (tracked as item 7.1 in `FEATURE_BACKLOG.md`)
+- [x] Unified on the green brand hue (`#2DBE73`) — splash, notification colour, adaptive-icon background and all 63 `$blue*` token usages
 - [ ] Give free/guest users something on the statistics tab instead of a permanently empty state
 - [ ] Fix the "En İyi" badge on the exercises tab (reads a statistics range nothing fetches)
 - [ ] Increase `SettingsRow` vertical padding to reach the 48 dp Android touch-target minimum
@@ -137,12 +137,13 @@ Source of detail: `PRODUCTION_AUDIT.md`.
 ## App Icon
 
 - [x] Adaptive icon (foreground, background, monochrome) and favicon configured in `app.json`
-- [ ] Regenerate the app icon in the green palette, then check the monochrome variant in the Android 13+ themed-icon style
+- [x] App icon is already green; the adaptive-icon background layer was regenerated to match (`#E4F8EE`)
+- [ ] Check the monochrome icon variant in the Android 13+ themed-icon style on a device
 
 ## Splash Screen
 
 - [x] `expo-splash-screen` configured; auto-hide prevented until fonts load
-- [ ] Change the splash background from `#208AEF` to the green brand colour (decided; see `FEATURE_BACKLOG.md` 7.1)
+- [x] Splash background is the green brand colour (`#2DBE73`)
 
 ## App Store Metadata
 

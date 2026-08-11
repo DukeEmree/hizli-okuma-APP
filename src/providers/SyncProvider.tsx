@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import { useSyncStore } from "@/stores/syncStore";
+import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 import { useMutation } from 'convex/react';
 import { api } from "@/convex/_generated/api";
 import { useAuth } from '@clerk/clerk-expo';
@@ -88,6 +89,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
         // Successfully synced
         syncState.removeSession(session.clientSessionId);
+        useLocalHistoryStore.getState().markSynced(session.clientSessionId);
         syncSuccessCount++;
       } catch (error: unknown) {
         // Increment retry if network otherwise if it's a fatal error (like schema mismatch), we might want to drop it
@@ -124,6 +126,27 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
     };
   }, [syncQueue]);
+
+  // Backfill: a user who exercised while free (or signed out) has that
+  // history only on the device. The moment they can sync, push whatever is
+  // still unsynced inside the local retention window up to Convex, so
+  // upgrading to premium doesn't start their cloud history from zero.
+  useEffect(() => {
+    if (!canSync) return;
+
+    const { sessions } = useLocalHistoryStore.getState();
+    const syncState = useSyncStore.getState();
+    const queuedIds = new Set(
+      syncState.pendingSessions.map((s) => s.clientSessionId),
+    );
+
+    for (const session of sessions) {
+      if (session.synced || queuedIds.has(session.clientSessionId)) continue;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { synced, ...pending } = session;
+      syncState.addSession(pending);
+    }
+  }, [canSync]);
 
   // Trigger sync if we have pending items or when login/premium state changes
   useEffect(() => {

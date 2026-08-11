@@ -25,6 +25,7 @@ export const getStreak = query({
         currentStreak: 0,
         longestStreak: 0,
         lastActivityAt: 0,
+        freezesAvailable: 0,
       }
     );
   },

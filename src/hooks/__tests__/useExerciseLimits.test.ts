@@ -7,7 +7,7 @@ import * as streakUtils from "@/utils/streak";
 // Mock dependencies
 const mockUseRevenueCat = mock(() => ({ isPremium: false, isConfigured: true }));
 const mockUseQuery = mock((query?: any, args?: any): any => null);
-const mockUseSyncStore = mock((selector) => selector({ pendingSessions: [] }));
+const mockUseLocalHistoryStore = mock((selector) => selector({ sessions: [] }));
 
 mock.module("@/hooks/useAppState", () => ({
   useAppState: mock(() => 'active')
@@ -20,8 +20,8 @@ mock.module("convex/react", () => ({
   useQuery: mockUseQuery,
 }));
 
-mock.module("@/stores/syncStore", () => ({
-  useSyncStore: mockUseSyncStore,
+mock.module("@/stores/localHistoryStore", () => ({
+  useLocalHistoryStore: mockUseLocalHistoryStore,
 }));
 
 // Spy on getLocalDateString (rather than mock.module the whole "@/utils/streak"
@@ -36,7 +36,7 @@ describe("useExerciseLimits", () => {
   beforeEach(() => {
     mockUseRevenueCat.mockClear();
     mockUseQuery.mockClear();
-    mockUseSyncStore.mockClear();
+    mockUseLocalHistoryStore.mockClear();
   });
 
   afterAll(() => {
@@ -59,7 +59,7 @@ describe("useExerciseLimits", () => {
     mockUseQuery.mockReturnValue({
       dailyTrends: [{ date: '2023-01-01', sessionCount: 100 }]
     });
-    mockUseSyncStore.mockImplementation((selector) => selector({ pendingSessions: [] }));
+    mockUseLocalHistoryStore.mockImplementation((selector) => selector({ sessions: [] }));
     
     const { result } = renderHook(() => useExerciseLimits());
     
@@ -74,7 +74,7 @@ describe("useExerciseLimits", () => {
     mockUseQuery.mockReturnValue({
       dailyTrends: [{ date: '2023-01-01', sessionCount: 0 }]
     });
-    mockUseSyncStore.mockImplementation((selector) => selector({ pendingSessions: [] }));
+    mockUseLocalHistoryStore.mockImplementation((selector) => selector({ sessions: [] }));
     
     const { result } = renderHook(() => useExerciseLimits());
     
@@ -86,12 +86,12 @@ describe("useExerciseLimits", () => {
 
   test("Free user at limit cannot start exercise", () => {
     // Free tier never queries Convex (cloud sync is premium-only), so the
-    // daily count comes entirely from local pendingSessions.
+    // daily count comes entirely from the on-device history.
     mockUseRevenueCat.mockReturnValue({ isPremium: false, isConfigured: true });
     mockUseQuery.mockReturnValue(undefined); // skipped for non-premium
     const max = SUBSCRIPTION_CONSTANTS.FREE_TIER.MAX_DAILY_EXERCISES;
-    mockUseSyncStore.mockImplementation((selector) => selector({
-      pendingSessions: Array.from({ length: max }, () => ({ completedAt: Date.now() })),
+    mockUseLocalHistoryStore.mockImplementation((selector) => selector({
+      sessions: Array.from({ length: max }, () => ({ completedAt: Date.now() })),
     }));
 
     const { result } = renderHook(() => useExerciseLimits());
@@ -103,7 +103,7 @@ describe("useExerciseLimits", () => {
   test("Guest user (null stats) with no pending sessions can start", () => {
     mockUseRevenueCat.mockReturnValue({ isPremium: false, isConfigured: true });
     mockUseQuery.mockReturnValue(null); // Guest behavior
-    mockUseSyncStore.mockImplementation((selector) => selector({ pendingSessions: [] }));
+    mockUseLocalHistoryStore.mockImplementation((selector) => selector({ sessions: [] }));
     
     const { result } = renderHook(() => useExerciseLimits());
     
@@ -116,8 +116,8 @@ describe("useExerciseLimits", () => {
     mockUseQuery.mockReturnValue(null); // Guest behavior
     
     // Simulate pending sessions today
-    mockUseSyncStore.mockImplementation((selector) => selector({ 
-      pendingSessions: [
+    mockUseLocalHistoryStore.mockImplementation((selector) => selector({
+      sessions: [
         { completedAt: Date.now() },
         { completedAt: Date.now() }
       ] 
@@ -140,8 +140,8 @@ describe("useExerciseLimits", () => {
     });
 
     // 2 pending from local
-    mockUseSyncStore.mockImplementation((selector) => selector({
-      pendingSessions: [
+    mockUseLocalHistoryStore.mockImplementation((selector) => selector({
+      sessions: [
         { completedAt: Date.now() },
         { completedAt: Date.now() }
       ]

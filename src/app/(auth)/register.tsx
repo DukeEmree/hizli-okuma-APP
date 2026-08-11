@@ -170,10 +170,10 @@ export default function RegisterScreen() {
               />
 
               <Button
-                backgroundColor="$blue10"
+                backgroundColor="$green10"
                 color="white"
-                hoverStyle={{ backgroundColor: '$blue11' }}
-                pressStyle={{ backgroundColor: '$blue9' }}
+                hoverStyle={{ backgroundColor: '$green11' }}
+                pressStyle={{ backgroundColor: '$green9' }}
                 onPress={onSignUpPress}
                 disabled={registerForm.formState.isSubmitting}
               >
@@ -183,7 +183,7 @@ export default function RegisterScreen() {
               <XStack justifyContent="center" marginTop="$4">
                 <Text fontSize="$4" color="$color" fontFamily="$body">{t('haveAccount', 'Zaten hesabın var mı?')} </Text>
                 <Link href="/(auth)/login">
-                  <Text fontSize="$4" color="$blue10" fontFamily="$body">{t('loginLink', 'Giriş Yap')}</Text>
+                  <Text fontSize="$4" color="$green10" fontFamily="$body">{t('loginLink', 'Giriş Yap')}</Text>
                 </Link>
               </XStack>
             </>
@@ -215,10 +215,10 @@ export default function RegisterScreen() {
               />
 
               <Button
-                backgroundColor="$blue10"
+                backgroundColor="$green10"
                 color="white"
-                hoverStyle={{ backgroundColor: '$blue11' }}
-                pressStyle={{ backgroundColor: '$blue9' }}
+                hoverStyle={{ backgroundColor: '$green11' }}
+                pressStyle={{ backgroundColor: '$green9' }}
                 onPress={onPressVerify}
                 disabled={codeForm.formState.isSubmitting}
               >

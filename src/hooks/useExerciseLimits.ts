@@ -5,7 +5,7 @@ import { getLocalDateString } from "@/utils/streak";
 import { useQuery } from "convex/react";
 import { useMemo, useState, useEffect } from "react";
 import { useAppState } from "@/hooks/useAppState";
-import { useSyncStore } from "@/stores/syncStore";
+import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 
 export function useExerciseLimits() {
   const { isPremium, isConfigured } = useRevenueCat();
@@ -31,7 +31,7 @@ export function useExerciseLimits() {
     isPremium ? { timeRange: "7d" } : "skip",
   );
 
-  const pendingSessions = useSyncStore(s => s.pendingSessions);
+  const localSessions = useLocalHistoryStore(s => s.sessions);
 
   return useMemo(() => {
     if (!isConfigured) {
@@ -60,9 +60,9 @@ export function useExerciseLimits() {
       };
     }
 
-    // Free/guest: no Convex data, count comes entirely from the local queue.
+    // Free/guest: no Convex data, the count comes from the on-device history.
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const sessionsToday = pendingSessions.filter(
+    const sessionsToday = localSessions.filter(
       (s) => getLocalDateString(s.completedAt, timeZone) === todayStr
     ).length;
 
@@ -75,5 +75,5 @@ export function useExerciseLimits() {
       remainingExercises: remaining,
       isPremium,
     };
-  }, [isPremium, isConfigured, stats, todayStr, pendingSessions]);
+  }, [isPremium, isConfigured, stats, todayStr, localSessions]);
 }

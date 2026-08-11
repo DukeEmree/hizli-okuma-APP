@@ -15,7 +15,7 @@ import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
 import { useExerciseLimits } from '@/hooks/useExerciseLimits';
 import { useAdaptiveExerciseStart } from '@/hooks/useAdaptiveExerciseStart';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
-import { useSyncStore } from '@/stores/syncStore';
+import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 
 const CATEGORY_ICONS: Record<string, any> = {
   reading: BookOpen,
@@ -48,16 +48,16 @@ export default function ExerciseInfoScreen() {
     api.exerciseSessions.getSessionsByExerciseType,
     exercise && useRemoteHistory ? { exerciseType: exercise.type } : "skip",
   );
-  const pendingSessions = useSyncStore(state => state.pendingSessions);
+  const localSessions = useLocalHistoryStore(state => state.sessions);
   const chartData = useMemo(() => {
     if (!exercise) return [];
     const points = useRemoteHistory
       ? (remoteSessions ?? [])
-      : pendingSessions
+      : localSessions
           .filter(s => s.exerciseId === exercise.id)
           .sort((a, b) => a.completedAt - b.completedAt);
     return points.map((s, i) => ({ x: i, y: s.score }));
-  }, [exercise, useRemoteHistory, remoteSessions, pendingSessions]);
+  }, [exercise, useRemoteHistory, remoteSessions, localSessions]);
 
   // Local state for UI settings adjustments before saving
   const [config, setConfig] = useState(() => {
@@ -134,7 +134,7 @@ export default function ExerciseInfoScreen() {
           
           {/* Header Section */}
           <XStack alignItems="center" gap="$3">
-            <View backgroundColor="$blue4" padding="$4" borderRadius="$4">
+            <View backgroundColor="$green4" padding="$4" borderRadius="$4">
               <IconComponent color={theme.accent10?.val} size={32} />
             </View>
             <YStack flex={1}>
@@ -153,7 +153,7 @@ export default function ExerciseInfoScreen() {
           <YStack gap="$4">
             <YStack gap="$2">
               <XStack alignItems="center" gap="$2">
-                <Info size={20} color={theme.blue10?.val as string} />
+                <Info size={20} color={theme.green10?.val as string} />
                 <H4>{t('labels.purpose', 'Amacı')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
@@ -219,7 +219,7 @@ export default function ExerciseInfoScreen() {
                   <YStack gap="$2">
                     <XStack justifyContent="space-between">
                       <Text fontWeight="bold">{t('settings.wpm', 'Hız (WPM)')}</Text>
-                      <Text color="$blue10" fontWeight="bold">{config.wpm}</Text>
+                      <Text color="$green10" fontWeight="bold">{config.wpm}</Text>
                     </XStack>
                     <Slider
                       defaultValue={[config.wpm]}
@@ -229,9 +229,9 @@ export default function ExerciseInfoScreen() {
                       onValueChange={(val) => handleSettingChange('wpm', val[0])}
                     >
                       <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$blue10" />
+                        <Slider.TrackActive backgroundColor="$green10" />
                       </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$blue10" />
+                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
                     </Slider>
                   </YStack>
                 )}
@@ -241,7 +241,7 @@ export default function ExerciseInfoScreen() {
                   <YStack gap="$2">
                     <XStack justifyContent="space-between">
                       <Text fontWeight="bold">{t('settings.chunkSize', 'Grup Büyüklüğü (Kelime)')}</Text>
-                      <Text color="$blue10" fontWeight="bold">{config.chunkSize}</Text>
+                      <Text color="$green10" fontWeight="bold">{config.chunkSize}</Text>
                     </XStack>
                     <Slider
                       defaultValue={[config.chunkSize]}
@@ -251,9 +251,9 @@ export default function ExerciseInfoScreen() {
                       onValueChange={(val) => handleSettingChange('chunkSize', val[0])}
                     >
                       <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$blue10" />
+                        <Slider.TrackActive backgroundColor="$green10" />
                       </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$blue10" />
+                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
                     </Slider>
                   </YStack>
                 )}
@@ -263,7 +263,7 @@ export default function ExerciseInfoScreen() {
                   <YStack gap="$2">
                     <XStack justifyContent="space-between">
                       <Text fontWeight="bold">{t('settings.gridSize', 'Tablo Boyutu')}</Text>
-                      <Text color="$blue10" fontWeight="bold">{config.gridSize}x{config.gridSize}</Text>
+                      <Text color="$green10" fontWeight="bold">{config.gridSize}x{config.gridSize}</Text>
                     </XStack>
                     <Slider
                       defaultValue={[config.gridSize]}
@@ -273,9 +273,9 @@ export default function ExerciseInfoScreen() {
                       onValueChange={(val) => handleSettingChange('gridSize', val[0])}
                     >
                       <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$blue10" />
+                        <Slider.TrackActive backgroundColor="$green10" />
                       </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$blue10" />
+                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
                     </Slider>
                   </YStack>
                 )}
@@ -285,7 +285,7 @@ export default function ExerciseInfoScreen() {
                   <YStack gap="$2">
                     <XStack justifyContent="space-between">
                       <Text fontWeight="bold">{t('settings.timeLimitMs', 'Süre Limiti')}</Text>
-                      <Text color="$blue10" fontWeight="bold">{config.timeLimitMs / 1000} sn</Text>
+                      <Text color="$green10" fontWeight="bold">{config.timeLimitMs / 1000} sn</Text>
                     </XStack>
                     <Slider
                       defaultValue={[config.timeLimitMs / 1000]}
@@ -295,9 +295,9 @@ export default function ExerciseInfoScreen() {
                       onValueChange={(val) => handleSettingChange('timeLimitMs', val[0] * 1000)}
                     >
                       <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$blue10" />
+                        <Slider.TrackActive backgroundColor="$green10" />
                       </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$blue10" />
+                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
                     </Slider>
                   </YStack>
                 )}

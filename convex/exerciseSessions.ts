@@ -176,6 +176,7 @@ export const createSession = mutation({
           currentStreak: existingStreak.currentStreak,
           longestStreak: existingStreak.longestStreak,
           lastActivityAt: existingStreak.lastActivityAt,
+          freezesAvailable: existingStreak.freezesAvailable ?? 0,
         }
       : null;
 

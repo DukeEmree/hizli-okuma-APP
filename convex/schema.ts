@@ -101,6 +101,10 @@ export default defineSchema({
     currentStreak: v.number(),
     longestStreak: v.number(),
     lastActivityAt: v.number(),
+    // Unspent streak freezes: one is earned every 7 consecutive days (max 2)
+    // and one is spent per missed day to keep a streak alive. Optional
+    // because rows written before freezes existed don't have the field.
+    freezesAvailable: v.optional(v.number()),
   }).index('by_userId', ['userId']),
 
   userStatistics: defineTable({

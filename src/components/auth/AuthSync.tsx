@@ -3,12 +3,13 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useMutation } from 'convex/react';
 import { api } from "@/convex/_generated/api";
 import { setActiveUserId } from "@/stores/storage";
-import { migrateGuestDataToUser } from "@/utils/migration";
+import { migrateGuestDataToUser, importLegacyQueueIntoHistory } from "@/utils/migration";
 import { useUserProgressStore } from '@/stores/userProgressStore';
 import { useSyncStore } from '@/stores/syncStore';
 import { useStreakCacheStore } from '@/stores/streakCacheStore';
 import { useExerciseProgressStore } from '@/stores/exerciseProgressStore';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
+import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { analytics } from '@/lib/analytics';
 import { captureException, setSentryUser } from '@/lib/sentry';
@@ -30,12 +31,17 @@ export function AuthSync() {
       
       // Local storage izole işlemi için user id ayarla
       setActiveUserId(userId);
+
+      // Eski (kuyruk = geçmiş) düzeninden kalan kayıtları yerel geçmişe taşı.
+      // setActiveUserId'den sonra, rehydrate'ten önce çalışmalı.
+      importLegacyQueueIntoHistory(userId);
       
       // Bind identity for Observability
       analytics.identify(userId);
       setSentryUser(userId);
     } else {
       setActiveUserId(null);
+      importLegacyQueueIntoHistory('guest');
       analytics.identify(null);
       setSentryUser(null);
     }
@@ -46,6 +52,7 @@ export function AuthSync() {
     useStreakCacheStore.persist.rehydrate();
     useExerciseProgressStore.persist.rehydrate();
     useExerciseSettingsStore.persist.rehydrate();
+    useLocalHistoryStore.persist.rehydrate();
 
   }, [isLoaded, isSignedIn, userId, storeUser, hasCompletedOnboarding]);
 

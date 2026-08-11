@@ -68,12 +68,12 @@ export function AchievementPopupGlobal() {
 
   return (
     <Animated.View style={animatedStyle}>
-      <Card padding="$4" borderWidth={1} borderColor="$blue7" backgroundColor="$blue3" elevation="$4">
+      <Card padding="$4" borderWidth={1} borderColor="$green7" backgroundColor="$green3" elevation="$4">
         <XStack gap="$3" alignItems="center">
           <Text fontSize="$10">{current.icon}</Text>
           <YStack flex={1}>
-            <Text color="$blue11" fontSize="$2" fontWeight="bold">YENİ BAŞARIM KİLİDİ AÇILDI!</Text>
-            <H4 color="$blue11">{current.title}</H4>
+            <Text color="$green11" fontSize="$2" fontWeight="bold">YENİ BAŞARIM KİLİDİ AÇILDI!</Text>
+            <H4 color="$green11">{current.title}</H4>
           </YStack>
         </XStack>
       </Card>

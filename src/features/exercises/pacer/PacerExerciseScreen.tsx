@@ -122,7 +122,7 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
                     fontSize="$7"
                     fontWeight="600"
                     color={isHighlighted ? '$color' : (isPassed ? '$color11' : '$color11')}
-                    backgroundColor={isHighlighted ? '$blue5' : 'transparent'}
+                    backgroundColor={isHighlighted ? '$green5' : 'transparent'}
                     borderRadius="$2"
                     paddingHorizontal="$1"
                   >

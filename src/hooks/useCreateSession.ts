@@ -1,4 +1,5 @@
 import { useSyncStore } from "@/stores/syncStore";
+import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
 import { calculateNextProgression } from "@/utils/adaptiveDifficulty";
 import { ProgressionState, ExerciseResult } from "@/types/exercise";
@@ -22,6 +23,7 @@ export interface CreateSessionArgs {
 
 export function useCreateSession() {
   const addSession = useSyncStore((state) => state.addSession);
+  const addLocalSession = useLocalHistoryStore((state) => state.addSession);
   const getExerciseMetrics = useExerciseProgressStore((state) => state.getExerciseMetrics);
   const updateExerciseMetrics = useExerciseProgressStore((state) => state.updateExerciseMetrics);
 
@@ -75,10 +77,17 @@ export function useCreateSession() {
       }
     }
 
-    // Add to local sync queue immediately (streaks / gamification / stats).
-    // SyncProvider only flushes this to Convex for premium users - for
-    // everyone else it just stays here as their local history.
-    addSession(args);
+    // Every session is recorded in the on-device 6-month history, whoever
+    // the user is - that is what the dashboard, the daily limit and the
+    // per-exercise charts read.
+    addLocalSession(args);
+
+    // The upload queue is only for users whose sessions Convex will actually
+    // accept. Queueing for anyone else would leave entries that can never be
+    // drained (see localHistoryStore for the full rationale).
+    if (isSignedIn && isPremium) {
+      addSession(args);
+    }
 
     // Return a dummy session ID since it will be synced later
     return { sessionId: 'offline-pending', gamification: null };

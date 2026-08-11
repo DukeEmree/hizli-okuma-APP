@@ -10,7 +10,7 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: theme.blue10?.val,
+      tabBarActiveTintColor: theme.green10?.val,
       tabBarInactiveTintColor: theme.color11?.val,
       tabBarLabelStyle: {
         fontSize: 11,

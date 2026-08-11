@@ -158,7 +158,7 @@ export function OnboardingScreen() {
 
       {step === 3 && !showQuestion && (
         <YStack flex={1} gap="$4">
-          <H4 color="$blue10">Başlangıç Değerlendirmesi</H4>
+          <H4 color="$green10">Başlangıç Değerlendirmesi</H4>
           <Text color="$color11">
             Aşağıdaki metni kendi doğal hızınızda, anlayarak okuyun. Bittiğinde
             butona tıklayın.

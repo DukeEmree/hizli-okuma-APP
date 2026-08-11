@@ -112,7 +112,7 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
                         onPress={() => handleSelection(opt)} 
                         minWidth={120} 
                         size="$4"
-                        bg={isSelected ? '$blue8' : '$backgroundHover'}
+                        bg={isSelected ? '$green8' : '$backgroundHover'}
                       >
                         {opt}
                       </Button>

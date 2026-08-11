@@ -133,7 +133,7 @@ export function ComprehensionScreen() {
 
         <Card borderWidth={1} borderColor="$borderColor" p="$4" w="100%" maxWidth={400} ai="center" bg="$backgroundHover">
           <Text fontSize="$6" mb="$2" color="$color">Anlama Oranı</Text>
-          <Text fontSize="$8" fontWeight="bold" color="$blue10">% {comprehensionScore}</Text>
+          <Text fontSize="$8" fontWeight="bold" color="$green10">% {comprehensionScore}</Text>
         </Card>
         
         <Button size="$5" mt="$4" theme="accent" onPress={handleFinish}>

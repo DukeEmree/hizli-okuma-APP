@@ -106,7 +106,7 @@ export default function ExercisesScreen() {
                     <XStack gap="$3" alignItems="flex-start">
                       
                       {/* Icon Container */}
-                      <View backgroundColor="$blue4" padding="$3" borderRadius="$3">
+                      <View backgroundColor="$green4" padding="$3" borderRadius="$3">
                         <IconComponent color={theme.accent10?.val} size={24} />
                       </View>
 
@@ -115,8 +115,8 @@ export default function ExercisesScreen() {
                         <XStack alignItems="center" gap="$2" flexWrap="wrap">
                           <H4 numberOfLines={1}>{t(exercise.nameKey, exercise.type)}</H4>
                           {exercise.isPremium && (
-                            <View backgroundColor="$blue4" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$4">
-                              <Text fontSize="$1" color="$blue11" fontWeight="bold">PRO</Text>
+                            <View backgroundColor="$green4" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$4">
+                              <Text fontSize="$1" color="$green11" fontWeight="bold">PRO</Text>
                             </View>
                           )}
                         </XStack>

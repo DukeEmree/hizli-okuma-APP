@@ -83,4 +83,84 @@ describe('Streak Utility', () => {
       expect(state3.longestStreak).toBe(2); // Keeps longest
     });
   });
+
+  describe('Streak freezes', () => {
+    const tz = 'Europe/Istanbul';
+    const day = (n: number) => new Date(Date.UTC(2026, 7, n, 10, 0, 0)).getTime();
+
+    /** Runs consecutive days 1..n and returns the resulting state. */
+    const streakOf = (days: number) => {
+      let state = calculateStreakUpdate(null, day(1), tz);
+      for (let d = 2; d <= days; d++) {
+        state = calculateStreakUpdate(state, day(d), tz);
+      }
+      return state;
+    };
+
+    test('No freezes are banked before the first full week', () => {
+      expect(streakOf(6).freezesAvailable).toBe(0);
+    });
+
+    test('One freeze is earned on the seventh consecutive day', () => {
+      expect(streakOf(7).freezesAvailable).toBe(1);
+    });
+
+    test('Freezes cap at 2 even after many weeks', () => {
+      expect(streakOf(28).freezesAvailable).toBe(2);
+    });
+
+    test('A single missed day spends a freeze and keeps the streak alive', () => {
+      const state = streakOf(7); // 7-day streak, 1 freeze
+
+      // Day 8 skipped, exercise on day 9
+      const resumed = calculateStreakUpdate(state, day(9), tz);
+
+      expect(resumed.currentStreak).toBe(8);
+      expect(resumed.freezesAvailable).toBe(0);
+    });
+
+    test('Two missed days spend two freezes', () => {
+      const state = streakOf(14); // 2 freezes banked
+
+      // Days 15 and 16 skipped, exercise on day 17
+      const resumed = calculateStreakUpdate(state, day(17), tz);
+
+      expect(resumed.currentStreak).toBe(15);
+      expect(resumed.freezesAvailable).toBe(0);
+    });
+
+    test('A gap larger than the banked freezes still resets the streak', () => {
+      const state = streakOf(7); // only 1 freeze
+
+      // Days 8, 9, 10 skipped
+      const resumed = calculateStreakUpdate(state, day(11), tz);
+
+      expect(resumed.currentStreak).toBe(1);
+      expect(resumed.longestStreak).toBe(7);
+      // Unspent freezes survive the reset rather than being confiscated
+      expect(resumed.freezesAvailable).toBe(1);
+    });
+
+    test('Rows written before freezes existed are treated as having none', () => {
+      const legacy = { currentStreak: 5, longestStreak: 5, lastActivityAt: day(1) };
+
+      const resumed = calculateStreakUpdate(legacy, day(3), tz);
+
+      expect(resumed.currentStreak).toBe(1);
+      expect(resumed.freezesAvailable).toBe(0);
+    });
+
+    test('Same-day repeat activity neither earns nor spends a freeze', () => {
+      const state = streakOf(7);
+
+      const again = calculateStreakUpdate(
+        state,
+        new Date(Date.UTC(2026, 7, 7, 20, 0, 0)).getTime(),
+        tz,
+      );
+
+      expect(again.currentStreak).toBe(7);
+      expect(again.freezesAvailable).toBe(1);
+    });
+  });
 });

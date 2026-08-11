@@ -6,10 +6,12 @@ interface StreakCacheState {
   currentStreak: number;
   longestStreak: number;
   lastActivityAt: number;
+  freezesAvailable: number;
   updateCache: (streak: {
     currentStreak: number;
     longestStreak: number;
     lastActivityAt: number;
+    freezesAvailable?: number;
   }) => void;
   resetCache: () => void;
 }
@@ -20,8 +22,9 @@ export const useStreakCacheStore = create<StreakCacheState>()(
       currentStreak: 0,
       longestStreak: 0,
       lastActivityAt: 0,
+      freezesAvailable: 0,
       updateCache: (streak) => {
-        set(streak);
+        set({ ...streak, freezesAvailable: streak.freezesAvailable ?? 0 });
         // Async import to avoid circular dependency issues
         import("@/services/notifications").then((module) => {
           module.rescheduleAllReminders().catch(console.error);
@@ -35,7 +38,12 @@ export const useStreakCacheStore = create<StreakCacheState>()(
         });
       },
       resetCache: () =>
-        set({ currentStreak: 0, longestStreak: 0, lastActivityAt: 0 }),
+        set({
+          currentStreak: 0,
+          longestStreak: 0,
+          lastActivityAt: 0,
+          freezesAvailable: 0,
+        }),
     }),
     {
       name: "streak-cache-store",

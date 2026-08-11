@@ -247,7 +247,7 @@ This is a deliberate visual change (it also means regenerating the app icon and 
 - `bun run lint`: 0 errors, 0 warnings (was 20 warnings).
 - `bunx expo export --platform android`: succeeds, producing a 15 MB Hermes bundle. This also settles the previous pass's open question about the missing `babel.config.js`/`metro.config.js` — SDK 57's defaults are sufficient and the production bundle compiles.
 - `bun run i18n:check`: passes.
-- `bun test`: 113 pass, 0 fail, 18 files. `act(...)` and `react-test-renderer is deprecated` notices are React 19 test-environment noise, not failures.
+- `bun test`: 126 pass, 0 fail, 19 files. `act(...)` and `react-test-renderer is deprecated` notices are React 19 test-environment noise, not failures.
 - `package.json` has no `test` script even though `AGENTS.md` documents `bun test`; the command works because Bun's runner needs no script. Harmless, worth adding for discoverability.
 - `eslint` is pinned to major 8 while TypeScript is 6.x and React 19.2. Lint runs clean today; flagged for future compatibility only. No upgrade performed.
 - `app.json`: `versionCode: 1`, `version: 1.0.0`, consistent bundle/package ids, `extra.eas.projectId` matches what `usePushNotificationToken` reads. `eas.json` uses `appVersionSource: remote` with `autoIncrement` on production.
@@ -278,7 +278,7 @@ Fixed in the previous pass and re-verified here: public migration mutation, miss
 
 ## Remaining Issues
 
-**REM-1 · The sync queue doubles as free-tier history and is never pruned.** `pendingSessions` is the sole local record of a guest/free user's history (home totals, per-exercise charts, daily limit counting), and `SyncProvider` only drains it for premium users. It therefore grows without bound in MMKV, is JSON-parsed in full on every rehydrate, and is scanned on every render of `useExerciseLimits`. At roughly 300 bytes per entry this is fine for months and uncomfortable after years. Pruning it would delete user-visible history, so the correct fix is a separate bounded local-history store — a design change, deliberately not attempted here. *Severity: MEDIUM. Recommendation: decide before the app has long-lived free users.*
+**REM-1 · RESOLVED after the audit.** The sync queue used to double as free-tier history and grew without bound. It is now split: `syncStore` is a pure upload queue, filled only for signed-in premium users; `localHistoryStore` keeps the last 6 months of sessions on-device for everyone and is what the dashboard, daily limit and exercise charts read. Existing installs are migrated once by `importLegacyQueueIntoHistory`, and unsynced local sessions are backfilled to Convex when a user becomes premium.
 
 **REM-2 · `resetMyStatistics` / `deleteMyAccount` read every row in one transaction.** Seven `collect()` calls with no pagination. Convex's per-transaction limits would reject this for an extremely heavy account. The fix is batched deletion driven by the scheduler, which is a meaningful rewrite of both mutations. *Severity: MEDIUM (latent). Not reachable at current volumes.*
 

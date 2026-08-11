@@ -57,10 +57,10 @@ export function AuthPromptSheet({ open, onOpenChange, title, description }: Auth
         <YStack gap="$3" marginTop="auto">
           <Button
             size="$5"
-            backgroundColor="$blue10"
+            backgroundColor="$green10"
             color="white"
-            hoverStyle={{ backgroundColor: '$blue11' }}
-            pressStyle={{ backgroundColor: '$blue9' }}
+            hoverStyle={{ backgroundColor: '$green11' }}
+            pressStyle={{ backgroundColor: '$green9' }}
             onPress={handleLogin}
             theme="accent"
           >
@@ -69,11 +69,11 @@ export function AuthPromptSheet({ open, onOpenChange, title, description }: Auth
           <Button
             size="$5"
             backgroundColor="transparent"
-            color="$blue10"
+            color="$green10"
             borderWidth={1}
-            borderColor="$blue10"
-            hoverStyle={{ backgroundColor: '$blue11' }}
-            pressStyle={{ backgroundColor: '$blue9' }}
+            borderColor="$green10"
+            hoverStyle={{ backgroundColor: '$green11' }}
+            pressStyle={{ backgroundColor: '$green9' }}
             onPress={() => onOpenChange(false)}
           >
             Şimdilik Misafir Olarak Devam Et
