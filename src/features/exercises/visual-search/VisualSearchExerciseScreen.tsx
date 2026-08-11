@@ -5,7 +5,6 @@ import { useVisualSearchEngine } from './useVisualSearchEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface VisualSearchExerciseScreenProps {
   timeLimitMs: number;
@@ -99,9 +98,9 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
           <YStack f={1} w="100%" jc="center" ai="center">
             {session.state === 'running' && targetWord !== '' ? (
               <YStack gap="$4" ai="center" w="100%">
-                <AppText variant="title" color="$blue10">
+                <Text fontSize="$8" fontWeight="bold" color="$blue10" fontFamily="$body">
                   Şu kelimeyi bul: {targetWord}
-                </AppText>
+                </Text>
                 
                 <View style={{
                   flexDirection: 'row',
@@ -118,7 +117,7 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
                         bg="$backgroundHover"
                         onPress={() => handleSelection(word)}
                       >
-                        <AppText fontSize={Math.min(itemWidth * 0.15, 14)} numberOfLines={1}>{word}</AppText>
+                        <Text fontSize={Math.min(itemWidth * 0.15, 14)} color="$color" fontFamily="$body" numberOfLines={1}>{word}</Text>
                       </Button>
                     </View>
                   ))}

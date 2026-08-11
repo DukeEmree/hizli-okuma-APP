@@ -1,13 +1,13 @@
-import { mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { internalMutation } from "./_generated/server";
 
 /**
  * Migration script to backfill userStatistics, exerciseStatistics, and dailyStatistics
  * from existing exerciseSessions for users who existed before the Phase 6 performance update.
- * 
- * Usage: Can be called via Convex Dashboard or a temporary admin UI.
+ *
+ * Internal only - run via `npx convex run migrations:migrateAllUserStatistics`
+ * from the Convex CLI/dashboard, never callable from the client.
  */
-export const migrateAllUserStatistics = mutation({
+export const migrateAllUserStatistics = internalMutation({
   args: {},
   handler: async (ctx) => {
     // 1. Get all users

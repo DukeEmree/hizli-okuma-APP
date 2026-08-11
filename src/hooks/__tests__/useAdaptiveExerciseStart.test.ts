@@ -5,6 +5,9 @@ import { ExerciseDefinition } from "@/types/exercise";
 
 // Mock dependencies
 const mockUseAuth = mock(() => ({ isSignedIn: true, isLoaded: true }));
+// Remote progression is premium-only; default to premium so the existing
+// "authenticated user" tests below exercise the remote path as intended.
+const mockUseRevenueCat = mock(() => ({ isPremium: true, isConfigured: true }));
 const mockUseQuery = mock((query?: any, args?: any): any => null);
 const mockGetExerciseMetrics = mock(() => ({
   currentDifficulty: 1,
@@ -28,6 +31,10 @@ mock.module("@clerk/clerk-expo", () => ({
   useAuth: mockUseAuth,
 }));
 
+mock.module("@/providers/RevenueCatProvider", () => ({
+  useRevenueCat: mockUseRevenueCat,
+}));
+
 mock.module("convex/react", () => ({
   useQuery: mockUseQuery,
 }));
@@ -45,6 +52,8 @@ describe("useAdaptiveExerciseStart", () => {
 
   beforeEach(() => {
     mockUseAuth.mockClear();
+    mockUseRevenueCat.mockClear();
+    mockUseRevenueCat.mockReturnValue({ isPremium: true, isConfigured: true });
     mockUseQuery.mockClear();
     mockGetExerciseMetrics.mockClear();
   });
@@ -95,6 +104,25 @@ describe("useAdaptiveExerciseStart", () => {
     expect(result.current.progressionState?.currentLevel).toBe(3);
     // Level 3 RSVP -> 100 + (3 * 50) = 250 WPM
     expect((result.current.config as any)?.wpm).toBe(250); 
+  });
+
+  test("Signed-in free (non-premium) user uses local progression, ignores remote", () => {
+    mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true });
+    mockUseRevenueCat.mockReturnValue({ isPremium: false, isConfigured: true });
+
+    // Remote would say level 3, but a non-premium signed-in user must not use it.
+    mockUseQuery.mockReturnValue({
+      currentLevel: 3,
+      consecutiveSuccesses: 1,
+      consecutiveFailures: 0,
+      historicalBest: 3
+    });
+
+    const { result } = renderHook(() => useAdaptiveExerciseStart(dummyDef));
+
+    expect(result.current.isReady).toBe(true);
+    expect(result.current.progressionState?.currentLevel).toBe(1);
+    expect((result.current.config as any)?.wpm).toBe(150);
   });
 
   test("Authenticated user falls back to local if remote is null (e.g. backend sync delay)", () => {

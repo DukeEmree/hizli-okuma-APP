@@ -2,8 +2,8 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 
 export const store = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { isOnboarded: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error('Called storeUser without authentication present');
@@ -15,14 +15,20 @@ export const store = mutation({
       .unique();
 
     if (user !== null) {
+      const patch: Record<string, unknown> = {};
       if (
         user.displayName !== identity.name ||
         user.avatarUrl !== identity.pictureUrl
       ) {
-        await ctx.db.patch(user._id, {
-          displayName: identity.name,
-          avatarUrl: identity.pictureUrl,
-        });
+        patch.displayName = identity.name;
+        patch.avatarUrl = identity.pictureUrl;
+      }
+      // Bu cihazda daha önce guest olarak tamamlanmış onboarding'i taşı, hiç geri almadan.
+      if (args.isOnboarded && !user.isOnboarded) {
+        patch.isOnboarded = true;
+      }
+      if (Object.keys(patch).length > 0) {
+        await ctx.db.patch(user._id, patch);
       }
       return user._id;
     }
@@ -31,7 +37,7 @@ export const store = mutation({
       clerkId: identity.subject,
       displayName: identity.name,
       avatarUrl: identity.pictureUrl,
-      // timezone eklenebilir
+      isOnboarded: args.isOnboarded ?? false,
     });
   },
 });
@@ -49,6 +55,23 @@ export const getMe = query({
       .unique();
 
     return user;
+  },
+});
+
+export const setPushNotificationsEnabled = mutation({
+  args: { enabled: v.boolean() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerkId', (q) => q.eq('clerkId', identity.subject))
+      .unique();
+
+    if (!user) throw new Error('User not found');
+
+    await ctx.db.patch(user._id, { pushNotificationsEnabled: args.enabled });
   },
 });
 
@@ -120,15 +143,6 @@ export const resetMyStatistics = mutation({
       .collect();
     for (const s of streaks) {
       await ctx.db.delete(s._id);
-    }
-
-    // 4. Delete Leaderboard Entries
-    const entries = await ctx.db
-      .query('leaderboardEntries')
-      .withIndex('by_userId_and_period', (q) => q.eq('userId', user._id))
-      .collect();
-    for (const e of entries) {
-      await ctx.db.delete(e._id);
     }
 
     // 5. Delete Achievements
@@ -219,15 +233,6 @@ export const deleteMyAccount = mutation({
       await ctx.db.delete(s._id);
     }
 
-    // 4. Delete Leaderboard Entries
-    const entries = await ctx.db
-      .query('leaderboardEntries')
-      .withIndex('by_userId_and_period', (q) => q.eq('userId', user._id))
-      .collect();
-    for (const e of entries) {
-      await ctx.db.delete(e._id);
-    }
-
     // 5. Delete Achievements
     const achievements = await ctx.db
       .query('userAchievements')
@@ -258,6 +263,16 @@ export const deleteMyAccount = mutation({
       .collect();
     for (const u of userStats) {
       await ctx.db.delete(u._id);
+    }
+
+    // 7. Delete registered push tokens (otherwise they're left pointing at
+    // a deleted user id, and could still receive server-sent pushes)
+    const tokens = await ctx.db
+      .query('pushTokens')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .collect();
+    for (const t of tokens) {
+      await ctx.db.delete(t._id);
     }
 
     // Finally delete the user

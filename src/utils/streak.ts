@@ -17,7 +17,7 @@ export function getLocalDateString(utcTimestamp: number, timeZone: string = 'UTC
       day: '2-digit'
     });
     return formatter.format(new Date(utcTimestamp));
-  } catch (error) {
+  } catch {
     // Fallback to UTC if timezone is invalid
     const date = new Date(utcTimestamp);
     const yyyy = date.getUTCFullYear();

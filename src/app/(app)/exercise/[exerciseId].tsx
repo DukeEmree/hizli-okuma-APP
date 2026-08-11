@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { YStack, XStack, H2, H4, Text, Button, Card, Slider, Separator, View, Paragraph, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
-import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock } from 'lucide-react-native';
+import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock, TrendingUp } from 'lucide-react-native';
+import { CartesianChart, Line } from 'victory-native';
+import { useAuth } from '@clerk/clerk-expo';
+import { useQuery } from 'convex/react';
 
+import { api } from '@/convex/_generated/api';
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
 import { useExerciseLimits } from '@/hooks/useExerciseLimits';
 import { useAdaptiveExerciseStart } from '@/hooks/useAdaptiveExerciseStart';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { useSyncStore } from '@/stores/syncStore';
 
 const CATEGORY_ICONS: Record<string, any> = {
   reading: BookOpen,
@@ -31,8 +37,27 @@ export default function ExerciseInfoScreen() {
   const { canStartExercise, isLoading: isLimitsLoading } = useExerciseLimits();
 
   // Adaptive difficulty logic
-  const { isReady: isAdaptiveReady, config: adaptiveConfig } = useAdaptiveExerciseStart(exercise);
+  const { isReady: isAdaptiveReady, config: adaptiveConfig, progressionState } = useAdaptiveExerciseStart(exercise);
   const hasAppliedAdaptive = React.useRef(false);
+
+  // Progress history for the chart - cloud history for premium, local queue otherwise.
+  const { isSignedIn } = useAuth();
+  const { isPremium } = useRevenueCat();
+  const useRemoteHistory = isSignedIn && isPremium;
+  const remoteSessions = useQuery(
+    api.exerciseSessions.getSessionsByExerciseType,
+    exercise && useRemoteHistory ? { exerciseType: exercise.type } : "skip",
+  );
+  const pendingSessions = useSyncStore(state => state.pendingSessions);
+  const chartData = useMemo(() => {
+    if (!exercise) return [];
+    const points = useRemoteHistory
+      ? (remoteSessions ?? [])
+      : pendingSessions
+          .filter(s => s.exerciseId === exercise.id)
+          .sort((a, b) => a.completedAt - b.completedAt);
+    return points.map((s, i) => ({ x: i, y: s.score }));
+  }, [exercise, useRemoteHistory, remoteSessions, pendingSessions]);
 
   // Local state for UI settings adjustments before saving
   const [config, setConfig] = useState(() => {
@@ -128,7 +153,7 @@ export default function ExerciseInfoScreen() {
           <YStack gap="$4">
             <YStack gap="$2">
               <XStack alignItems="center" gap="$2">
-                <Info size={20} color="$blue10" />
+                <Info size={20} color={theme.blue10?.val as string} />
                 <H4>{t('labels.purpose', 'Amacı')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
@@ -138,7 +163,7 @@ export default function ExerciseInfoScreen() {
 
             <YStack gap="$2" marginTop="$2">
               <XStack alignItems="center" gap="$2">
-                <Target size={20} color="$green10" />
+                <Target size={20} color={theme.green10?.val as string} />
                 <H4>{t('labels.howItWorks', 'Nasıl Çalışır?')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
@@ -149,10 +174,40 @@ export default function ExerciseInfoScreen() {
 
           <Separator />
 
+          {/* Progress History Section */}
+          <YStack gap="$2">
+            <XStack alignItems="center" gap="$2">
+              <TrendingUp size={20} color={theme.accent10?.val as string} />
+              <H4>{t('labels.progressHistory', 'Geçmiş Performans')}</H4>
+            </XStack>
+            {chartData.length > 1 ? (
+              <View style={{ height: 180, width: '100%' }}>
+                <CartesianChart
+                  data={chartData}
+                  xKey="x"
+                  yKeys={["y"]}
+                  domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
+                >
+                  {({ points }) => (
+                    <Line points={points.y} color={theme.accent10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                  )}
+                </CartesianChart>
+              </View>
+            ) : (
+              <Text color="$color11">
+                {progressionState
+                  ? t('labels.historicalBest', 'En İyi Seviye: {{level}}', { level: progressionState.historicalBest })
+                  : t('labels.notEnoughHistory', 'Henüz yeterli geçmiş yok. İlk denemeni tamamla!')}
+              </Text>
+            )}
+          </YStack>
+
+          <Separator />
+
           {/* Settings Section */}
           <YStack gap="$4">
             <XStack alignItems="center" gap="$2">
-              <Settings2 size={20} color="$orange10" />
+              <Settings2 size={20} color={theme.orange10?.val as string} />
               <H4>{t('labels.settings', 'Ayarlar')}</H4>
             </XStack>
 

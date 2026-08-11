@@ -1,12 +1,11 @@
 import React from 'react';
 import { View } from 'react-native';
-import { H1, H4, Text, XStack, YStack, Button, Spinner, ScrollView } from 'tamagui';
+import { H1, H4, Text, XStack, YStack, Button, Spinner, ScrollView, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 import { TimeRange } from "@/convex/statistics";
-import { CartesianChart, Line } from 'victory-native';
+import { CartesianChart, Line, Bar } from 'victory-native';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { StreakWeeklyCalendar } from "@/features/streak/StreakWeeklyCalendar";
-import { HEADER_RIGHT_SPACING } from "@/constants/layout";
 
 export function formatTime(ms: number) {
   const mins = Math.floor(ms / 60000);
@@ -32,6 +31,7 @@ export function StatisticsDashboard({
   currentStats
 }: StatisticsDashboardProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   if (isLoading) {
     return (
@@ -41,18 +41,33 @@ export function StatisticsDashboard({
     );
   }
 
-  const chartDataWpm: Array<{x: number, y: number}> = hasData && currentStats.dailyTrends.length > 1 
+  const chartDataWpm: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1 
     ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: d.avgWpm || 0 }))
     : [];
 
-  const chartDataComp: Array<{x: number, y: number}> = hasData && currentStats.dailyTrends.length > 1
+  const chartDataComp: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1
     ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: (d.avgComprehension || 0) * 100 }))
     : [];
+
+  const chartDataAcc: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1
+    ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: (d.avgAccuracy || 0) * 100 }))
+    : [];
+
+  const chartDataExercise: {x: number, y: number}[] = hasData
+    ? currentStats.exerciseStats.map((ex: any, i: number) => ({ x: i, y: ex.bestScore }))
+    : [];
+
+  const overallAverageScore = hasData && currentStats.exerciseStats.length > 0
+    ? Math.round(
+        currentStats.exerciseStats.reduce((sum: number, ex: any) => sum + ex.averageScore, 0) /
+          currentStats.exerciseStats.length,
+      )
+    : 0;
 
   return (
     <ScrollView flex={1} backgroundColor="$background">
       <YStack padding="$4" gap="$4">
-        <XStack justifyContent="space-between" alignItems="center" paddingRight={HEADER_RIGHT_SPACING}>
+        <XStack justifyContent="space-between" alignItems="center">
           <H1 fontSize="$8">{t('progress.title', 'Gelişim & İstatistikler')}</H1>
           <StreakBadge />
         </XStack>
@@ -93,6 +108,14 @@ export function StatisticsDashboard({
                 <Text color="$color11" fontSize="$4">Tamamlanan Seans</Text>
                 <H4>{currentStats.totalSessions}</H4>
               </YStack>
+              <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4">
+                <Text color="$color11" fontSize="$4">Ortalama Skor</Text>
+                <H4>{overallAverageScore}</H4>
+              </YStack>
+              <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4">
+                <Text color="$color11" fontSize="$4">Egzersiz Türü</Text>
+                <H4>{currentStats.exerciseStats.length}</H4>
+              </YStack>
             </XStack>
 
             {/* WPM Trend Chart */}
@@ -107,7 +130,7 @@ export function StatisticsDashboard({
                     domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                   >
                     {({ points }) => (
-                      <Line points={points.y} color="blue" strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                      <Line points={points.y} color={theme.blue10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
                     )}
                   </CartesianChart>
                 ) : (
@@ -128,11 +151,62 @@ export function StatisticsDashboard({
                     domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                   >
                     {({ points }) => (
-                      <Line points={points.y} color="green" strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                      <Line points={points.y} color={theme.green10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
                     )}
                   </CartesianChart>
                 ) : (
                   <Text padding="$4" textAlign="center" color="$color11">Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.</Text>
+                )}
+              </View>
+            </YStack>
+
+            {/* Accuracy Trend Chart */}
+            <YStack gap="$2">
+              <H4>Doğruluk Oranı (%)</H4>
+              <View style={{ height: 250, width: '100%' }}>
+                {currentStats.dailyTrends.length > 1 ? (
+                  <CartesianChart
+                    data={chartDataAcc}
+                    xKey="x"
+                    yKeys={["y"]}
+                    domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
+                  >
+                    {({ points }) => (
+                      <Line points={points.y} color={theme.orange10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                    )}
+                  </CartesianChart>
+                ) : (
+                  <Text padding="$4" textAlign="center" color="$color11">Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.</Text>
+                )}
+              </View>
+            </YStack>
+
+            {/* Per-Exercise Best Score Bar Chart */}
+            <YStack gap="$2">
+              <H4>Egzersiz Türüne Göre En İyi Skor</H4>
+              <View style={{ height: 220, width: '100%' }}>
+                {currentStats.exerciseStats.length > 0 ? (
+                  <CartesianChart
+                    data={chartDataExercise}
+                    xKey="x"
+                    yKeys={["y"]}
+                    domainPadding={{ left: 30, right: 30, top: 20, bottom: 20 }}
+                    axisOptions={{
+                      formatXLabel: (v) => currentStats.exerciseStats[v as number]?.type ?? '',
+                    }}
+                  >
+                    {({ points, chartBounds }) => (
+                      <Bar
+                        points={points.y}
+                        chartBounds={chartBounds}
+                        color={theme.accent10?.val as string}
+                        roundedCorners={{ topLeft: 4, topRight: 4 }}
+                        animate={{ type: "timing", duration: 500 }}
+                      />
+                    )}
+                  </CartesianChart>
+                ) : (
+                  <Text padding="$4" textAlign="center" color="$color11">Egzersiz istatistiği bulunmuyor.</Text>
                 )}
               </View>
             </YStack>

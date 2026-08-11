@@ -1,7 +1,8 @@
-import { expect, test, describe, mock, beforeEach } from "bun:test";
+import { expect, test, describe, mock, spyOn, beforeEach, afterAll } from "bun:test";
 import { renderHook } from '@testing-library/react-hooks';
 import { useExerciseLimits } from "../useExerciseLimits";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
+import * as streakUtils from "@/utils/streak";
 
 // Mock dependencies
 const mockUseRevenueCat = mock(() => ({ isPremium: false, isConfigured: true }));
@@ -23,17 +24,23 @@ mock.module("@/stores/syncStore", () => ({
   useSyncStore: mockUseSyncStore,
 }));
 
-// Provide a mock for getLocalDateString that just returns '2023-01-01' for testing
-mock.module("@/utils/streak", () => ({
-  getLocalDateString: () => '2023-01-01',
-}));
+// Spy on getLocalDateString (rather than mock.module the whole "@/utils/streak"
+// module) so this only patches the one export on the shared module object and
+// can be restored in afterAll - mock.module() replaces the module process-wide
+// for the rest of the bun test run, which previously leaked '2023-01-01' into
+// unrelated streak.test.ts assertions running later in the same process.
+const getLocalDateStringSpy = spyOn(streakUtils, "getLocalDateString").mockReturnValue('2023-01-01');
 
 describe("useExerciseLimits", () => {
-  
+
   beforeEach(() => {
     mockUseRevenueCat.mockClear();
     mockUseQuery.mockClear();
     mockUseSyncStore.mockClear();
+  });
+
+  afterAll(() => {
+    getLocalDateStringSpy.mockRestore();
   });
 
   test("Returns loading state when not configured or stats are undefined", () => {
@@ -78,14 +85,17 @@ describe("useExerciseLimits", () => {
   });
 
   test("Free user at limit cannot start exercise", () => {
+    // Free tier never queries Convex (cloud sync is premium-only), so the
+    // daily count comes entirely from local pendingSessions.
     mockUseRevenueCat.mockReturnValue({ isPremium: false, isConfigured: true });
-    mockUseQuery.mockReturnValue({
-      dailyTrends: [{ date: '2023-01-01', sessionCount: SUBSCRIPTION_CONSTANTS.FREE_TIER.MAX_DAILY_EXERCISES }]
-    });
-    mockUseSyncStore.mockImplementation((selector) => selector({ pendingSessions: [] }));
-    
+    mockUseQuery.mockReturnValue(undefined); // skipped for non-premium
+    const max = SUBSCRIPTION_CONSTANTS.FREE_TIER.MAX_DAILY_EXERCISES;
+    mockUseSyncStore.mockImplementation((selector) => selector({
+      pendingSessions: Array.from({ length: max }, () => ({ completedAt: Date.now() })),
+    }));
+
     const { result } = renderHook(() => useExerciseLimits());
-    
+
     expect(result.current.canStartExercise).toBe(false);
     expect(result.current.remainingExercises).toBe(0);
   });
@@ -121,24 +131,26 @@ describe("useExerciseLimits", () => {
     expect(result.current.canStartExercise).toBe(max > 2);
   });
 
-  test("Combines server sessions and pending sessions correctly", () => {
+  test("Server session count is ignored for free tier - only pending sessions count", () => {
     mockUseRevenueCat.mockReturnValue({ isPremium: false, isConfigured: true });
+    // Even if a stale/mocked Convex response were returned, the query is
+    // skipped for free tier and must not affect the count.
     mockUseQuery.mockReturnValue({
-      dailyTrends: [{ date: '2023-01-01', sessionCount: 2 }] // 2 from server
+      dailyTrends: [{ date: '2023-01-01', sessionCount: 100 }]
     });
-    
+
     // 2 pending from local
-    mockUseSyncStore.mockImplementation((selector) => selector({ 
+    mockUseSyncStore.mockImplementation((selector) => selector({
       pendingSessions: [
         { completedAt: Date.now() },
         { completedAt: Date.now() }
-      ] 
+      ]
     }));
-    
+
     const { result } = renderHook(() => useExerciseLimits());
-    
+
     const max = SUBSCRIPTION_CONSTANTS.FREE_TIER.MAX_DAILY_EXERCISES;
-    expect(result.current.remainingExercises).toBe(Math.max(0, max - 4));
+    expect(result.current.remainingExercises).toBe(Math.max(0, max - 2));
   });
 
 });

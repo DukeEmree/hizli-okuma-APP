@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
-import { YStack, XStack, Input, useTheme } from 'tamagui';
+import { YStack, XStack, Input, useTheme, Text, Button, ColorTokens } from 'tamagui';
 import { useSignIn, useSSO, isClerkAPIResponseError } from '@clerk/clerk-expo';
 import { useRouter, Link } from 'expo-router';
-import { AppText } from "@/components/ui/AppText";
-import { AppButton } from "@/components/ui/AppButton";
 import { useTranslation } from 'react-i18next';
 import * as WebBrowser from 'expo-web-browser';
 import { useWarmUpBrowser } from "@/hooks/useWarmUpBrowser";
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { captureException } from '@/lib/sentry';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -52,7 +51,7 @@ export default function LoginScreen() {
       if (completeSignIn.status === 'complete') {
         await setActive({ session: completeSignIn.createdSessionId });
         router.replace('/(app)/(tabs)');
-      } else {
+      } else if (__DEV__) {
         console.error(JSON.stringify(completeSignIn, null, 2));
       }
     } catch (err: unknown) {
@@ -82,7 +81,7 @@ export default function LoginScreen() {
       if (isCanceled) {
         return;
       }
-      console.error('SSO error', err);
+      captureException(err, { context: 'login.googleSSO' });
       if (isClerkAPIResponseError(err)) {
         setErrorMsg(err.errors?.[0]?.message || t('errors.ssoFailed', 'Google ile giriş yapılırken bir hata oluştu.'));
       } else {
@@ -102,9 +101,9 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
             <YStack gap="$4">
-          <AppText variant="title" textAlign="center">{t('loginTitle', 'Giriş Yap')}</AppText>
-          
-          {!!errorMsg && <AppText variant="caption" color="$red10">{errorMsg}</AppText>}
+          <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" textAlign="center">{t('loginTitle', 'Giriş Yap')}</Text>
+
+          {!!errorMsg && <Text fontSize="$2" color="$red10" fontFamily="$body">{errorMsg}</Text>}
 
           <Controller
             control={form.control}
@@ -120,9 +119,9 @@ export default function LoginScreen() {
                   onBlur={onBlur}
                   onChangeText={onChange}
                   placeholder={t('emailPlaceholder', 'E-posta')}
-                  placeholderTextColor="$color11"
+                  placeholderTextColor={theme.color11?.val as ColorTokens}
                 />
-                {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                {error && <Text fontSize="$2" color="$red10" fontFamily="$body">{error.message}</Text>}
               </YStack>
             )}
           />
@@ -139,25 +138,41 @@ export default function LoginScreen() {
                   secureTextEntry
                   textContentType="password"
                   placeholder={t('passwordPlaceholder', 'Şifre')}
-                  placeholderTextColor="$color11"
+                  placeholderTextColor={theme.color11?.val as ColorTokens}
                 />
-                {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                {error && <Text fontSize="$2" color="$red10" fontFamily="$body">{error.message}</Text>}
               </YStack>
             )}
           />
 
-          <AppButton onPress={onSignInPress} disabled={form.formState.isSubmitting}>
+          <Button
+            backgroundColor="$blue10"
+            color="white"
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+            onPress={onSignInPress}
+            disabled={form.formState.isSubmitting}
+          >
             {form.formState.isSubmitting ? t('loading', 'Yükleniyor...') : t('loginButton', 'Giriş Yap')}
-          </AppButton>
+          </Button>
 
-          <AppButton btnType="outline" onPress={onPressGoogle} disabled={ssoLoading}>
+          <Button
+            backgroundColor="transparent"
+            color="$blue10"
+            borderWidth={1}
+            borderColor="$blue10"
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+            onPress={onPressGoogle}
+            disabled={ssoLoading}
+          >
             {ssoLoading ? t('loading', 'Yükleniyor...') : t('loginGoogle', 'Google ile Giriş Yap')}
-          </AppButton>
+          </Button>
 
           <XStack justifyContent="center" marginTop="$4">
-            <AppText variant="body">{t('noAccount', 'Hesabın yok mu?')} </AppText>
+            <Text fontSize="$4" color="$color" fontFamily="$body">{t('noAccount', 'Hesabın yok mu?')} </Text>
             <Link href="/(auth)/register">
-              <AppText variant="body" color="$blue10">{t('registerLink', 'Kayıt Ol')}</AppText>
+              <Text fontSize="$4" color="$blue10" fontFamily="$body">{t('registerLink', 'Kayıt Ol')}</Text>
             </Link>
           </XStack>
         </YStack>

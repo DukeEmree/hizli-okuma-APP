@@ -1,5 +1,4 @@
-import { Spinner, YStack } from 'tamagui';
-import { AppText } from './AppText';
+import { Spinner, Text, YStack } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 
 export function LoadingState({ message }: { message?: string }) {
@@ -8,7 +7,7 @@ export function LoadingState({ message }: { message?: string }) {
   return (
     <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
       <Spinner size="large" color="$color" />
-      <AppText variant="caption">{displayMessage}</AppText>
+      <Text fontSize="$2" color="$color10" fontFamily="$body">{displayMessage}</Text>
     </YStack>
   );
 }

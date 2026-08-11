@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { useAuth } from '@clerk/clerk-expo';
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
+import { captureException } from "@/lib/sentry";
 
 interface RevenueCatContextState {
   isPremium: boolean;
@@ -27,7 +28,7 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
     // Configure RevenueCat on mount
     const apiKey = Platform.OS === 'ios' ? SUBSCRIPTION_CONSTANTS.REVENUECAT_API_KEY_IOS : SUBSCRIPTION_CONSTANTS.REVENUECAT_API_KEY_ANDROID;
     
-    Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+    Purchases.setLogLevel(__DEV__ ? Purchases.LOG_LEVEL.DEBUG : Purchases.LOG_LEVEL.WARN);
     Purchases.configure({ apiKey });
 
     const customerInfoUpdateListener = (info: CustomerInfo) => {
@@ -75,7 +76,7 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
             if (isCurrent) setCustomerInfo(info);
           }
         } catch (error) {
-          console.error('Failed to sync RevenueCat user', error);
+          captureException(error, { context: 'RevenueCatProvider.syncUser', isSignedIn, userId });
         }
       };
 

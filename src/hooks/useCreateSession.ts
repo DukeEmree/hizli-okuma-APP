@@ -5,6 +5,7 @@ import { ProgressionState, ExerciseResult } from "@/types/exercise";
 import { useAuth } from "@clerk/clerk-expo";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useRevenueCat } from "@/providers/RevenueCatProvider";
 
 export interface CreateSessionArgs {
   clientSessionId: string;
@@ -25,6 +26,7 @@ export function useCreateSession() {
   const updateExerciseMetrics = useExerciseProgressStore((state) => state.updateExerciseMetrics);
 
   const { isSignedIn } = useAuth();
+  const { isPremium } = useRevenueCat();
   const updateProgress = useMutation(api.exerciseProgress.updateProgress);
 
   // `result` is the raw ExerciseResult the engine produced; `args` is its
@@ -56,8 +58,8 @@ export function useCreateSession() {
         bestComprehension: result.metrics?.comprehensionAccuracy,
       });
 
-      // Sync to backend if authenticated
-      if (isSignedIn) {
+      // Cloud sync is premium-only - free/guest users keep progress local.
+      if (isSignedIn && isPremium) {
         // Fire and forget - if network fails, local storage still has the state.
         updateProgress({
           exerciseId: result.exerciseId,
@@ -73,7 +75,9 @@ export function useCreateSession() {
       }
     }
 
-    // Add to sync queue immediately for leaderboard / streaks / gamification
+    // Add to local sync queue immediately (streaks / gamification / stats).
+    // SyncProvider only flushes this to Convex for premium users - for
+    // everyone else it just stays here as their local history.
     addSession(args);
 
     // Return a dummy session ID since it will be synced later

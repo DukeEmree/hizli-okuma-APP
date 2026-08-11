@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { HEADER_RIGHT_SPACING } from '@/constants/layout';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { YStack, XStack, H2, H4, Text, Button, Card, View, ScrollView, useTheme } from 'tamagui';
@@ -58,7 +57,7 @@ export default function ExercisesScreen() {
       <ScrollView flex={1} backgroundColor="$background">
         <YStack padding="$4" gap="$4">
           
-          <YStack gap="$2" paddingRight={HEADER_RIGHT_SPACING}>
+          <YStack gap="$2">
             <H2>{t('title', 'Egzersizler')}</H2>
             <Text color="$color11">{t('subtitle', 'Okuma hızını, kavramanı ve odağını geliştiren egzersizler.')}</Text>
           </YStack>

@@ -1,6 +1,7 @@
 import { mmkv } from '@/stores/storage';
 import type { PendingSession } from '@/stores/syncStore';
 import type { ExerciseMetrics } from '@/stores/exerciseProgressStore';
+import { captureException } from '@/lib/sentry';
 
 // Must match the `version` declared on each store's `persist()` config -
 // zustand's persist middleware discards the entire persisted blob (falling
@@ -51,9 +52,18 @@ export const migrateGuestDataToUser = (userId: string) => {
     // 2. Migrate User Progress
     const guestProgressStr = mmkv.getString('guest_user-progress-store');
     if (guestProgressStr) {
+      // Remove the guest key before doing the additive merge below, not after.
+      // totalTrainingSeconds/completedExercises are summed (not deduped by ID
+      // like the other sections), so if this ran twice against the same guest
+      // snapshot it would double-count. Clearing the source first means a
+      // crash between this line and the merge write below can only lose this
+      // run's not-yet-migrated seconds (already-synced server data is
+      // unaffected), never double-add them on a retry.
+      mmkv.remove('guest_user-progress-store');
+
       const guestProgressData = JSON.parse(guestProgressStr);
       const guestState = guestProgressData?.state;
-      
+
       if (guestState && guestState.totalTrainingSeconds > 0) {
         const userProgressStr = mmkv.getString(`${userId}_user-progress-store`);
         let userState = {
@@ -86,9 +96,6 @@ export const migrateGuestDataToUser = (userId: string) => {
 
         mmkv.set(`${userId}_user-progress-store`, JSON.stringify({ state: userState, version }));
       }
-      
-      // Clear guest progress storage
-      mmkv.remove('guest_user-progress-store');
     }
 
     // 3. Migrate Streak Cache (this is only a local cache - the server
@@ -172,6 +179,6 @@ export const migrateGuestDataToUser = (userId: string) => {
       mmkv.remove('guest_exercise-progress-store');
     }
   } catch (error) {
-    console.error('Error during guest data migration:', error);
+    captureException(error, { context: 'migrateGuestDataToUser', userId });
   }
 };

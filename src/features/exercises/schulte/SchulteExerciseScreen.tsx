@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useSchulteEngine } from './useSchulteEngine';
 import { useTranslation } from 'react-i18next';

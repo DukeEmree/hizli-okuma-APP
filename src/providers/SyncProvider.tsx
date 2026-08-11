@@ -4,24 +4,29 @@ import { useSyncStore } from "@/stores/syncStore";
 import { useMutation } from 'convex/react';
 import { api } from "@/convex/_generated/api";
 import { useAuth } from '@clerk/clerk-expo';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useGamificationStore } from "@/stores/gamificationStore";
 import { ACHIEVEMENTS } from "@/constants/gamification";
 import { AppState, AppStateStatus } from 'react-native';
 import { analytics } from '@/lib/analytics';
+import { captureException } from '@/lib/sentry';
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
   const pendingSessionsLength = useSyncStore((state) => state.pendingSessions.length);
   const createSession = useMutation(api.exerciseSessions.createSession);
   const addAchievement = useGamificationStore((state) => state.addAchievement);
   const { isSignedIn } = useAuth();
+  const { isPremium } = useRevenueCat();
+  // Cloud sync is a premium feature - free/guest users keep sessions local only.
+  const canSync = isSignedIn && isPremium;
 
   const isSyncingRef = useRef(false);
 
   const syncQueue = useCallback(async () => {
     const syncState = useSyncStore.getState();
     const pendingSessions = syncState.pendingSessions;
-    
-    if (isSyncingRef.current || pendingSessions.length === 0 || !isSignedIn) return;
+
+    if (isSyncingRef.current || pendingSessions.length === 0 || !canSync) return;
     
     const state = await NetInfo.fetch();
     if (!state.isConnected) return;
@@ -87,6 +92,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       } catch (error: unknown) {
         // Increment retry if network otherwise if it's a fatal error (like schema mismatch), we might want to drop it
         // But for safety, we just increment retry count. Convex usually throws for application errors.
+        captureException(error, { context: 'SyncProvider.syncQueue', clientSessionId: session.clientSessionId, retryCount: session.retryCount });
         syncState.incrementRetryCount(session.clientSessionId);
         syncFailCount++;
         // Break out of the loop to try again later if the network went down
@@ -104,7 +110,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
 
     isSyncingRef.current = false;
-  }, [createSession, addAchievement, isSignedIn]);
+  }, [createSession, addAchievement, canSync]);
 
   // Listen to network changes
   useEffect(() => {
@@ -119,26 +125,26 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     };
   }, [syncQueue]);
 
-  // Trigger sync if we have pending items or when login state changes
+  // Trigger sync if we have pending items or when login/premium state changes
   useEffect(() => {
-    if (pendingSessionsLength > 0 && isSignedIn) {
+    if (pendingSessionsLength > 0 && canSync) {
       syncQueue();
     }
-  }, [pendingSessionsLength, isSignedIn, syncQueue]);
+  }, [pendingSessionsLength, canSync, syncQueue]);
 
   // Periodic interval just in case
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isSignedIn) syncQueue();
+      if (canSync) syncQueue();
     }, 15000); // Check every 15 seconds
-    
+
     return () => clearInterval(interval);
-  }, [syncQueue, isSignedIn]);
+  }, [syncQueue, canSync]);
 
   // Trigger sync when app comes to foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active' && isSignedIn) {
+      if (nextAppState === 'active' && canSync) {
         syncQueue();
       }
     });
@@ -146,7 +152,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.remove();
     };
-  }, [syncQueue, isSignedIn]);
+  }, [syncQueue, canSync]);
 
   return <>{children}</>;
 }

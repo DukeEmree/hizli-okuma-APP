@@ -10,7 +10,11 @@ export default defineSchema({
     timezone: v.optional(v.string()),
     isPremium: v.optional(v.boolean()),
     premiumExpiresAt: v.optional(v.number()),
-    
+
+    // undefined is treated as enabled (matches client default) — only an
+    // explicit false suppresses server-sent push notifications.
+    pushNotificationsEnabled: v.optional(v.boolean()),
+
     // Onboarding fields
     isOnboarded: v.optional(v.boolean()),
     onboardingReason: v.optional(v.string()),
@@ -23,6 +27,29 @@ export default defineSchema({
     xp: v.optional(v.number()),
     level: v.optional(v.number()),
   }).index('by_clerkId', ['clerkId']),
+
+  // One row per (user, device). A device's Expo push token is looked up by
+  // `by_token` on registration so it can be reassigned when the same device
+  // logs into a different account, instead of leaving it bound to the old user.
+  pushTokens: defineTable({
+    userId: v.id('users'),
+    token: v.string(),
+    platform: v.union(v.literal('ios'), v.literal('android')),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']).index('by_token', ['token']),
+
+  // Dedup ledger for RevenueCat webhook events. `by_eventId` is unique per
+  // RevenueCat event id; the check-then-insert in revenuecatEvents.ts is
+  // race-safe because Convex mutations are serialized transactions (OCC).
+  processedRevenueCatEvents: defineTable({
+    eventId: v.string(),
+    eventType: v.string(),
+    clerkId: v.string(),
+    processedAt: v.number(),
+    notificationSent: v.optional(v.boolean()),
+    notificationError: v.optional(v.string()),
+  }).index('by_eventId', ['eventId']),
 
   userAchievements: defineTable({
     userId: v.id('users'),
@@ -44,7 +71,18 @@ export default defineSchema({
     score: v.number(),
     metrics: v.optional(v.any()), // flexible object for specific exercise metrics
     algorithmVersion: v.optional(v.number()),
-  }).index('by_userId', ['userId']).index('by_userId_and_clientSessionId', ['userId', 'clientSessionId']),
+    // Achievements unlocked by gamification processing at insert time, so a
+    // dedup'd retry (same clientSessionId) can return the original result
+    // instead of silently dropping the notification or re-running
+    // processGamification (which would double-award XP).
+    unlockedAchievementIds: v.optional(v.array(v.string())),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_userId_and_clientSessionId', ['userId', 'clientSessionId'])
+    .index('by_userId_and_exerciseType', ['userId', 'exerciseType'])
+    // Lets the dashboard read only today's sessions as an index range
+    // instead of scanning every session the user has ever completed.
+    .index('by_userId_and_completedAt', ['userId', 'completedAt']),
 
   exerciseProgress: defineTable({
     userId: v.id('users'),
@@ -64,12 +102,6 @@ export default defineSchema({
     longestStreak: v.number(),
     lastActivityAt: v.number(),
   }).index('by_userId', ['userId']),
-
-  leaderboardEntries: defineTable({
-    userId: v.id('users'),
-    period: v.string(), // "ALL_TIME", "MONTH_YYYY_MM", "WEEK_YYYY_WW"
-    score: v.number(),
-  }).index('by_period_and_score', ['period', 'score']).index('by_userId_and_period', ['userId', 'period']),
 
   userStatistics: defineTable({
     userId: v.id('users'),

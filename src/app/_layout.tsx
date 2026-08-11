@@ -7,7 +7,8 @@ import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
-import { TamaguiProvider, Theme } from "tamagui";
+import { TamaguiProvider, Theme, YStack } from "tamagui";
+import { Toast, ToastProvider, ToastViewport, useToastState } from "@tamagui/toast";
 
 import { AuthSync } from "@/components/auth/AuthSync";
 import { AchievementPopupGlobal } from "@/components/gamification/AchievementPopup";
@@ -21,7 +22,7 @@ import { AppNotificationProvider } from "@/providers/NotificationProvider";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useQuery } from "convex/react";
 
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import tamaguiConfig from "../../tamagui.config";
 import "../i18n";
@@ -70,27 +71,31 @@ function RootNavigation() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
+    if (isSignedIn && convexUser === undefined) {
+      // Still loading convex user, wait
+      return;
+    }
+
+    const inAppGroup = segments[0] === "(app)";
     const inOnboardingGroup = segments[0] === "(onboarding)";
 
     const isCloudOnboarded =
       convexUser !== null && convexUser?.isOnboarded === true;
     const isLocallyOnboarded = hasCompletedOnboarding;
 
-    // We consider the user onboarded if either cloud says so (logged in) or local says so
-    const userIsOnboarded = isSignedIn ? isCloudOnboarded : isLocallyOnboarded;
+    // A signed-in user counts as onboarded if either side says so. Cloud
+    // alone isn't enough: right after sign-in `getMe` resolves to null for
+    // the moment before AuthSync's `users.store` mutation creates the row,
+    // which would bounce an already-onboarded device into the onboarding
+    // flow and straight back out again. AuthSync seeds the new row with
+    // this same local flag, so the two can't disagree for long.
+    const userIsOnboarded = isSignedIn
+      ? isCloudOnboarded || isLocallyOnboarded
+      : isLocallyOnboarded;
 
-    if (isSignedIn && convexUser === undefined) {
-      // Still loading convex user, wait
-      return;
-    }
-
-    if (!userIsOnboarded && !inOnboardingGroup) {
-      router.replace("/(onboarding)");
-    } else if (userIsOnboarded && inOnboardingGroup) {
-      router.replace("/(app)/(tabs)");
-    } else if (isSignedIn && inAuthGroup) {
-      // Already signed in, no need to be on auth screens
+    if (!userIsOnboarded) {
+      if (!inOnboardingGroup) router.replace("/(onboarding)");
+    } else if (!inAppGroup) {
       router.replace("/(app)/(tabs)");
     }
   }, [
@@ -104,6 +109,7 @@ function RootNavigation() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen
@@ -113,10 +119,42 @@ function RootNavigation() {
     </Stack>
   );
 }
+function CurrentToast() {
+  const currentToast = useToastState();
+  if (!currentToast || currentToast.isHandledNatively) return null;
+  return (
+    <Toast
+      key={currentToast.id}
+      duration={currentToast.duration}
+      viewportName={currentToast.viewportName}
+      enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
+      exitStyle={{ opacity: 0, scale: 1, y: -20 }}
+      y={0}
+      opacity={1}
+      scale={1}
+    >
+      <YStack>
+        <Toast.Title>{currentToast.title}</Toast.Title>
+        {!!currentToast.message && (
+          <Toast.Description>{currentToast.message}</Toast.Description>
+        )}
+      </YStack>
+    </Toast>
+  );
+}
+
+function AppToastViewport() {
+  const insets = useSafeAreaInsets();
+  return <ToastViewport top={insets.top} left={0} right={0} />;
+}
+
 SplashScreen.preventAutoHideAsync();
 
-// Initialize Observability
+// Initialize Observability. analytics.init() must run before the first
+// analytics.track() call below - without it the Amplitude SDK is never
+// configured and every tracked event is silently dropped in production.
 initSentry();
+analytics.init();
 
 export default function RootLayout() {
   const systemColorScheme = useColorScheme();
@@ -159,13 +197,17 @@ export default function RootLayout() {
                     style={activeTheme === "dark" ? "light" : "dark"}
                     animated
                   />
-                  <AppNotificationProvider>
-                    <SyncProvider>
-                      <AuthSync />
-                      <RootNavigation />
-                      <AchievementPopupGlobal />
-                    </SyncProvider>
-                  </AppNotificationProvider>
+                  <ToastProvider swipeDirection="horizontal" duration={3000}>
+                    <AppNotificationProvider>
+                      <SyncProvider>
+                        <AuthSync />
+                        <RootNavigation />
+                        <AchievementPopupGlobal />
+                      </SyncProvider>
+                    </AppNotificationProvider>
+                    <CurrentToast />
+                    <AppToastViewport />
+                  </ToastProvider>
                 </ThemeProvider>
               </Theme>
             </TamaguiProvider>

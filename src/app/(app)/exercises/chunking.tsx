@@ -3,7 +3,8 @@ import { ChunkingExerciseScreen } from "@/features/exercises/chunking/ChunkingEx
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COMPREHENSION_TEXTS } from "@/constants/content";
 import { useComprehensionStore } from "@/stores/useComprehensionStore";
-import { ExerciseResult } from "@/types/exercise";
+import { DifficultyLevel, ExerciseResult } from "@/types/exercise";
+import { pickByDifficulty } from "@/features/exercises/contentSelection";
 
 const DEFAULT_TEXT = "Kelime gruplama tekniği okuma hızınızı önemli ölçüde artırır. Gözleriniz her kelime için ayrı ayrı duraklamak yerine, birkaç kelimeyi tek bir bakışta kavrar. Bu sayede hem zaman kazanırsınız hem de cümlenin bütününü daha rahat anlarsınız. Düzenli pratik yaparak göz kaslarınızı eğitebilir ve çok daha hızlı bir okuyucu olabilirsiniz.";
 
@@ -13,17 +14,18 @@ export default function ChunkingRoute() {
   const wpm = params.wpm ? parseInt(params.wpm as string, 10) : 250;
   const chunkSize = params.chunkSize ? parseInt(params.chunkSize as string, 10) : 2;
   const textId = params.textId as string;
+  const initialDifficulty = (params.initialDifficulty ? parseInt(params.initialDifficulty as string, 10) : 5) as DifficultyLevel;
   const setComprehensionContext = useComprehensionStore(s => s.setComprehensionContext);
 
   // eslint-disable-next-line react-hooks/purity
-  const [randomIndex] = React.useState(() => Math.floor(Math.random() * COMPREHENSION_TEXTS.length));
+  const [pickedText] = React.useState(() => pickByDifficulty(COMPREHENSION_TEXTS, initialDifficulty));
 
   const activeText = useMemo(() => {
     if (textId) {
       return COMPREHENSION_TEXTS.find(t => t.id === textId) || null;
     }
-    return COMPREHENSION_TEXTS[randomIndex];
-  }, [textId, randomIndex]);
+    return pickedText;
+  }, [textId, pickedText]);
 
   const handleComplete = (result: ExerciseResult) => {
     if (activeText) {

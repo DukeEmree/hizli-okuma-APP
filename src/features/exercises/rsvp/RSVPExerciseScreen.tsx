@@ -32,7 +32,6 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
     start,
     pause,
     resume,
-    reset
   } = useRSVPEngine({ text, wpm, skipDefaultStorage, updateIntervalMs: 16 }, (result) => {
     if (onComplete) {
       onComplete(result);

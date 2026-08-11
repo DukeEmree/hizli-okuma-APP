@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
-import { YStack, XStack, Input, useTheme } from 'tamagui';
+import { YStack, XStack, Input, useTheme, Text, Button, ColorTokens } from 'tamagui';
 import { useSignUp, isClerkAPIResponseError } from '@clerk/clerk-expo';
 import { useRouter, Link } from 'expo-router';
-import { AppText } from "@/components/ui/AppText";
-import { AppButton } from "@/components/ui/AppButton";
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -85,7 +83,7 @@ export default function RegisterScreen() {
       if (completeSignUp.status === 'complete') {
         await setActive({ session: completeSignUp.createdSessionId });
         router.replace('/(app)/(tabs)');
-      } else {
+      } else if (__DEV__) {
         console.error(JSON.stringify(completeSignUp, null, 2));
       }
     } catch (err: unknown) {
@@ -106,9 +104,9 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
             <YStack gap="$4">
-          <AppText variant="title" textAlign="center">{t('registerTitle', 'Kayıt Ol')}</AppText>
-          
-          {!!errorMsg && <AppText variant="caption" color="$red10">{errorMsg}</AppText>}
+          <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" textAlign="center">{t('registerTitle', 'Kayıt Ol')}</Text>
+
+          {!!errorMsg && <Text fontSize="$2" color="$red10" fontFamily="$body">{errorMsg}</Text>}
 
           {!pendingVerification && (
             <>
@@ -126,9 +124,9 @@ export default function RegisterScreen() {
                       onBlur={onBlur}
                       onChangeText={onChange}
                       placeholder={t('emailPlaceholder', 'E-posta')}
-                      placeholderTextColor="$color11"
+                      placeholderTextColor={theme.color11?.val as ColorTokens}
                     />
-                    {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                    {error && <Text fontSize="$2" color="$red10" fontFamily="$body">{error.message}</Text>}
                   </YStack>
                 )}
               />
@@ -145,9 +143,9 @@ export default function RegisterScreen() {
                       secureTextEntry
                       textContentType="newPassword"
                       placeholder={t('passwordPlaceholder', 'Şifre')}
-                      placeholderTextColor="$color11"
+                      placeholderTextColor={theme.color11?.val as ColorTokens}
                     />
-                    {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                    {error && <Text fontSize="$2" color="$red10" fontFamily="$body">{error.message}</Text>}
                   </YStack>
                 )}
               />
@@ -164,21 +162,28 @@ export default function RegisterScreen() {
                       secureTextEntry
                       textContentType="newPassword"
                       placeholder={t('passwordConfirmationPlaceholder', 'Şifre Tekrar')}
-                      placeholderTextColor="$color11"
+                      placeholderTextColor={theme.color11?.val as ColorTokens}
                     />
-                    {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                    {error && <Text fontSize="$2" color="$red10" fontFamily="$body">{error.message}</Text>}
                   </YStack>
                 )}
               />
 
-              <AppButton onPress={onSignUpPress} disabled={registerForm.formState.isSubmitting}>
+              <Button
+                backgroundColor="$blue10"
+                color="white"
+                hoverStyle={{ backgroundColor: '$blue11' }}
+                pressStyle={{ backgroundColor: '$blue9' }}
+                onPress={onSignUpPress}
+                disabled={registerForm.formState.isSubmitting}
+              >
                 {registerForm.formState.isSubmitting ? t('loading', 'Yükleniyor...') : t('registerButton', 'Kayıt Ol')}
-              </AppButton>
-              
+              </Button>
+
               <XStack justifyContent="center" marginTop="$4">
-                <AppText variant="body">{t('haveAccount', 'Zaten hesabın var mı?')} </AppText>
+                <Text fontSize="$4" color="$color" fontFamily="$body">{t('haveAccount', 'Zaten hesabın var mı?')} </Text>
                 <Link href="/(auth)/login">
-                  <AppText variant="body" color="$blue10">{t('loginLink', 'Giriş Yap')}</AppText>
+                  <Text fontSize="$4" color="$blue10" fontFamily="$body">{t('loginLink', 'Giriş Yap')}</Text>
                 </Link>
               </XStack>
             </>
@@ -186,9 +191,9 @@ export default function RegisterScreen() {
 
           {pendingVerification && (
             <>
-              <AppText variant="body" textAlign="center">
+              <Text fontSize="$4" color="$color" fontFamily="$body" textAlign="center">
                 {t('verifyInstruction', 'E-postanıza gönderilen doğrulama kodunu girin.')}
-              </AppText>
+              </Text>
               
               <Controller
                 control={codeForm.control}
@@ -202,16 +207,23 @@ export default function RegisterScreen() {
                       keyboardType="number-pad"
                       textContentType="oneTimeCode"
                       placeholder={t('codePlaceholder', 'Doğrulama Kodu')}
-                      placeholderTextColor="$color11"
+                      placeholderTextColor={theme.color11?.val as ColorTokens}
                     />
-                    {error && <AppText variant="caption" color="$red10">{error.message}</AppText>}
+                    {error && <Text fontSize="$2" color="$red10" fontFamily="$body">{error.message}</Text>}
                   </YStack>
                 )}
               />
 
-              <AppButton onPress={onPressVerify} disabled={codeForm.formState.isSubmitting}>
+              <Button
+                backgroundColor="$blue10"
+                color="white"
+                hoverStyle={{ backgroundColor: '$blue11' }}
+                pressStyle={{ backgroundColor: '$blue9' }}
+                onPress={onPressVerify}
+                disabled={codeForm.formState.isSubmitting}
+              >
                 {codeForm.formState.isSubmitting ? t('loading', 'Yükleniyor...') : t('verifyButton', 'Doğrula')}
-              </AppButton>
+              </Button>
             </>
           )}
         </YStack>

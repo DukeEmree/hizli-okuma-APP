@@ -1,5 +1,6 @@
 import { api } from "@/convex/_generated/api";
 import { analytics } from "@/lib/analytics";
+import { captureException } from "@/lib/sentry";
 import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
@@ -108,7 +109,7 @@ export function OnboardingScreen() {
       analytics.track("onboarding_completed");
       router.replace("/(app)/(tabs)");
     } catch (e) {
-      console.error(e);
+      captureException(e, { context: 'OnboardingScreen.handleFinish' });
       setIsSubmitting(false);
     }
   };

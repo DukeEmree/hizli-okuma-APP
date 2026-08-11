@@ -13,8 +13,6 @@ export default function AppLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: false }} />
-      <Stack.Screen name="leaderboard" options={{ headerShown: false }} />
-      <Stack.Screen name="progress" options={{ headerShown: false }} />
     </Stack>
   );
 }

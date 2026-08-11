@@ -5,7 +5,6 @@ import { useMainIdeaEngine } from './useMainIdeaEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface MainIdeaExerciseScreenProps {
   timeLimitMs: number;
@@ -94,16 +93,16 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
           <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
             {phase === 'read' && session.state === 'running' && currentItem ? (
               <YStack gap="$6" ai="center" px="$4">
-                <AppText variant="body" fontSize="$6" lineHeight="$8" textAlign="justify">
+                <Text fontSize="$6" lineHeight="$8" textAlign="justify" color="$color" fontFamily="$body">
                   {currentItem.paragraph}
-                </AppText>
+                </Text>
                 <Button size="$5" theme="accent" onPress={handleFinishedReading}>
                   Okudum
                 </Button>
               </YStack>
             ) : phase === 'question' && session.state === 'running' && currentItem ? (
               <YStack w="100%" gap="$6" ai="center" px="$4">
-                <AppText textAlign="center" variant="title" mb="$4">{currentItem.question}</AppText>
+                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" mb="$4">{currentItem.question}</Text>
                 <YStack w="100%" gap="$3">
                   {currentItem.options.map((opt, i) => (
                     <Button 
@@ -111,9 +110,9 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
                       onPress={() => handleSelection(i)} 
                       size="$5"
                     >
-                      <AppText fontSize="$4" style={{ whiteSpace: 'normal', textAlign: 'center' }}>
+                      <Text fontSize="$4" color="$color" fontFamily="$body" style={{ whiteSpace: 'normal', textAlign: 'center' }}>
                         {opt}
-                      </AppText>
+                      </Text>
                     </Button>
                   ))}
                 </YStack>

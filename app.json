@@ -7,9 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "hizliokuma",
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -24,7 +21,14 @@
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
         "com.android.vending.BILLING",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "web": {
@@ -68,6 +72,9 @@
       "eas": {
         "projectId": "6e8675f6-36b8-4d11-ba8a-3fe4efb3d63d"
       }
+    },
+    "ios": {
+      "bundleIdentifier": "com.dukeemree.hizliokuma"
     }
   }
 }

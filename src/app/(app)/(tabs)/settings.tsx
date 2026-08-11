@@ -3,7 +3,7 @@ import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, Platform, Switch as RNSwitch } from "react-native";
+import { Alert, ScrollView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Button,
@@ -12,14 +12,13 @@ import {
   SizableText,
   Spinner,
   Switch,
+  Text,
   useTheme,
   XStack,
   YStack,
 } from "tamagui";
 import { api } from "@/convex/_generated/api";
 
-import { AppButton } from "@/components/ui/AppButton";
-import { AppText } from "@/components/ui/AppText";
 import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
 import {
@@ -55,6 +54,8 @@ import { requestNotificationPermissions, rescheduleAllReminders } from '@/servic
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
+import { captureException } from "@/lib/sentry";
+import { useToastController } from "@tamagui/toast";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation("settings");
@@ -78,8 +79,9 @@ export default function SettingsScreen() {
   const setProgressNotificationsEnabled = useSettingsStore(s => s.setProgressNotificationsEnabled);
 
   const { isPremium, customerInfo, isConfigured } = useRevenueCat();
-  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const { isSignedIn, signOut } = useAuth();
   const { user } = useUser();
+  const toast = useToastController();
 
   // States for Sheets and Pickers
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
@@ -183,9 +185,18 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = async () => {
     setIsProcessing(true);
+    // Tracks whether the Convex side (all progress/session data) already
+    // succeeded, so a later Clerk-side failure can't be reported as a plain
+    // "couldn't delete" - the data is already gone at that point, and we
+    // must still sign the user out rather than leave them signed in against
+    // a deleted profile (AuthSync would otherwise silently recreate a blank
+    // one on the next auth-state effect run).
+    let convexDataDeleted = false;
     try {
       if (isSignedIn) {
         await deleteMyAccount();
+        convexDataDeleted = true;
+
         if (user) {
           await user.delete();
         }
@@ -202,8 +213,30 @@ export default function SettingsScreen() {
       setDeleteAccountSheetOpen(false);
       router.replace("/");
     } catch (error) {
-      console.error(error);
-      Alert.alert("Hata", "Hesap silinemedi");
+      captureException(error, { context: "handleDeleteAccount", convexDataDeleted });
+
+      if (convexDataDeleted) {
+        // Data is already deleted server-side; force sign-out so the app
+        // doesn't sit on a deleted profile, then tell the user plainly.
+        try {
+          await signOut();
+        } catch (signOutError) {
+          captureException(signOutError, { context: "handleDeleteAccount.signOutAfterPartialFailure" });
+        }
+        useExerciseProgressStore.getState().resetAll();
+        useStatisticsStore.getState().invalidate();
+        useUserProgressStore.getState().resetProgress();
+        useStreakCacheStore.getState().resetCache();
+        useSyncStore.getState().clearQueue();
+        setDeleteAccountSheetOpen(false);
+        Alert.alert(
+          "Hesap Silindi",
+          "Verilerin silindi ancak oturum kapatma sırasında bir sorun oluştu. Uygulamayı yeniden başlatman gerekebilir.",
+        );
+        router.replace("/");
+      } else {
+        Alert.alert("Hata", "Hesap silinemedi");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -241,10 +274,10 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         {/* Header */}
         <YStack gap="$2" marginBottom="$6">
-          <AppText variant="title">{t("title")}</AppText>
-          <AppText variant="caption" color="$color10">
+          <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">{t("title")}</Text>
+          <Text fontSize="$2" color="$color10" fontFamily="$body">
             {t("subtitle")}
-          </AppText>
+          </Text>
         </YStack>
 
         {/* Appearance Section */}
@@ -440,7 +473,13 @@ export default function SettingsScreen() {
                     ? t("dangerZone.deleteAccountDesc")
                     : "Hesabını ve ilişkili verilerini kalıcı olarak sil."
                 }
-                onPress={() => setDeleteAccountSheetOpen(true)}
+                onPress={() => {
+                  if (isPremium) {
+                    toast.show("Hesabınızı silmek için önce aboneliğinizi iptal etmelisiniz.");
+                    return;
+                  }
+                  setDeleteAccountSheetOpen(true);
+                }}
               />
             </>
           )}
@@ -533,8 +572,9 @@ function SettingsSection({
 }) {
   return (
     <YStack marginBottom="$5">
-      <AppText
-        variant="caption"
+      <Text
+        fontSize="$2"
+        fontFamily="$body"
         color={titleColor || "$color10"}
         marginBottom={8}
         marginLeft={8}
@@ -542,7 +582,7 @@ function SettingsSection({
         fontWeight="bold"
       >
         {title}
-      </AppText>
+      </Text>
       <YStack
         backgroundColor="$backgroundHover"
         borderRadius="$4"
@@ -619,14 +659,14 @@ function SettingsRow({
       {loading ? (
         <Spinner size="small" color={theme.color?.val} />
       ) : isSwitch ? (
-        <YStack borderWidth={1} borderColor="$borderColor" borderRadius={20} padding={2}>
-          <RNSwitch
-            value={switchValue}
-            onValueChange={onSwitchChange}
-            trackColor={{ false: theme.backgroundHover?.val || "#767577", true: theme.accent10?.val || theme.primary?.val || "$green10" }}
-            thumbColor={switchValue ? theme.background?.val || "#fff" : theme.color10?.val || "#f4f3f4"}
-          />
-        </YStack>
+        <Switch
+          size="$3"
+          checked={switchValue}
+          onCheckedChange={onSwitchChange}
+          backgroundColor={switchValue ? "$accent10" : "$backgroundHover"}
+        >
+          <Switch.Thumb backgroundColor="$background" />
+        </Switch>
       ) : value ? (
         <XStack alignItems="center" gap="$2">
           <SizableText size="$4" color="$color10" fontFamily="$body">
@@ -635,9 +675,16 @@ function SettingsRow({
           <ChevronRight color={theme.color10?.val} size={20} />
         </XStack>
       ) : actionText ? (
-        <AppButton size="$3" onPress={onPress}>
+        <Button
+          size="$3"
+          backgroundColor="$blue10"
+          color="white"
+          hoverStyle={{ backgroundColor: '$blue11' }}
+          pressStyle={{ backgroundColor: '$blue9' }}
+          onPress={onPress}
+        >
           {actionText}
-        </AppButton>
+        </Button>
       ) : onPress ? (
         <ChevronRight color={theme.color10?.val} size={20} />
       ) : null}
@@ -670,12 +717,15 @@ function SelectionSheet({
       <Sheet.Handle />
       <Sheet.Frame padding="$4" backgroundColor="$background">
         <YStack gap="$4">
-          <AppText
-            variant="title"
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            color="$color"
+            fontFamily="$body"
             style={{ textAlign: "center", marginBottom: 8 }}
           >
             {title}
-          </AppText>
+          </Text>
           {options.map((opt: any) => (
             <Button
               key={opt.value}
@@ -693,7 +743,7 @@ function SelectionSheet({
                 alignItems="center"
                 justifyContent="space-between"
               >
-                <AppText fontSize="$5">{opt.label}</AppText>
+                <Text fontSize="$5" color="$color" fontFamily="$body">{opt.label}</Text>
                 {currentValue === opt.value && (
                   <Check size={20} color={theme.accent10?.val || theme.primary?.val} />
                 )}
@@ -730,16 +780,22 @@ function ConfirmationSheet({
       <Sheet.Handle />
       <Sheet.Frame padding="$4" backgroundColor="$background">
         <YStack gap="$4">
-          <AppText
-            variant="title"
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            color="$color"
+            fontFamily="$body"
             style={{
               textAlign: "center",
               color: destructive ? theme.red10?.val : theme.color?.val,
             }}
           >
             {title}
-          </AppText>
-          <AppText
+          </Text>
+          <Text
+            fontSize="$4"
+            color="$color"
+            fontFamily="$body"
             style={{
               textAlign: "center",
               color: theme.color10?.val,
@@ -747,25 +803,31 @@ function ConfirmationSheet({
             }}
           >
             {description}
-          </AppText>
+          </Text>
 
           <YStack gap="$3">
-            <AppButton
-              btnType={destructive ? "secondary" : "primary"}
-              backgroundColor={destructive ? "$red10" : undefined}
-              color={destructive ? "white" : undefined}
+            <Button
+              backgroundColor={destructive ? "$red10" : "$blue10"}
+              color="white"
+              hoverStyle={{ backgroundColor: '$blue11' }}
+              pressStyle={{ backgroundColor: '$blue9' }}
               onPress={onConfirm}
               disabled={isProcessing}
             >
               {isProcessing ? <Spinner color={theme.background?.val} /> : confirmText}
-            </AppButton>
-            <AppButton
-              btnType="outline"
+            </Button>
+            <Button
+              backgroundColor="transparent"
+              color="$blue10"
+              borderWidth={1}
+              borderColor="$blue10"
+              hoverStyle={{ backgroundColor: '$blue11' }}
+              pressStyle={{ backgroundColor: '$blue9' }}
               onPress={() => onOpenChange(false)}
               disabled={isProcessing}
             >
               {cancelText}
-            </AppButton>
+            </Button>
           </YStack>
         </YStack>
       </Sheet.Frame>

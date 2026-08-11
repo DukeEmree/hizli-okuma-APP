@@ -5,7 +5,6 @@ import { usePeripheralEngine } from './usePeripheralEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface PeripheralExerciseScreenProps {
   timeLimitMs: number;
@@ -111,7 +110,7 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
               {/* Target Word */}
               {showTarget && session.state === 'running' && (
                 <View style={{ position: 'absolute', ...getPositionStyles() }}>
-                  <AppText variant="title" style={{ whiteSpace: 'nowrap' }}>{currentTarget}</AppText>
+                  <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" style={{ whiteSpace: 'nowrap' }}>{currentTarget}</Text>
                 </View>
               )}
             </View>
@@ -119,7 +118,7 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
             {/* Options */}
             {!showTarget && session.state === 'running' && (
               <YStack position="absolute" bottom={0} w="100%" gap="$2">
-                <AppText textAlign="center" variant="body" color="$color11" mb="$2">Gördüğünüz kelimeyi seçin:</AppText>
+                <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">Gördüğünüz kelimeyi seçin:</Text>
                 <XStack flexWrap="wrap" jc="center" gap="$2">
                   {options.map((opt, i) => (
                     <Button key={i} onPress={() => handleSelection(opt)} minWidth={120}>

@@ -15,12 +15,13 @@ export function initSentry() {
 
   Sentry.init({
     dsn,
-    // Add any routing/tracing integrations here if needed.
-    // For now, basic error and crash tracking.
-    tracesSampleRate: 1.0,
+    // Errors/crashes are always captured; only performance traces are
+    // sampled. 100% tracing in production burns the Sentry quota on a
+    // consumer app and adds per-transaction overhead on the JS thread,
+    // so keep a representative 20% sample instead.
+    tracesSampleRate: 0.2,
     _experiments: {
-      // ProfilesSampleRate is optional
-      profilesSampleRate: 1.0,
+      profilesSampleRate: 0.2,
     },
   });
 }

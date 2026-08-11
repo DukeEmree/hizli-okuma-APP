@@ -1,5 +1,4 @@
 import React from 'react';
-import { HEADER_RIGHT_SPACING } from '@/constants/layout';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, YStack, XStack, Card, H2, H4, Button, Progress, Spinner, ScrollView } from 'tamagui';
@@ -24,7 +23,8 @@ export default function HomeScreen() {
   const dailyGoalMinutes = useSettingsStore(state => state.dailyGoalMinutes);
   const pendingSessions = useSyncStore(state => state.pendingSessions);
 
-  const shouldFetch = isLoaded && isSignedIn;
+  // Dashboard cloud data is premium-only - free/guest users get the local branch below.
+  const shouldFetch = isLoaded && isSignedIn && isPremium;
   const queryResult = useQuery(api.home.getDashboardData, shouldFetch ? undefined : 'skip');
 
   if (!isLoaded || (shouldFetch && queryResult === undefined)) {
@@ -37,10 +37,10 @@ export default function HomeScreen() {
 
   let data;
   
-  if (isSignedIn && queryResult) {
+  if (shouldFetch && queryResult) {
     data = queryResult;
   } else {
-    // Construct local data for guest
+    // Construct local data for guest / free-tier user
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todaysSessions = pendingSessions.filter(s => s.completedAt >= todayStart.getTime());
@@ -54,16 +54,19 @@ export default function HomeScreen() {
         totalWpm += s.metrics.wpm;
         wpmCount++;
       }
-      if (s.metrics?.comprehension !== undefined) {
-        totalComp += s.metrics.comprehension;
+      // The metric is `comprehensionAccuracy` (a 0-1 ratio) - ExerciseMetrics
+      // has an index signature, so the old `metrics.comprehension` typo was
+      // never a type error, it just always read undefined.
+      if (s.metrics?.comprehensionAccuracy !== undefined) {
+        totalComp += s.metrics.comprehensionAccuracy;
         compCount++;
       }
     }
 
-    // Guests never sync (SyncProvider only runs when signed in), so the
-    // full pending queue is effectively this guest's whole local history -
-    // sum it directly rather than a separate "total training seconds"
-    // counter that's never actually incremented anywhere in the app.
+    // Guests and free-tier users never sync (SyncProvider only runs when
+    // premium), so the full pending queue is effectively their whole local
+    // history - sum it directly rather than a separate "total training
+    // seconds" counter that's never actually incremented anywhere in the app.
     const totalTrainingMs = pendingSessions.reduce((sum, s) => sum + s.durationMs, 0);
 
     data = {
@@ -74,7 +77,10 @@ export default function HomeScreen() {
       todayTrainingMs,
       stats: {
         avgWpm: wpmCount > 0 ? Math.round(totalWpm / wpmCount) : (bestWpm || null),
-        avgComp: compCount > 0 ? Math.round(totalComp / compCount) : (bestComprehension || null),
+        // Both sources are 0-1 ratios, rendered below as a percentage.
+        avgComp: compCount > 0
+          ? Math.round((totalComp / compCount) * 100)
+          : (bestComprehension ? Math.round(bestComprehension * 100) : null),
         totalDurationMs: totalTrainingMs
       },
       recentSessions: pendingSessions.slice().sort((a, b) => b.completedAt - a.completedAt).slice(0, 5).map(s => ({
@@ -94,7 +100,7 @@ export default function HomeScreen() {
         <YStack padding="$4" gap="$5">
           
           {/* Header & Streak */}
-          <XStack justifyContent="space-between" alignItems="center" marginRight={HEADER_RIGHT_SPACING}>
+          <XStack justifyContent="space-between" alignItems="center">
             <YStack flex={1}>
               <H2>Merhaba {user.displayName ? user.displayName.split(' ')[0] : ''} 👋</H2>
               <Text color="$color11">Hoş geldin, hazır mısın?</Text>

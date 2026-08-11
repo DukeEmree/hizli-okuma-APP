@@ -24,16 +24,17 @@ export function useExerciseLimits() {
     }
   }, [appState]);
 
-  // To avoid hitting API limits unnecessarily, we reuse getPerformanceStats for '7d'
-  // and check today's count.
-  const stats = useQuery(api.statistics.getPerformanceStats, {
-    timeRange: "7d",
-  });
-  
+  // Convex sync (and this stats query) is premium-only - free/guest daily
+  // counts come entirely from the local pending-sessions queue below.
+  const stats = useQuery(
+    api.statistics.getPerformanceStats,
+    isPremium ? { timeRange: "7d" } : "skip",
+  );
+
   const pendingSessions = useSyncStore(s => s.pendingSessions);
 
   return useMemo(() => {
-    if (!isConfigured || stats === undefined) {
+    if (!isConfigured) {
       return {
         canStartExercise: false,
         isLoading: true,
@@ -43,6 +44,14 @@ export function useExerciseLimits() {
     }
 
     if (isPremium) {
+      if (stats === undefined) {
+        return {
+          canStartExercise: false,
+          isLoading: true,
+          remainingExercises: 0,
+          isPremium,
+        };
+      }
       return {
         canStartExercise: true,
         isLoading: false,
@@ -51,17 +60,11 @@ export function useExerciseLimits() {
       };
     }
 
-    // `stats` is null or empty if guest
-    const todayStats = stats?.dailyTrends?.find((d) => d.date === todayStr);
-    const serverSessionsToday = todayStats?.sessionCount || 0;
-    
-    // Count pending sessions that belong to today
+    // Free/guest: no Convex data, count comes entirely from the local queue.
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const pendingSessionsToday = pendingSessions.filter(
+    const sessionsToday = pendingSessions.filter(
       (s) => getLocalDateString(s.completedAt, timeZone) === todayStr
     ).length;
-    
-    const sessionsToday = serverSessionsToday + pendingSessionsToday;
 
     const max = SUBSCRIPTION_CONSTANTS.FREE_TIER.MAX_DAILY_EXERCISES;
     const remaining = Math.max(0, max - sessionsToday);

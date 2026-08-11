@@ -1,8 +1,6 @@
 import React from 'react';
-import { Sheet, YStack, H2, Text, XStack } from 'tamagui';
+import { Sheet, YStack, H2, Text, XStack, Button } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { AppText } from "@/components/ui/AppText";
-import { AppButton } from "@/components/ui/AppButton";
 
 interface AuthPromptSheetProps {
   open: boolean;
@@ -44,29 +42,42 @@ export function AuthPromptSheet({ open, onOpenChange, title, description }: Auth
         <YStack gap="$3" marginBottom="$4" paddingHorizontal="$2">
           <XStack gap="$3" alignItems="center">
             <Text fontSize="$7">🔒</Text>
-            <AppText>İlerlemen güvenli şekilde kaydedilir</AppText>
+            <Text color="$color" fontFamily="$body" fontSize="$4">İlerlemen güvenli şekilde kaydedilir</Text>
           </XStack>
           <XStack gap="$3" alignItems="center">
             <Text fontSize="$7">📱</Text>
-            <AppText>Farklı cihazlarda erişebilirsin</AppText>
-          </XStack>
-          <XStack gap="$3" alignItems="center">
-            <Text fontSize="$7">🏆</Text>
-            <AppText>Liderlik tablosuna katılabilirsin</AppText>
+            <Text color="$color" fontFamily="$body" fontSize="$4">Farklı cihazlarda erişebilirsin</Text>
           </XStack>
           <XStack gap="$3" alignItems="center">
             <Text fontSize="$7">⭐</Text>
-            <AppText>Premium özelliklere erişebilirsin</AppText>
+            <Text color="$color" fontFamily="$body" fontSize="$4">Premium özelliklere erişebilirsin</Text>
           </XStack>
         </YStack>
 
         <YStack gap="$3" marginTop="auto">
-          <AppButton size="$5" onPress={handleLogin} theme="accent">
+          <Button
+            size="$5"
+            backgroundColor="$blue10"
+            color="white"
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+            onPress={handleLogin}
+            theme="accent"
+          >
             Giriş Yap / Kayıt Ol
-          </AppButton>
-          <AppButton size="$5" btnType="outline" onPress={() => onOpenChange(false)}>
+          </Button>
+          <Button
+            size="$5"
+            backgroundColor="transparent"
+            color="$blue10"
+            borderWidth={1}
+            borderColor="$blue10"
+            hoverStyle={{ backgroundColor: '$blue11' }}
+            pressStyle={{ backgroundColor: '$blue9' }}
+            onPress={() => onOpenChange(false)}
+          >
             Şimdilik Misafir Olarak Devam Et
-          </AppButton>
+          </Button>
         </YStack>
       </Sheet.Frame>
     </Sheet>

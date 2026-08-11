@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine";
 import { keywordDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { keywordItems, KeywordItem } from '../content';
+import { pickByDifficulty } from '../contentSelection';
 
 export interface KeywordConfig extends Partial<ExerciseConfig> {
   timeLimitMs: number;
@@ -44,12 +45,14 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
   }, [createSession, correctCount, totalAttempts, reactionTimes, onCompleteCallback]);
 
   const engine = useExerciseEngine(keywordDefinition, config, handleComplete);
+  const recentIdsRef = useRef<string[]>([]);
 
   const generateNewRound = useCallback(() => {
-    const item = keywordItems[Math.floor(Math.random() * keywordItems.length)];
+    const item = pickByDifficulty(keywordItems, engine.session.currentDifficulty, recentIdsRef.current);
+    recentIdsRef.current = [...recentIdsRef.current.slice(-2), item.id];
     setCurrentItem(item);
     setLastShowTime(Date.now());
-  }, []);
+  }, [engine.session.currentDifficulty]);
 
   // Initial load
   useEffect(() => {

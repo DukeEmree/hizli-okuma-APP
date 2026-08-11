@@ -5,7 +5,6 @@ import {
   ExerciseResult,
   ExerciseMetrics,
   ExerciseScore,
-  DifficultyLevel,
 } from "@/types/exercise";
 import { ExerciseTimer } from './ExerciseTimer';
 import { calculateExerciseScore, CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";

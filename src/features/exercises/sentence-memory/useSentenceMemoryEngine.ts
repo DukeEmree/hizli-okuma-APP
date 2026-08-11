@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine";
 import { sentenceMemoryDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { sentenceMemoryItems, SentenceMemoryItem } from '../content';
+import { pickByDifficulty } from '../contentSelection';
 
 export interface SentenceMemoryConfig extends Partial<ExerciseConfig> {
   timeLimitMs: number;
@@ -45,9 +46,11 @@ export function useSentenceMemoryEngine(config: SentenceMemoryConfig, onComplete
   }, [createSession, correctCount, totalAttempts, reactionTimes, onCompleteCallback]);
 
   const engine = useExerciseEngine(sentenceMemoryDefinition, config, handleComplete);
+  const recentIdsRef = useRef<string[]>([]);
 
   const generateNewRound = useCallback(() => {
-    const item = sentenceMemoryItems[Math.floor(Math.random() * sentenceMemoryItems.length)];
+    const item = pickByDifficulty(sentenceMemoryItems, engine.session.currentDifficulty, recentIdsRef.current);
+    recentIdsRef.current = [...recentIdsRef.current.slice(-2), item.id];
     setCurrentItem(item);
     setPhase('read');
     

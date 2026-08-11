@@ -7,7 +7,6 @@ import common from './locales/tr/common.json';
 import errors from './locales/tr/errors.json';
 import exercises from './locales/tr/exercises.json';
 import home from './locales/tr/home.json';
-import leaderboard from './locales/tr/leaderboard.json';
 import navigation from './locales/tr/navigation.json';
 import onboarding from './locales/tr/onboarding.json';
 import progress from './locales/tr/progress.json';
@@ -23,7 +22,6 @@ export const resources = {
     errors,
     exercises,
     home,
-    leaderboard,
     navigation,
     onboarding,
     progress,

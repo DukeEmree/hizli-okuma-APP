@@ -5,7 +5,6 @@ import { useKeywordEngine } from './useKeywordEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface KeywordExerciseScreenProps {
   timeLimitMs: number;
@@ -92,13 +91,13 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
           <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
             {session.state === 'running' && currentItem ? (
               <YStack gap="$6" ai="center" px="$4">
-                <AppText textAlign="center" variant="title" color="$blue10" mb="$2">
+                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$blue10" fontFamily="$body" mb="$2">
                   Soru: {currentItem.question}
-                </AppText>
-                
-                <AppText variant="body" fontSize="$5" lineHeight="$7" textAlign="justify">
+                </Text>
+
+                <Text fontSize="$5" lineHeight="$7" textAlign="justify" color="$color" fontFamily="$body">
                   {currentItem.paragraph}
-                </AppText>
+                </Text>
                 
                 <YStack w="100%" gap="$3" mt="$4">
                   {currentItem.options.map((opt, i) => (
@@ -107,9 +106,9 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
                       onPress={() => handleSelection(i)} 
                       size="$4"
                     >
-                      <AppText fontSize="$4" style={{ whiteSpace: 'normal', textAlign: 'center' }}>
+                      <Text fontSize="$4" color="$color" fontFamily="$body" style={{ whiteSpace: 'normal', textAlign: 'center' }}>
                         {opt}
-                      </AppText>
+                      </Text>
                     </Button>
                   ))}
                 </YStack>

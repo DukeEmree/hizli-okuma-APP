@@ -1,217 +1,190 @@
 # Project Status
 
-> Living documentation of the current application architecture and implementation status.
+> Living documentation of the current architecture and implementation status. Everything here was verified by reading the code in this working tree; anything that could only be confirmed in an external dashboard is marked **VERIFY**.
 
-Last Updated: 2026-08-10
-Status: Active Development
+Last updated: 2026-08-11, after the second production audit pass (`PRODUCTION_AUDIT.md`).
 
-## 1. Project Overview
-"Hızlı Okuma" (Speed Reading) is a React Native mobile application built with Expo. It provides various reading exercises, progress tracking, gamification (streaks, leaderboards), and premium features via subscriptions. The app supports a guest-first architecture, allowing users to try exercises locally before signing up, and then syncing their progress to the cloud.
+## Overview
 
-## 2. Tech Stack
-**Core:**
-- React Native (0.86.2)
-- Expo (~57.0.11)
-- Expo Router (~57.0.11)
-- TypeScript
+"Hızlı Okuma" is a Turkish speed-reading trainer built with React Native and Expo. It ships 15 exercises across five categories (reading, comprehension, vision, memory, focus), adaptive per-exercise difficulty, streaks, XP/levels and achievements, plus a premium subscription.
 
-**UI & Styling:**
-- Tamagui (^2.7.4)
-- Lucide React Native (Icons)
-- Victory Native (Charts)
+The app is guest-first: every exercise works fully offline with no account. Signing in adds cloud sync — but **only for premium subscribers**. A signed-in free user's history stays on the device. This is deliberate (it is enforced on both the client and the server, with matching comments), but it is a product decision worth re-confirming, because "I'm logged in" usually implies "my data is backed up" to end users.
 
-**State Management & Storage:**
-- Zustand (^5.0.14)
-- React Native MMKV (^4.3.2)
+The competitive leaderboard was removed and does not exist in this tree.
 
-**Backend & Auth:**
-- Convex (^1.43.0) - Serverless Database and Functions
-- Clerk (@clerk/clerk-expo ^2.19.31) - Authentication
+## Current Stack
 
-**Monetization & Analytics:**
-- RevenueCat (react-native-purchases ^10.7.0) - Subscriptions
-- Amplitude (@amplitude/analytics-react-native) - Analytics
-- Sentry (@sentry/react-native) - Crash & Error Monitoring
+| Area | Choice |
+|---|---|
+| Runtime | React Native 0.86.2, React 19.2.3, Expo SDK ~57.0.11 |
+| Language | TypeScript ~6.0.3, `strict: true` |
+| Navigation | Expo Router ~57.0.11, typed routes + React Compiler enabled |
+| UI | Tamagui ^2.7.4 (v5 config), Lucide icons, Victory Native charts |
+| State | Zustand ^5.0.14 + react-native-mmkv ^4.3.2 |
+| Backend | Convex ^1.43.0 |
+| Auth | Clerk (@clerk/clerk-expo ^2.19.31) |
+| Billing | RevenueCat ^10.7.0 (+ `react-native-purchases-ui`) |
+| Observability | Sentry ~7.11.0, Amplitude ^1.6.8 |
+| Device | expo-notifications, expo-audio, expo-secure-store, expo-localization |
+| i18n | i18next + react-i18next, Turkish only |
+| Package manager | Bun, exclusively |
 
-**Device Features:**
-- expo-notifications
-- expo-audio
+No `babel.config.js` or `metro.config.js` exists; SDK 57's defaults are sufficient. This was previously flagged as an open question and is now resolved: `bunx expo export --platform android` completes successfully and produces a 15 MB Hermes bundle.
 
-**Package Manager:**
-- Bun
+## Architecture
 
-## 3. Project Structure
 ```text
-/
-├── convex/               # Backend database schema, queries, mutations, and actions
-├── src/
-│   ├── app/              # Expo Router pages and layouts
-│   ├── components/       # Reusable UI components
-│   ├── constants/        # App-wide constants (e.g., subscription IDs)
-│   ├── features/         # Domain-specific logic (exercises, leaderboard, progress, etc.)
-│   ├── hooks/            # Custom React hooks
-│   ├── i18n/             # Translation files and i18next initialization
-│   ├── lib/              # Third-party library initializations (Analytics, Sentry)
-│   ├── providers/        # Context providers (RevenueCat, Notifications, Sync)
-│   ├── services/         # External API services, push notification setup
-│   ├── stores/           # Zustand state management and MMKV persistence
-│   ├── types/            # TypeScript type definitions
-│   └── utils/            # Helper functions
-├── package.json          # Dependency list
-├── bun.lock              # Bun lockfile
-├── app.json              # Expo configuration
-├── eas.json              # EAS Build configuration
-└── tamagui.config.ts     # Tamagui design system configuration
+convex/                    Backend: schema + 15 function modules + RevenueCat webhook
+src/
+  app/                     Expo Router routes and layouts
+  components/              Shared UI (Screen, LoadingState, StatisticsDashboard, AchievementPopup)
+  features/                Domain code — 15 exercises, onboarding, streak, subscription, comprehension
+  hooks/                   useCreateSession, useExerciseLimits, useAdaptiveExerciseStart, useMetronome, …
+  stores/                  Zustand + MMKV, split device-global vs per-user-prefixed
+  providers/               RevenueCat, Notifications, Sync
+  services/                Notification scheduling
+  lib/                     Sentry and Amplitude initialisation
+  utils/                   scoring, streak, adaptiveDifficulty, migration, reading
+  i18n/                    i18next setup + tr locale JSON
 ```
 
-## 4. Navigation (Expo Router)
-The app uses a tab-based navigation system with protected routes and an onboarding flow.
-- `app/_layout.tsx`: Main root layout. Handles initialization of all providers (Clerk, Convex, Tamagui, RevenueCat, Sentry) and routing logic (redirecting to `/(onboarding)`, `/(auth)`, or `/(app)/(tabs)` based on authentication and onboarding status).
-- `app/(auth)/`: Authentication screens (`login.tsx`, `register.tsx`).
-- `app/(onboarding)/`: Initial user onboarding flow.
-- `app/(app)/(tabs)/`: Main authenticated/guest application screens:
-  - `index.tsx`: Home Dashboard
-  - `exercises.tsx`: Exercise Selection
-  - `statistics.tsx`: User Progress and Charts
-  - `settings.tsx`: App Settings and Preferences
-- `app/(app)/exercise/`: Specific exercise session screens.
-- `app/(app)/paywall.tsx`: RevenueCat paywall screen.
+The one-way data flow for a completed exercise:
 
-## 5. Authentication
-**Status:** COMPLETED
-- Handled by Clerk (`@clerk/clerk-expo`).
-- **Providers:** Email/Password and Google OAuth (`useSSO`).
-- **Flow:** Users can sign in or register via `app/(auth)`.
-- **Sync:** The `AuthSync` component listens to Clerk's authentication state. When a user logs in, it triggers a Convex mutation (`api.users.store`) to sync the user profile to the backend database.
+```text
+Exercise screen → use*Engine → ExerciseEngine.complete()
+  → useCreateSession
+      ├─ adaptive difficulty computed locally, written to exerciseProgressStore
+      ├─ (premium) exerciseProgress.updateProgress mutation
+      └─ session appended to syncStore (MMKV)
+  → SyncProvider (premium only) flushes the queue
+      → convex exerciseSessions.createSession
+          ├─ server-side validation / anti-cheat
+          ├─ dedup by (userId, clientSessionId)
+          ├─ streak recalculation (user timezone)
+          ├─ userStatistics / exerciseStatistics / dailyStatistics aggregation
+          └─ processGamification → XP, level, achievements
+```
 
-## 6. Guest Architecture
-**Status:** COMPLETED
-- Users can use the app without logging in.
-- `src/stores/storage.ts` provides a `userScopedStorageAdapter` for MMKV.
-- If a user is not logged in, `activeUserId` is set to `'guest'`, and all local data (progress, streaks) is saved with a `guest_` prefix.
-- Upon login, `activeUserId` is updated to the Clerk user ID, isolating data.
-- Syncing guest data to an authenticated account is managed via the `syncStore` and Convex mutations (offline-first approach).
+## Authentication
 
-## 7. Data & Persistence
-**Status:** COMPLETED
-- **State Manager:** Zustand.
-- **Storage Engine:** React Native MMKV for high-performance synchronous local storage.
-- **Stores:**
-  - `settingsStore.ts`: Global app settings (theme, language, notifications). Persisted globally.
-  - `userProgressStore.ts`: Local progress tracking (WPM, comprehension, session counts). Persisted per-user.
-  - `exerciseSessionStore.ts`: Ephemeral state for active exercise sessions (not persisted).
-  - `syncStore.ts`: Offline queue for pushing completed exercise sessions to Convex.
-  - `streakCacheStore.ts`: Local caching for daily streaks.
+Clerk, with email/password and Google SSO. Tokens live in `expo-secure-store` behind a soft-failing token cache. Auth state is read from Clerk's hooks everywhere and never mirrored into Zustand.
 
-## 8. Convex Backend
-**Status:** COMPLETED
-- Convex is the primary backend, integrated with Clerk (`ConvexProviderWithClerk`).
-- **Schema (`convex/schema.ts`):**
-  - `users`: Synchronized from Clerk. Contains onboarding preferences and gamification stats.
-  - `exerciseSessions`: Immutable logs of every completed exercise.
-  - `exerciseProgress`: Aggregated progress per exercise type (best WPM, consecutive successes).
-  - `streaks`: Server-side calculated user streaks.
-  - `leaderboardEntries`: Scores for global/weekly leaderboards.
-  - `userAchievements`: Unlocked badges.
+`RootNavigation` (`src/app/_layout.tsx`) is the single routing gate: it waits for `isLoaded` and for the Convex `getMe` query, then routes to `(onboarding)` or `(app)/(tabs)`. A signed-in user counts as onboarded if either the Convex row or the device's local flag says so, which removes the onboarding flash that used to occur in the window between sign-in and the `users.store` mutation creating the row.
 
-## 9. RevenueCat (Subscriptions)
-**Status:** COMPLETED
-- Configured via `RevenueCatProvider.tsx`.
-- Connects to RevenueCat using API keys defined in `SUBSCRIPTION_CONSTANTS`.
-- Automatically logs in the user to RevenueCat using their Clerk `userId`.
-- Exposes `isPremium` boolean derived from active entitlements.
-- Fallback/Anonymous mode is supported for Guest users.
+`AuthSync` runs guest→user data migration, calls `users.store`, sets the MMKV user prefix, and binds the user id to Amplitude and Sentry.
 
-## 10. Exercise System
-**Status:** IN PROGRESS
-- Managed via `src/features/exercises/registry.ts`.
-- **Implemented / Registered Exercises:**
-  - `rsvp` (Rapid Serial Visual Presentation)
-  - `chunking`
-  - `pacer`
-  - `schulte` (Schulte Table)
-  - `scanning`
-- The architecture separates Exercise Definitions, Engine (logic/timer), UI Session, and Result Scoring.
+**VERIFY:** all EAS environments currently reference a `pk_test_...` Clerk key. A production instance and production key are still required.
 
-## 11. Progress Tracking
-**Status:** COMPLETED
-- **Local:** `userProgressStore` tracks `totalTrainingSeconds`, `completedExercises`, `bestWpm`, `bestComprehension`.
-- **Cloud:** Sessions are queued in `syncStore` and pushed to Convex table `exerciseSessions`. Convex background processes aggregate this into `exerciseProgress`.
+## Backend
 
-## 12. Streak System
-**Status:** COMPLETED
-- **Local Cache:** `streakCacheStore` provides immediate UI feedback.
-- **Server Truth:** Convex `streaks` table maintains the validated streak logic, calculating `currentStreak` and `longestStreak` based on `lastActivityAt`.
+Convex, 15 modules. Every public function resolves the caller from `ctx.auth.getUserIdentity()` and scopes access to that user's own rows; no function accepts a user id as an authorization argument.
 
-## 13. Notifications
-**Status:** COMPLETED
-- Uses `expo-notifications`.
-- `AppNotificationProvider` initializes channels on app start and listens for deep link responses.
-- Reschedules local reminders (e.g., Daily Reminder, Inactivity Reminder) automatically when the app transitions to the background (`AppState` listener).
-- User preferences managed via `settingsStore` (Daily Reminder Time, Streak Reminders).
+Tables: `users`, `pushTokens`, `processedRevenueCatEvents`, `userAchievements`, `exerciseSessions`, `exerciseProgress`, `streaks`, `userStatistics`, `exerciseStatistics`, `dailyStatistics`.
 
-## 14. Audio & Haptics
-**Status:** PARTIAL
-- `expo-audio` is installed.
-- Settings exist for `soundEnabled`, `hapticsEnabled`, and `metronomeEnabled` (with BPM control) in `settingsStore`.
-- Full integration into all exercise engines is ongoing.
+Internal-only functions: `migrations`, `subscriptions.syncPremiumState`, `revenuecatEvents`, `expoPush`, and the internal half of `pushTokens`. Clients cannot reach any of them.
 
-## 15. Settings & Theming
-**Status:** COMPLETED
-- **Theme:** Tamagui is used for styling. Supports `light`, `dark`, and `system` appearance.
-- Controlled via `settingsStore.ts`.
-- Changes instantly reflect across the app using Tamagui's `ThemeProvider`.
+Notable properties:
 
-## 16. Internationalization (i18n)
-**Status:** COMPLETED
-- Uses `react-i18next` and `expo-localization`.
-- Active Language: Turkish (`tr`).
-- Architecture is fully prepared for multi-language support.
-- Namespaces: `common`, `auth`, `errors`, `exercises`, `home`, `leaderboard`, `navigation`, `onboarding`, `progress`, `settings`, `subscription`, `notifications`.
+- XP, level, streak and achievements are computed entirely server-side. The client only reports session results, which are bounds-checked.
+- `createSession` is idempotent per `(userId, clientSessionId)` and returns the original run's unlocked achievements on a retry, so a redelivered session neither double-awards XP nor drops the achievement popup.
+- The RevenueCat webhook verifies its secret in constant time and dedupes by event id inside one transaction; a push-delivery failure can never fail the webhook response.
+- Daily statistics and the dashboard's "today" window bucket by the user's timezone, matching the streak calculation. `by_userId_and_completedAt` was added so the dashboard reads a bounded index range instead of scanning full history.
 
-## 17. Analytics & Error Monitoring
-**Status:** COMPLETED
-- **Amplitude:** Initialized in `src/lib/analytics.ts`. Tracks events like `app_opened`, `exercise_completed`, `paywall_viewed`. PII is explicitly filtered out before tracking.
-- **Sentry:** Initialized in `src/lib/sentry.ts` for crash reporting and performance monitoring.
-- Both are disabled in `__DEV__` mode.
+## State Management
 
-## 18. Build & Deployment
-- Uses Expo EAS (`eas.json`).
-- Profiles defined for `development` (with development client), `preview`, and `production`.
-- Required Environment Variables:
-  - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
-  - `EXPO_PUBLIC_CONVEX_URL`
-  - `EXPO_PUBLIC_AMPLITUDE_API_KEY`
-  - `EXPO_PUBLIC_SENTRY_DSN`
+| Store | Scope | Purpose |
+|---|---|---|
+| `settingsStore` | device-global | theme, language, reminders, metronome, daily goal, onboarding flag |
+| `syncStore` | per-user | pending session queue — also the local history for free users |
+| `exerciseProgressStore` | per-user | adaptive difficulty and best-* per exercise |
+| `userProgressStore` | per-user | legacy aggregate counters — **currently has no writers** |
+| `streakCacheStore` | per-user | streak cache for instant UI |
+| `gamificationStore` | per-user | achievement popup queue |
+| `useExerciseSettingsStore` | per-user | per-exercise config overrides |
+| `useStatisticsStore` | per-user | cached Convex statistics per time range |
+| `useComprehensionStore` | per-user | in-flight comprehension quiz state |
 
-## 19. Current Feature Status Summary
+All stores use selector subscriptions. Per-user stores go through `userScopedStorageAdapter`, which prefixes every MMKV key with the active user id, so two accounts on one device are physically separated.
 
-### COMPLETED
-- Clerk Authentication (Email + Google SSO)
-- Convex Backend Schema & Auth Integration
-- Guest Mode with Isolated Local Storage (MMKV)
-- Offline-First Architecture & Guest Migration (SyncStore, MMKV)
-- RevenueCat Subscription Infrastructure
-- i18n System (Turkish base)
-- Tamagui Theming (Dark/Light/System)
-- Local Push Notifications System
-- Amplitude & Sentry Integration
-- Exercise Architecture (Registry, Engines)
-- Adaptive Difficulty System (Dynamic adjustment based on 2-success/2-failure rule)
+## Local Storage
 
-### IN PROGRESS
-- Exercise Implementations (RSVP, Chunking, Pacer, Schulte, Scanning)
-- Gamification (Achievements, Leaderboard UI)
+MMKV, single instance (`hizli-okuma`). Holds settings and exercise history only — no tokens or secrets. Clerk sessions live in `expo-secure-store`.
 
-### NOT IMPLEMENTED
-- Advanced Analytics Dashboards in UI
+Guest→user migration (`utils/migration.ts`) dedupes the sync queue by `clientSessionId`, merges best-* values with `max()`, and clears the guest key before the one additive merge so an interrupted run can lose that run's unmigrated seconds but never double-count them.
 
-## 20. Known Issues
-- Tamagui v5 typing warnings (minor).
-- `expo-notifications` sound configuration occasionally fails on native Android builds if custom sounds are missing from `app.json` plugin config.
-- `expo-audio` requires manual native build regeneration (`bun run android` / `bun run ios`) after installation to link the native module properly.
+## UI System
 
-## 21. Next Steps
-1. **P0 - Stabilize Native Modules:** Ensure `expo-audio` and `@react-native-community/datetimepicker` are correctly linked and functioning in the development client.
-2. **P1 - Complete Exercise Engines:** Finalize the UI and timing logic for all registered exercises in the registry.
-3. **P1 - RevenueCat Customer Center:** Integrate native subscription management flows for users to manage and cancel their subscriptions directly.
+Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`dark`/`system` themes driven by `settingsStore`. No hardcoded hex colours anywhere in `src/`. Safe-area edges are applied per screen; Victory Native renders the progress charts.
+
+Known inconsistency: the app icon, splash background and notification colour are blue (`#208AEF`) while the Tamagui accent is green, and screens mix `$blue*` tokens with `theme="accent"`. A single-hue token mapping is proposed in `PRODUCTION_AUDIT.md` but was not applied — it is a visual decision.
+
+## Main Features
+
+- **15 exercises** — rsvp, chunking, pacer, schulte, scanning, peripheral, word-recognition, memory, sentence-memory, main-idea, keyword, selective-attention, number-scan, visual-search, comprehension-speed. Each is a `use*Engine` hook over the shared `ExerciseEngine`/`ExerciseTimer`.
+- **Adaptive difficulty** — single-step progression per session, enforced client-side and re-validated server-side.
+- **Streaks** — timezone-aware, server-authoritative, with a local cache for instant display.
+- **Gamification** — 10 XP per exercise, 100 XP per achievement, six achievements, level derived from total XP.
+- **Statistics** — daily WPM/comprehension/accuracy trends and per-exercise bests, over 7d/30d/90d/all.
+- **Subscription** — RevenueCat hosted paywall and Customer Center; free tier capped at 6 exercises per day.
+- **Notifications** — local daily/streak/inactivity reminders plus server-sent push on subscription events.
+- **Onboarding** — a reading test that seeds initial WPM, comprehension and starting difficulty.
+
+## Completed
+
+- Convex authorization model, server-side validation and anti-cheat
+- Idempotent session sync with exponential backoff, plus four independent flush triggers
+- Guest-first architecture with per-user storage isolation and guest→user migration
+- RevenueCat identity handling, race-guarded against rapid account switches
+- Push token lifecycle (register, reassign on account switch, release on logout, prune on `DeviceNotRegistered`)
+- Exercise engine lifecycle: double-completion guard, timer cleanup, auto-pause on backgrounding, abandonment tracking
+- Account deletion and statistics reset, including the premium-subscription block and partial-failure handling
+- Observability: Sentry wired through the real failure paths; Amplitude now actually initialised
+- Timezone-correct daily buckets across streaks, statistics and the daily-goal ring
+- Validation: typecheck clean, lint clean, 113 tests passing, i18n check passing, production bundle export succeeds
+
+## In Progress
+
+Nothing is mid-implementation in the code. The open work is release configuration (see `PRODUCTION_CHECKLIST.md`) and the deferred design decisions below.
+
+## Known Issues
+
+| Issue | Severity | Notes |
+|---|---|---|
+| The sync queue doubles as free-tier history and is never pruned | MEDIUM | Grows without bound in MMKV; pruning would delete user-visible history, so it needs a separate local-history store |
+| `resetMyStatistics` / `deleteMyAccount` collect every row in one transaction | MEDIUM | Latent Convex transaction-limit risk for a very heavy account; not reachable at current volumes |
+| `persist.rehydrate()` not awaited on account switch | LOW | Brief flash of the previous user's in-memory state; storage isolation is unaffected |
+| Dead code: `userProgressStore` best-* fields, `SUBSCRIPTION_CONSTANTS` tier lists, the exercises-tab "En İyi" badge | LOW | Removal means deleting fields/files — awaiting sign-off |
+| Round-advance `setTimeout`s not cleared on unmount | LOW | 500 ms window, React 19 no longer warns, but it does not match the cleanup rule in AGENTS.md |
+| Home and statistics screens use hardcoded Turkish strings | LOW | Invisible while Turkish is the only locale; blocking for a second language |
+| Free/guest users see an empty statistics tab | LOW (UX) | Premium gating is intentional; the empty state reads as broken |
+
+## Production Readiness
+
+**Code: ready.** No open CRITICAL or HIGH findings. `bun run typecheck`, `bun run lint` (0 warnings), `bun test` (113 pass) and `bunx expo export` all succeed against this tree.
+
+**Release configuration: not ready.** Every remaining blocker is external:
+
+1. Production Clerk instance and key (all environments currently use a test key)
+2. Production RevenueCat key, products, entitlement linkage and webhook (all environments currently use a test key)
+3. Android release keystore verified via `eas credentials`
+4. `CLERK_FRONTEND_API_URL` and `REVENUECAT_WEBHOOK_AUTH_HEADER` set on the production Convex deployment
+5. Privacy Policy and Terms hosted, linked in the Play listing and in Settings
+6. Play Console Data Safety form completed
+
+## Remaining Work
+
+- Deploy the schema change (the new `by_userId_and_completedAt` index) with `npx convex deploy`
+- Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
+- Add `environment`/`release` tags to `Sentry.init()`
+- Decide the local-history model for free users
+- Unify the brand colour across icon, splash and accent
+- Accessibility pass: labels on icon-only buttons, touch-target sizes, large-font layout
+- Manual device pass: background mid-exercise, double-tap completion, airplane-mode sync, account switch, account deletion
+
+## Recommended Next Steps
+
+1. Work through `PRODUCTION_CHECKLIST.md` top to bottom — the external configuration is the only thing between this tree and a release build.
+2. Produce a production build and smoke-test the full path on a physical device: onboarding → exercise → completion → statistics → paywall → sandbox purchase → settings.
+3. Confirm Sentry, Amplitude and Convex traffic actually arrives from that build. Amplitude in particular has never delivered a single event before this pass, so its dashboard is the fastest way to prove the fix.
+4. Then decide the two deferred design questions: the free-tier history model, and one brand hue.
+5. Retention features are proposed with full technical shape at the end of `PRODUCTION_AUDIT.md` — the daily plan and the streak freeze are the two highest-value, and the streak freeze is the cheapest to build because `calculateStreakUpdate` is already pure and unit-tested.

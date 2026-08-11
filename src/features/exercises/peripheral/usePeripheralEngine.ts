@@ -64,7 +64,7 @@ export function usePeripheralEngine(config: PeripheralConfig, onCompleteCallback
     }
     
     const allOptions = [...falseOptions, target].sort(() => 0.5 - Math.random());
-    const positions: Array<'left' | 'right' | 'top' | 'bottom'> = ['left', 'right', 'top', 'bottom'];
+    const positions: ('left' | 'right' | 'top' | 'bottom')[] = ['left', 'right', 'top', 'bottom'];
     
     setCurrentTarget(target);
     setOptions(allOptions);

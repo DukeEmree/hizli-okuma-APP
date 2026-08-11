@@ -1,6 +1,6 @@
 /// <reference types="bun-types" />
 import { describe, expect, test } from 'bun:test';
-import { calculateStreakUpdate, getLocalDateString, StreakState } from "@/utils/streak";
+import { calculateStreakUpdate, getLocalDateString } from "@/utils/streak";
 
 describe('Streak Utility', () => {
 

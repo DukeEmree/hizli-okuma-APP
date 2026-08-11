@@ -4,11 +4,14 @@ import { useQuery } from 'convex/react';
 import { api } from "@/convex/_generated/api";
 import { getLocalDateString } from "@/utils/streak";
 import { useTranslation } from 'react-i18next';
+import { useRevenueCat } from "@/providers/RevenueCatProvider";
 
 export function StreakWeeklyCalendar() {
   const { t } = useTranslation();
-  const stats = useQuery(api.statistics.getPerformanceStats, { timeRange: '7d' });
-  
+  const { isPremium } = useRevenueCat();
+  // Weekly activity is derived from cloud stats - premium-only.
+  const stats = useQuery(api.statistics.getPerformanceStats, isPremium ? { timeRange: '7d' } : "skip");
+
   if (!stats) return null;
 
   // Generate last 7 days strings

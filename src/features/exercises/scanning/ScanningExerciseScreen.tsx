@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useScanningEngine } from './useScanningEngine';
 import { useTranslation } from 'react-i18next';

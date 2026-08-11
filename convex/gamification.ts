@@ -62,8 +62,10 @@ export async function processGamification(
     await awardAchievement("wpm_300");
   }
 
-  // Check Comprehension
-  if (sessionComp !== undefined && sessionComp >= 90) {
+  // Check Comprehension. sessionComp is `metrics.comprehensionAccuracy`,
+  // which is a 0-1 ratio (see src/types/exercise.ts), not a percentage -
+  // comparing it against 90 made this achievement unreachable.
+  if (sessionComp !== undefined && sessionComp >= 0.9) {
     await awardAchievement("comp_90");
   }
 

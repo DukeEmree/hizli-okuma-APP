@@ -7,6 +7,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { analytics } from "@/lib/analytics";
 import { AuthPromptSheet } from "@/components/auth/AuthPromptSheet";
 import { useTheme } from 'tamagui';
+import { SUBSCRIPTION_CONSTANTS } from '@/constants/subscription';
 
 export default function PaywallScreen() {
   const { t } = useTranslation();
@@ -23,13 +24,13 @@ export default function PaywallScreen() {
       {isSignedIn ? (
         <RevenueCatUI.Paywall
           onPurchaseCompleted={({ customerInfo }) => {
-            if (typeof customerInfo.entitlements.active['premium'] !== 'undefined') {
+            if (typeof customerInfo.entitlements.active[SUBSCRIPTION_CONSTANTS.ENTITLEMENT_ID] !== 'undefined') {
               analytics.track('subscription_started');
               router.back();
             }
           }}
           onRestoreCompleted={({ customerInfo }) => {
-             if (typeof customerInfo.entitlements.active['premium'] !== 'undefined') {
+             if (typeof customerInfo.entitlements.active[SUBSCRIPTION_CONSTANTS.ENTITLEMENT_ID] !== 'undefined') {
                 router.back();
              }
           }}

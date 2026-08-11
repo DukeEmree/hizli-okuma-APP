@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useMemoryEngine } from './useMemoryEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface MemoryExerciseScreenProps {
   timeLimitMs: number;
@@ -95,16 +93,16 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
           <YStack f={1} w="100%" jc="center" ai="center">
             {phase === 'memorize' && session.state === 'running' ? (
               <YStack gap="$4" ai="center">
-                <AppText variant="title">Bu kelimeleri hatırla:</AppText>
+                <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">Bu kelimeleri hatırla:</Text>
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {targetWords.map((word, i) => (
-                    <AppText key={i} fontSize="$8" fontWeight="bold">{word}</AppText>
+                    <Text key={i} fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">{word}</Text>
                   ))}
                 </XStack>
               </YStack>
             ) : phase === 'recall' && session.state === 'running' ? (
               <YStack w="100%" gap="$6" ai="center">
-                <AppText textAlign="center" variant="body" color="$color11" mb="$2">Hatırladığınız kelimeleri seçin ({selectedWords.length}/{targetWords.length}):</AppText>
+                <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">Hatırladığınız kelimeleri seçin ({selectedWords.length}/{targetWords.length}):</Text>
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {options.map((opt, i) => {
                     const isSelected = selectedWords.includes(opt);

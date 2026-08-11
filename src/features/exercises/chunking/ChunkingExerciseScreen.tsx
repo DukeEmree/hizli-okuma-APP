@@ -28,7 +28,6 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
     start,
     pause,
     resume,
-    reset
   } = useChunkingEngine({ text, wpm, chunkSize, skipDefaultStorage, updateIntervalMs: 16 }, (result) => {
     if (onComplete) {
       onComplete(result);

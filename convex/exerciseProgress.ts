@@ -76,6 +76,12 @@ export const updateProgress = mutation({
       throw new Error('User not found');
     }
 
+    // Cloud sync is a premium feature - see exerciseSessions.createSession
+    // for the matching guard and rationale.
+    if (!user.isPremium) {
+      return;
+    }
+
     // Server-side anti-cheat validation. The adaptive algorithm
     // (src/utils/adaptiveDifficulty.ts) only ever moves currentLevel by one
     // step per submission, so a client-reported jump larger than that (or an

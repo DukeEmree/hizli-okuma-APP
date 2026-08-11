@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine";
 import { comprehensionSpeedDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { comprehensionSpeedItems, ComprehensionSpeedItem } from '../content';
+import { pickByDifficulty } from '../contentSelection';
 
 export interface ComprehensionSpeedConfig extends Partial<ExerciseConfig> {
   timeLimitMs: number;
@@ -22,7 +23,6 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
   const [isCompleted, setIsCompleted] = useState(false);
   
   const [readStartTime, setReadStartTime] = useState(0);
-  const [readingDurationMs, setReadingDurationMs] = useState(0);
   const [wpm, setWpm] = useState(0);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
@@ -41,6 +41,11 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
         ...result.metrics,
         wpm: wpm,
         comprehensionScore: _accuracy * 100,
+        // Scoring, adaptive difficulty and the comprehension statistics all
+        // read `comprehensionAccuracy` (0-1); sending only the 0-100
+        // `comprehensionScore` left this exercise invisible to every one
+        // of them.
+        comprehensionAccuracy: _accuracy,
         errorCount: totalAttempts - correctCount,
         correctCount: correctCount,
       },
@@ -51,15 +56,16 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
   }, [createSession, correctCount, totalAttempts, wpm, onCompleteCallback]);
 
   const engine = useExerciseEngine(comprehensionSpeedDefinition, config, handleComplete);
+  const recentIdsRef = useRef<string[]>([]);
 
   const generateNewRound = useCallback(() => {
-    // Pick an item based on difficulty, or randomly for now
-    const item = comprehensionSpeedItems[Math.floor(Math.random() * comprehensionSpeedItems.length)];
+    const item = pickByDifficulty(comprehensionSpeedItems, engine.session.currentDifficulty, recentIdsRef.current);
+    recentIdsRef.current = [...recentIdsRef.current.slice(-2), item.id];
     setCurrentItem(item);
     setPhase('read');
     setCurrentQuestionIndex(0);
     setReadStartTime(Date.now());
-  }, []);
+  }, [engine.session.currentDifficulty]);
 
   // Initial load
   useEffect(() => {
@@ -83,8 +89,7 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
     if (engine.session.state !== 'running' || phase !== 'read' || !currentItem) return;
     
     const duration = Date.now() - readStartTime;
-    setReadingDurationMs(duration);
-    
+
     const wordCount = currentItem.text.split(' ').length;
     const currentWpm = Math.round((wordCount / duration) * 60000);
     setWpm(currentWpm);

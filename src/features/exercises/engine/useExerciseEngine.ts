@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ExerciseEngine, EngineCallbacks } from './ExerciseEngine';
 import { ExerciseDefinition, ExerciseConfig, ExerciseSession, ExerciseMetrics } from "@/types/exercise";
 import { analytics } from "@/lib/analytics";
+import { useAppState } from "@/hooks/useAppState";
 
 export function useExerciseEngine(
   definition: ExerciseDefinition,
@@ -69,6 +70,18 @@ export function useExerciseEngine(
     (metrics: Partial<ExerciseMetrics>) => engine.updateMetrics(metrics),
     [engine]
   );
+
+  // Auto-pause when the app is backgrounded mid-exercise - otherwise the
+  // backgrounded time silently counts toward durationMs and the exercise
+  // stays "running" while the user is elsewhere. Resuming is left to the
+  // user (the existing pause/resume UI) rather than auto-resuming, since a
+  // silent auto-resume on return would be just as surprising.
+  const appState = useAppState();
+  useEffect(() => {
+    if (appState !== 'active' && statusRef.current === 'running') {
+      engine.pause();
+    }
+  }, [appState, engine]);
 
   // Track abandoned exercise if unmounted while running
   useEffect(() => {

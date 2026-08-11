@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useWordRecognitionEngine } from './useWordRecognitionEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface WordRecognitionExerciseScreenProps {
   timeLimitMs: number;
@@ -93,11 +91,11 @@ export function WordRecognitionExerciseScreen({ timeLimitMs, onComplete }: WordR
         ) : (
           <YStack f={1} w="100%" jc="center" ai="center">
             {showTarget && session.state === 'running' ? (
-              <AppText fontSize="$10" fontWeight="bold">{currentTarget}</AppText>
+              <Text fontSize="$10" fontWeight="bold" color="$color" fontFamily="$body">{currentTarget}</Text>
             ) : (
               <YStack w="100%" gap="$4" ai="center">
                 {session.state === 'running' && (
-                   <AppText textAlign="center" variant="body" color="$color11" mb="$2">Hangi kelimeyi gördünüz?</AppText>
+                   <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">Hangi kelimeyi gördünüz?</Text>
                 )}
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {!showTarget && session.state === 'running' && options.map((opt, i) => (

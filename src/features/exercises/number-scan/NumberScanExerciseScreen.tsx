@@ -5,7 +5,6 @@ import { useNumberScanEngine } from './useNumberScanEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface NumberScanExerciseScreenProps {
   timeLimitMs: number;
@@ -99,9 +98,9 @@ export function NumberScanExerciseScreen({ timeLimitMs, onComplete }: NumberScan
           <YStack f={1} w="100%" jc="center" ai="center">
             {session.state === 'running' && targetNumber > 0 ? (
               <YStack gap="$4" ai="center" w="100%">
-                <AppText variant="title" color="$blue10">
+                <Text fontSize="$8" fontWeight="bold" color="$blue10" fontFamily="$body">
                   Şu sayıyı bul: {targetNumber}
-                </AppText>
+                </Text>
                 
                 <View style={{
                   flexDirection: 'row',
@@ -118,7 +117,7 @@ export function NumberScanExerciseScreen({ timeLimitMs, onComplete }: NumberScan
                         bg="$backgroundHover"
                         onPress={() => handleSelection(num)}
                       >
-                        <AppText fontSize={itemSize * 0.4} fontWeight="bold">{num}</AppText>
+                        <Text fontSize={itemSize * 0.4} fontWeight="bold" color="$color" fontFamily="$body">{num}</Text>
                       </Button>
                     </View>
                   ))}

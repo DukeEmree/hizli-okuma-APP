@@ -4,7 +4,6 @@ import { useSentenceMemoryEngine } from './useSentenceMemoryEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface SentenceMemoryExerciseScreenProps {
   timeLimitMs: number;
@@ -92,11 +91,11 @@ export function SentenceMemoryExerciseScreen({ timeLimitMs, onComplete }: Senten
           <YStack f={1} w="100%" jc="center" ai="center" px="$4">
             {phase === 'read' && session.state === 'running' && currentItem ? (
               <YStack gap="$4" ai="center">
-                <AppText variant="title" textAlign="center">{currentItem.sentence}</AppText>
+                <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" textAlign="center">{currentItem.sentence}</Text>
               </YStack>
             ) : phase === 'question' && session.state === 'running' && currentItem ? (
               <YStack w="100%" gap="$6" ai="center">
-                <AppText textAlign="center" variant="title" mb="$4">{currentItem.question}</AppText>
+                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" mb="$4">{currentItem.question}</Text>
                 <YStack w="100%" gap="$3">
                   {currentItem.options.map((opt, i) => (
                     <Button 

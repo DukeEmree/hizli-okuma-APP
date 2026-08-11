@@ -5,11 +5,14 @@ import { api } from "@/convex/_generated/api";
 import { TimeRange } from "@/convex/statistics";
 import { useStatisticsStore } from "@/stores/useStatisticsStore";
 import { StatisticsDashboard } from "@/components/ui/StatisticsDashboard";
+import { useRevenueCat } from "@/providers/RevenueCatProvider";
 
 export default function StatisticsTabScreen() {
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
+  const { isPremium } = useRevenueCat();
 
-  const rawStats = useQuery(api.statistics.getPerformanceStats, { timeRange });
+  // Cloud statistics are premium-only - free/guest users see the empty state.
+  const rawStats = useQuery(api.statistics.getPerformanceStats, isPremium ? { timeRange } : "skip");
   const currentStats = useStatisticsStore(state => state.stats[timeRange]);
   const setStats = useStatisticsStore(state => state.setStats);
 
@@ -19,7 +22,9 @@ export default function StatisticsTabScreen() {
     }
   }, [rawStats, timeRange, setStats]);
 
-  const isLoading = currentStats === null;
+  // Free/guest users never populate currentStats (query is skipped), so
+  // don't show a perpetual spinner for them - go straight to empty state.
+  const isLoading = isPremium && currentStats === null;
   const hasData = (currentStats?.totalSessions ?? 0) > 0;
 
   return (

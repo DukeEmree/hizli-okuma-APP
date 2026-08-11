@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import i18n from '@/i18n';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useStreakCacheStore } from '@/stores/streakCacheStore';
-import { router } from 'expo-router';
 
 // Bildirimlerin uygulamada nasıl gösterileceğini yapılandırıyoruz
 Notifications.setNotificationHandler({

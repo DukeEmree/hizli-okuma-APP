@@ -4,7 +4,6 @@ import { useSelectiveAttentionEngine } from './useSelectiveAttentionEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
-import { AppText } from '@/components/ui/AppText';
 
 interface SelectiveAttentionExerciseScreenProps {
   timeLimitMs: number;
@@ -95,12 +94,12 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
           <YStack f={1} w="100%" jc="center" ai="center">
             {session.state === 'running' && gridWords.length > 0 ? (
               <YStack gap="$4" ai="center" w="100%">
-                <AppText variant="title" color="$blue10">
+                <Text fontSize="$8" fontWeight="bold" color="$blue10" fontFamily="$body">
                   Kategori: {targetCategoryName}
-                </AppText>
-                <AppText variant="body" color="$color11" mb="$2">
+                </Text>
+                <Text fontSize="$4" color="$color11" fontFamily="$body" mb="$2">
                   Aşağıdaki kelimelerden bu kategoriye ait olanları seçin.
-                </AppText>
+                </Text>
                 
                 <XStack flexWrap="wrap" jc="center" gap="$2" px="$2">
                   {gridWords.map((word, i) => {

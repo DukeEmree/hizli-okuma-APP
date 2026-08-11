@@ -37,6 +37,18 @@ Goals:
 
 ---
 
+## Commands
+
+bun start              # dev server (Expo)
+bun run android        # run on Android
+bun run ios            # run on iOS
+bun run lint           # eslint
+bun run typecheck      # tsc --noEmit
+bun test               # bun test runner (preload: test-setup.ts)
+bun run i18n:check     # verify i18n key coverage
+
+---
+
 ## Package Manager
 
 Only Bun is allowed.
@@ -424,6 +436,7 @@ After meaningful changes run:
 
 bun run typecheck
 bun run lint
+bun test
 
 Run relevant tests when they exist.
 
@@ -438,8 +451,9 @@ Keep project history and detailed status out of AGENTS.md.
 Use:
 
 - PROJECT_STATUS.md → current architecture and implementation status
-- walkthrough.md → completed work and important changes
-- task.md → current task and TODOs
+
+walkthrough.md and task.md are created on demand when a task needs them; do not
+assume they exist.
 
 AGENTS.md contains rules, not project history.
 

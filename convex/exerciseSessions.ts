@@ -1,5 +1,4 @@
-import { getPeriodString } from "../src/utils/leaderboard";
-import { calculateStreakUpdate } from "../src/utils/streak";
+import { calculateStreakUpdate, getLocalDateString } from "../src/utils/streak";
 
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
@@ -26,6 +25,42 @@ export const getMySessions = query({
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
       .order("desc")
       .take(50);
+  },
+});
+
+export const getSessionsByExerciseType = query({
+  args: {
+    exerciseType: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const sessions = await ctx.db
+      .query("exerciseSessions")
+      .withIndex("by_userId_and_exerciseType", (q) =>
+        q.eq("userId", user._id).eq("exerciseType", args.exerciseType),
+      )
+      .order("desc")
+      .take(15);
+
+    return sessions
+      .map((s) => ({
+        completedAt: s.completedAt,
+        score: s.score,
+        metrics: s.metrics,
+      }))
+      .reverse();
   },
 });
 
@@ -62,8 +97,8 @@ export const createSession = mutation({
       throw new Error("Score cannot be negative");
     }
     // Generous sanity ceiling - no legitimate single session should score
-    // this high; catches obviously forged leaderboard submissions without
-    // having to re-derive the exact client-side scoring formula server-side.
+    // this high; catches obviously forged submissions without having to
+    // re-derive the exact client-side scoring formula server-side.
     if (args.score > 50000) {
       throw new Error("Implausible score. Anti-cheat triggered.");
     }
@@ -95,6 +130,14 @@ export const createSession = mutation({
       throw new Error("User not found");
     }
 
+    // Cloud sync (sessions, streaks, statistics, gamification) is a premium
+    // feature - free/guest users keep everything in local storage on the
+    // client. The client already skips this call for non-premium users;
+    // this guard stops a bypassed/modified client from writing for free.
+    if (!user.isPremium) {
+      return { sessionId: 'offline-pending', gamification: null };
+    }
+
     // Check duplicate clientSessionId (scoped to this user - clientSessionId
     // is only `${exerciseId}-${Date.now()}`, so two different users can
     // collide on the same millisecond and must not dedupe against each other)
@@ -106,7 +149,15 @@ export const createSession = mutation({
       .first();
 
     if (existing) {
-      return { sessionId: existing._id, gamification: null };
+      // Same session already processed by an earlier (successful but
+      // unacknowledged) call - return the achievements that call actually
+      // unlocked instead of a hardcoded null, otherwise a retry silently
+      // drops the achievement notification even though the data is correct.
+      const unlockedAchievements = existing.unlockedAchievementIds ?? [];
+      return {
+        sessionId: existing._id,
+        gamification: unlockedAchievements.length > 0 ? { unlockedAchievements } : null,
+      };
     }
 
     const sessionId = await ctx.db.insert("exerciseSessions", {
@@ -146,37 +197,6 @@ export const createSession = mutation({
       });
     }
 
-    // 3. Leaderboard Update
-    if (args.score > 0) {
-      const periods: ("allTime" | "monthly" | "weekly")[] = [
-        "allTime",
-        "monthly",
-        "weekly",
-      ];
-
-      for (const p of periods) {
-        const periodStr = getPeriodString(args.completedAt, p);
-
-        const existingEntry = await ctx.db
-          .query("leaderboardEntries")
-          .withIndex("by_userId_and_period", (q) =>
-            q.eq("userId", user._id).eq("period", periodStr),
-          )
-          .unique();
-
-        if (existingEntry) {
-          await ctx.db.patch(existingEntry._id, {
-            score: existingEntry.score + args.score,
-          });
-        } else {
-          await ctx.db.insert("leaderboardEntries", {
-            userId: user._id,
-            period: periodStr,
-            score: args.score,
-          });
-        }
-      }
-    }
     // 4. Aggregate Statistics Updates
     // A) userStatistics
     const existingUserStats = await ctx.db
@@ -223,10 +243,14 @@ export const createSession = mutation({
     }
 
     // C) dailyStatistics
-    const dateObj = new Date(args.completedAt);
-    const dateStr = dateObj.toISOString().split('T')[0];
-    const timestamp = Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
-    
+    // Bucket by the user's local date (same rule the streak uses), not by
+    // UTC - otherwise a UTC+3 user's late-evening/early-morning sessions
+    // land on the wrong day in every chart on the statistics screen.
+    // `timestamp` stays the UTC instant of that local date's midnight so
+    // the by_userId_and_timestamp range queries keep working unchanged.
+    const dateStr = getLocalDateString(args.completedAt, user.timezone || 'UTC');
+    const timestamp = Date.parse(`${dateStr}T00:00:00Z`);
+
     const existingDaily = await ctx.db
       .query("dailyStatistics")
       .withIndex("by_userId_and_date", (q) => q.eq("userId", user._id).eq("date", dateStr))
@@ -295,6 +319,15 @@ export const createSession = mutation({
       newStreakState.currentStreak,
       isDailyGoalCompleted,
     );
+
+    // Persist which achievements this session unlocked so a later dedup'd
+    // retry (see the `existing` branch above) can return the same result
+    // instead of re-running processGamification and double-awarding XP.
+    if (gamificationResult.unlockedAchievements.length > 0) {
+      await ctx.db.patch(sessionId, {
+        unlockedAchievementIds: gamificationResult.unlockedAchievements,
+      });
+    }
 
     return {
       sessionId,

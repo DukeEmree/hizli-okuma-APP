@@ -5,7 +5,6 @@ import {
   getPacerConfig,
   getSchulteConfig,
   getScanningConfig,
-  getAdaptiveConfig
 } from "../difficultyMapper";
 
 describe("Difficulty Mapper", () => {

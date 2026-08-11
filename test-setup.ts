@@ -55,6 +55,13 @@ mock.module('react-native', () => ({
   },
 }));
 
+mock.module('@sentry/react-native', () => ({
+  init: () => {},
+  withScope: (fn: (scope: { setExtra: () => void }) => void) => fn({ setExtra: () => {} }),
+  captureException: () => {},
+  setUser: () => {},
+}));
+
 mock.module('react-native-purchases', () => ({
   default: {
     configure: () => {},

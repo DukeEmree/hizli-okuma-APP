@@ -1,14 +1,17 @@
 import React from 'react';
-import { View } from 'react-native';
 import { Text, XStack } from 'tamagui';
 import { useQuery } from 'convex/react';
 import { api } from "@/convex/_generated/api";
 import { analytics } from "@/lib/analytics";
 import { useEffect, useRef } from 'react';
 import { useStreakCacheStore } from "@/stores/streakCacheStore";
+import { useRevenueCat } from "@/providers/RevenueCatProvider";
 
 export function StreakBadge() {
-  const streak = useQuery(api.streaks.getStreak);
+  const { isPremium } = useRevenueCat();
+  // Streak is tracked server-side and is premium-only - free/guest users
+  // fall back to the last cached value (0 if they've never been premium).
+  const streak = useQuery(api.streaks.getStreak, isPremium ? {} : "skip");
   const currentStreak = useStreakCacheStore((state) => state.currentStreak);
   const updateCache = useStreakCacheStore((state) => state.updateCache);
   const prevStreakRef = useRef<number | null>(null);

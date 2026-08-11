@@ -24,7 +24,10 @@
     "estimatedTime": "{{time}} sn",
     "purpose": "Amacı",
     "howItWorks": "Nasıl Çalışır?",
-    "settings": "Ayarlar"
+    "settings": "Ayarlar",
+    "progressHistory": "Geçmiş Performans",
+    "notEnoughHistory": "Henüz yeterli geçmiş yok. İlk denemeni tamamla!",
+    "historicalBest": "En İyi Seviye: {{level}}"
   },
   "settings": {
     "wpm": "Hız (WPM)",
