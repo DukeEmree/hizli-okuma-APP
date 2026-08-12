@@ -1,13 +1,10 @@
 import React from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, YStack, XStack, Card, H2, H4, Button, Progress, Spinner, ScrollView } from 'tamagui';
+import { Text, YStack, XStack, Card, H2, H4, Button, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { useQuery } from 'convex/react';
-import { api } from "@/convex/_generated/api";
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { useRevenueCat } from "@/providers/RevenueCatProvider";
-import { useAuth } from '@clerk/clerk-expo';
 import { useUserProgressStore } from '@/stores/userProgressStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
@@ -15,93 +12,60 @@ import { DailyPlanCard } from '@/features/dailyPlan/DailyPlanCard';
 import { WeeklySummaryCard } from '@/features/weeklySummary/WeeklySummaryCard';
 
 export default function HomeScreen() {
-
   const router = useRouter();
   const { isPremium } = useRevenueCat();
-  const { isLoaded, isSignedIn } = useAuth();
 
   const bestWpm = useUserProgressStore(state => state.bestWpm);
   const bestComprehension = useUserProgressStore(state => state.bestComprehension);
   const dailyGoalMinutes = useSettingsStore(state => state.dailyGoalMinutes);
   const localSessions = useLocalHistoryStore(state => state.sessions);
 
-  // Dashboard cloud data is premium-only - free/guest users get the local branch below.
-  const shouldFetch = isLoaded && isSignedIn && isPremium;
-  const queryResult = useQuery(api.home.getDashboardData, shouldFetch ? undefined : 'skip');
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todaysSessions = localSessions.filter(s => s.completedAt >= todayStart.getTime());
+  const todayTrainingMs = todaysSessions.reduce((sum, s) => sum + s.durationMs, 0);
 
-  if (!isLoaded || (shouldFetch && queryResult === undefined)) {
-    return (
-      <View flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Spinner size="large" />
-      </View>
-    );
-  }
-
-  let data;
-  
-  if (shouldFetch && queryResult) {
-    data = queryResult;
-  } else {
-    // Construct local data for guest / free-tier user
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todaysSessions = localSessions.filter(s => s.completedAt >= todayStart.getTime());
-    const todayTrainingMs = todaysSessions.reduce((sum, s) => sum + s.durationMs, 0);
-
-    // Compute basic averages for guest from the local history if it exists
-    let totalWpm = 0, wpmCount = 0;
-    let totalComp = 0, compCount = 0;
-    for (const s of localSessions) {
-      if (s.metrics?.wpm) {
-        totalWpm += s.metrics.wpm;
-        wpmCount++;
-      }
-      // The metric is `comprehensionAccuracy` (a 0-1 ratio) - ExerciseMetrics
-      // has an index signature, so the old `metrics.comprehension` typo was
-      // never a type error, it just always read undefined.
-      if (s.metrics?.comprehensionAccuracy !== undefined) {
-        totalComp += s.metrics.comprehensionAccuracy;
-        compCount++;
-      }
+  let totalWpm = 0, wpmCount = 0;
+  let totalComp = 0, compCount = 0;
+  for (const s of localSessions) {
+    if (s.metrics?.wpm) {
+      totalWpm += s.metrics.wpm;
+      wpmCount++;
     }
-
-    // Guests and free-tier users never sync, so the on-device history (last
-    // 6 months, see localHistoryStore) is all they have - sum it directly
-    // rather than a separate "total training seconds" counter that's never
-    // actually incremented anywhere in the app.
-    const totalTrainingMs = localSessions.reduce((sum, s) => sum + s.durationMs, 0);
-
-    data = {
-      user: {
-        displayName: 'Misafir',
-        trainingGoalMins: dailyGoalMinutes,
-      },
-      todayTrainingMs,
-      stats: {
-        avgWpm: wpmCount > 0 ? Math.round(totalWpm / wpmCount) : (bestWpm || null),
-        // Both sources are 0-1 ratios, rendered below as a percentage.
-        avgComp: compCount > 0
-          ? Math.round((totalComp / compCount) * 100)
-          : (bestComprehension ? Math.round(bestComprehension * 100) : null),
-        totalDurationMs: totalTrainingMs
-      },
-      recentSessions: localSessions.slice().sort((a, b) => b.completedAt - a.completedAt).slice(0, 5).map(s => ({
-        _id: s.clientSessionId,
-        ...s
-      }))
-    };
+    if (s.metrics?.comprehensionAccuracy !== undefined) {
+      totalComp += s.metrics.comprehensionAccuracy;
+      compCount++;
+    }
   }
 
-  const { user, todayTrainingMs, stats, recentSessions } = data;
-  const goalMs = user.trainingGoalMins * 60 * 1000;
-  const progressPercent = Math.min(Math.round((todayTrainingMs / goalMs) * 100), 100);
+  const totalTrainingMs = localSessions.reduce((sum, s) => sum + s.durationMs, 0);
+
+  const data = {
+    user: {
+      displayName: 'Misafir',
+      trainingGoalMins: dailyGoalMinutes,
+    },
+    todayTrainingMs,
+    stats: {
+      avgWpm: wpmCount > 0 ? Math.round(totalWpm / wpmCount) : (bestWpm || null),
+      avgComp: compCount > 0
+        ? Math.round((totalComp / compCount) * 100)
+        : (bestComprehension ? Math.round(bestComprehension * 100) : null),
+      totalDurationMs: totalTrainingMs
+    },
+    recentSessions: localSessions.slice().sort((a, b) => b.completedAt - a.completedAt).slice(0, 5).map(s => ({
+      _id: s.clientSessionId,
+      ...s
+    }))
+  };
+
+  const { user, stats, recentSessions } = data;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
       <ScrollView flex={1} backgroundColor="$background">
         <YStack padding="$4" gap="$5">
-          
-          {/* Header & Streak */}
+
           <XStack justifyContent="space-between" alignItems="center">
             <YStack flex={1}>
               <H2>Merhaba {user.displayName ? user.displayName.split(' ')[0] : ''} 👋</H2>
@@ -110,30 +74,10 @@ export default function HomeScreen() {
             <StreakBadge />
           </XStack>
 
-          {/* Daily Goal — hidden per product decision, code kept for a possible return.
-          <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover" elevation="$1">
-            <YStack gap="$2">
-              <XStack justifyContent="space-between">
-                <H4>Bugünkü Hedef</H4>
-                <Text fontWeight="bold">{progressPercent}%</Text>
-              </XStack>
-              <Progress value={progressPercent} size="$2">
-                <Progress.Indicator transition="quick" />
-              </Progress>
-              <Text color="$color11" fontSize="$2">
-                {Math.floor(todayTrainingMs / 60000)} / {user.trainingGoalMins} dakika tamamlandı
-              </Text>
-            </YStack>
-          </Card>
-          */}
-
-          {/* Daily Plan */}
           <DailyPlanCard />
 
-          {/* Weekly Summary */}
           <WeeklySummaryCard />
 
-          {/* Stats Row */}
           <XStack gap="$3" justifyContent="space-between">
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
               <Text color="$color11" fontSize="$2" marginBottom="$1">Ort. Hız</Text>
@@ -149,7 +93,6 @@ export default function HomeScreen() {
             </Card>
           </XStack>
 
-          {/* Premium CTA (If free user) */}
           {!isPremium && (
             <Card padding="$4" borderWidth={1} backgroundColor="$green3" borderColor="$green7" onPress={() => router.push('/paywall')}>
               <XStack justifyContent="space-between" alignItems="center">
@@ -162,13 +105,12 @@ export default function HomeScreen() {
             </Card>
           )}
 
-          {/* Recent Activity */}
           <YStack gap="$3" marginTop="$2">
             <H4>Son Aktiviteler</H4>
             {recentSessions.length === 0 ? (
               <Text color="$color11">Henüz bir egzersiz yapmadınız.</Text>
             ) : (
-              recentSessions.map((session: any) => {
+              recentSessions.map((session) => {
                 const dateObj = new Date(session.completedAt);
                 return (
                   <Card key={session._id} padding="$3" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover">
