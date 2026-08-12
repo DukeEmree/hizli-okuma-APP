@@ -6,15 +6,11 @@ import { YStack, XStack, H2, H4, Text, Button, Card, Slider, Separator, View, Pa
 import { useTranslation } from 'react-i18next';
 import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock, TrendingUp } from 'lucide-react-native';
 import { CartesianChart, Line } from 'victory-native';
-import { useAuth } from '@clerk/clerk-expo';
-import { useQuery } from 'convex/react';
 
-import { api } from '@/convex/_generated/api';
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
 import { useExerciseLimits } from '@/hooks/useExerciseLimits';
 import { useAdaptiveExerciseStart } from '@/hooks/useAdaptiveExerciseStart';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -40,24 +36,15 @@ export default function ExerciseInfoScreen() {
   const { isReady: isAdaptiveReady, config: adaptiveConfig, progressionState } = useAdaptiveExerciseStart(exercise);
   const hasAppliedAdaptive = React.useRef(false);
 
-  // Progress history for the chart - cloud history for premium, local queue otherwise.
-  const { isSignedIn } = useAuth();
-  const { isPremium } = useRevenueCat();
-  const useRemoteHistory = isSignedIn && isPremium;
-  const remoteSessions = useQuery(
-    api.exerciseSessions.getSessionsByExerciseType,
-    exercise && useRemoteHistory ? { exerciseType: exercise.type } : "skip",
-  );
+  // Progress history for the chart - local history only
   const localSessions = useLocalHistoryStore(state => state.sessions);
   const chartData = useMemo(() => {
     if (!exercise) return [];
-    const points = useRemoteHistory
-      ? (remoteSessions ?? [])
-      : localSessions
-          .filter(s => s.exerciseId === exercise.id)
-          .sort((a, b) => a.completedAt - b.completedAt);
+    const points = localSessions
+      .filter(s => s.exerciseId === exercise.id)
+      .sort((a, b) => a.completedAt - b.completedAt);
     return points.map((s, i) => ({ x: i, y: s.score }));
-  }, [exercise, useRemoteHistory, remoteSessions, localSessions]);
+  }, [exercise, localSessions]);
 
   // Local state for UI settings adjustments before saving
   const [config, setConfig] = useState(() => {
