@@ -75,6 +75,23 @@ export const setPushNotificationsEnabled = mutation({
   },
 });
 
+export const setProgressNotificationsEnabled = mutation({
+  args: { enabled: v.boolean() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerkId', (q) => q.eq('clerkId', identity.subject))
+      .unique();
+
+    if (!user) throw new Error('User not found');
+
+    await ctx.db.patch(user._id, { progressNotificationsEnabled: args.enabled });
+  },
+});
+
 export const completeOnboarding = mutation({
   args: {
     onboardingReason: v.string(),

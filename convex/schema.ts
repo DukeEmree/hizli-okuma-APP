@@ -15,6 +15,12 @@ export default defineSchema({
     // explicit false suppresses server-sent push notifications.
     pushNotificationsEnabled: v.optional(v.boolean()),
 
+    // Client-side `progressNotificationsEnabled` (settingsStore) mirrored here so
+    // server-sent progress pushes (e.g. the weekly summary digest) can honor it.
+    // Same convention as pushNotificationsEnabled: undefined is treated as enabled,
+    // only an explicit false suppresses.
+    progressNotificationsEnabled: v.optional(v.boolean()),
+
     // Onboarding fields
     isOnboarded: v.optional(v.boolean()),
     onboardingReason: v.optional(v.string()),

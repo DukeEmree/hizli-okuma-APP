@@ -126,7 +126,11 @@ export const sendWeeklyDigest = internalAction({
       });
 
       for (const user of page.page) {
-        if (!user.isPremium || user.pushNotificationsEnabled === false) {
+        if (
+          !user.isPremium ||
+          user.pushNotificationsEnabled === false ||
+          user.progressNotificationsEnabled === false
+        ) {
           continue;
         }
 

@@ -141,6 +141,7 @@ export default function SettingsScreen() {
   // Convex Mutations
   const resetMyStatistics = useMutation(api.users.resetMyStatistics);
   const deleteMyAccount = useMutation(api.users.deleteMyAccount);
+  const syncProgressNotificationsEnabled = useMutation(api.users.setProgressNotificationsEnabled);
 
 
 
@@ -360,6 +361,9 @@ export default function SettingsScreen() {
                 onSwitchChange={(val) => {
                   setProgressNotificationsEnabled(val);
                   scheduleWeeklySummaryNotification(isPremium).catch(console.error);
+                  if (isSignedIn) {
+                    syncProgressNotificationsEnabled({ enabled: val }).catch(console.error);
+                  }
                 }}
               />
             </>
