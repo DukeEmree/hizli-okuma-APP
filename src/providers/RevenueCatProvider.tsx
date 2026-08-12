@@ -37,18 +37,32 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
 
     Purchases.addCustomerInfoUpdateListener(customerInfoUpdateListener);
 
-    // Fetch initial customer info and set isConfigured asynchronously
-    Purchases.getCustomerInfo()
-      .then((info) => {
-        setCustomerInfo(info);
-        setIsConfigured(true);
-      })
-      .catch(() => {
-        setIsConfigured(true);
-      });
+    let retryTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    // Fetch initial customer info and set isConfigured asynchronously.
+    // A transient network hiccup on cold start must not strand isPremium at
+    // false for the whole session, so failures get one retry before giving up.
+    const fetchCustomerInfo = (isRetry: boolean) => {
+      Purchases.getCustomerInfo()
+        .then((info) => {
+          setCustomerInfo(info);
+          setIsConfigured(true);
+        })
+        .catch((error) => {
+          if (isRetry) {
+            captureException(error, { context: 'RevenueCatProvider.getCustomerInfo' });
+            setIsConfigured(true);
+          } else {
+            retryTimeout = setTimeout(() => fetchCustomerInfo(true), 2000);
+          }
+        });
+    };
+
+    fetchCustomerInfo(false);
 
     return () => {
       Purchases.removeCustomerInfoUpdateListener(customerInfoUpdateListener);
+      clearTimeout(retryTimeout);
     };
   }, []);
 
@@ -59,8 +73,9 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
       // apply its result, otherwise a slower call for the previous user can
       // overwrite the next user's customerInfo with the wrong entitlements.
       let isCurrent = true;
+      let retryTimeout: ReturnType<typeof setTimeout> | undefined;
 
-      const syncUser = async () => {
+      const syncUser = async (isRetry: boolean) => {
         try {
           if (isSignedIn && userId) {
             // Identify user in RevenueCat with Clerk ID
@@ -76,14 +91,19 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
             if (isCurrent) setCustomerInfo(info);
           }
         } catch (error) {
-          captureException(error, { context: 'RevenueCatProvider.syncUser', isSignedIn, userId });
+          if (isRetry) {
+            captureException(error, { context: 'RevenueCatProvider.syncUser', isSignedIn, userId });
+          } else if (isCurrent) {
+            retryTimeout = setTimeout(() => syncUser(true), 2000);
+          }
         }
       };
 
-      syncUser();
+      syncUser(false);
 
       return () => {
         isCurrent = false;
+        clearTimeout(retryTimeout);
       };
     }
   }, [isConfigured, isLoaded, isSignedIn, userId]);

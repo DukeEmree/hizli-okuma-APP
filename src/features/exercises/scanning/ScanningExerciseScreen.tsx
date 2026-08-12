@@ -4,6 +4,8 @@ import { useScanningEngine } from './useScanningEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface ScanningExerciseScreenProps {
   gridSize: number;
@@ -60,6 +62,10 @@ export function ScanningExerciseScreen({
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted || isTimeUp) haptics.success();
+  }, [isCompleted, isTimeUp]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -85,9 +91,7 @@ export function ScanningExerciseScreen({
         <Text fontSize="$4" color="$color11">
           Hedef: {foundCount} / {targetCount} | Hata: {errors}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="scanning" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }

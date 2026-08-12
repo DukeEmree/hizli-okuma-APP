@@ -8,6 +8,8 @@ import { Play, Pause, X } from 'lucide-react-native';
 import { useMetronome } from '@/hooks/useMetronome';
 import { MetronomeControl } from '@/components/exercises/MetronomeControl';
 import { ExerciseResult } from '@/types/exercise';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface RSVPExerciseScreenProps {
   text: string;
@@ -70,6 +72,10 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     // Alert kullanarak exit confirmation
     // Expo Web'de Alert tam çalışmayabilir, geçici olarak router.back()
@@ -91,16 +97,26 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
   // Egzersiz tamamlanmışsa
   if (isCompleted) {
     return (
-      <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
+      <YStack
+        f={1}
+        bg="$background"
+        jc="center"
+        ai="center"
+        p="$4"
+        gap="$4"
+        transition="bouncy"
+        enterStyle={{ opacity: 0, scale: 0.9, y: 10 }}
+        opacity={1}
+        scale={1}
+        y={0}
+      >
         <Text fontSize="$8" fontWeight="bold" color="$color">
           {t('exercises.rsvp.completed', 'Tebrikler!')}
         </Text>
         <Text fontSize="$4" color="$color11">
           WPM: {wpm}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="rsvp" onFinish={() => router.back()} />
       </YStack>
     );
   }
@@ -116,7 +132,7 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
           <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
           <View style={{ flex: 1, marginHorizontal: 20 }}>
             <Progress value={progress * 100}>
-              <Progress.Indicator />
+              <Progress.Indicator transition="quick" />
             </Progress>
           </View>
           <Text color="$color11" fontSize="$3">{Math.round(progress * 100)}%</Text>

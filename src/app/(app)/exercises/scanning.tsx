@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScanningExerciseScreen } from "@/features/exercises/scanning/ScanningExerciseScreen";
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 
 export default function ScanningRoute() {
   const params = useLocalSearchParams();
@@ -10,15 +11,17 @@ export default function ScanningRoute() {
   const targetCount = params.targetCount ? parseInt(params.targetCount as string, 10) : 3;
   const targetSymbol = (params.targetSymbol as string) || 'B';
   const distractorSymbol = (params.distractorSymbol as string) || 'A';
-  
+  const markStepCompleted = useDailyPlanStore(s => s.markStepCompleted);
+
   return (
-    <ScanningExerciseScreen 
+    <ScanningExerciseScreen
       gridSize={gridSize}
       timeLimitMs={timeLimitMs}
       targetCount={targetCount}
       targetSymbol={targetSymbol}
       distractorSymbol={distractorSymbol}
       onComplete={() => {
+        if (markStepCompleted('scanning')) return;
         router.replace('/(app)/(tabs)/exercises');
       }}
     />

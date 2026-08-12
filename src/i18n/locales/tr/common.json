@@ -3,5 +3,6 @@
   "error": "Bir hata oluştu.",
   "empty": "Gösterilecek veri bulunamadı.",
   "retry": "Tekrar Dene",
-  "back": "Geri"
+  "back": "Geri",
+  "done": "Bitir"
 }

@@ -21,6 +21,10 @@ export async function processGamification(
   // 1. Base XP for exercise
   totalXpGained += XP_SOURCES.EXERCISE_COMPLETED;
 
+  if (isDailyGoalCompleted) {
+    totalXpGained += XP_SOURCES.DAILY_GOAL_COMPLETED;
+  }
+
   // 2. Fetch existing achievements
   const existingAchievements = await db
     .query("userAchievements")

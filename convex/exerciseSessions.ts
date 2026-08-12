@@ -1,4 +1,5 @@
 import { calculateStreakUpdate, getLocalDateString } from "../src/utils/streak";
+import { DAILY_PLAN_SIZE } from "../src/utils/dailyPlan";
 
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
@@ -309,7 +310,12 @@ export const createSession = mutation({
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
       .take(11);
 
-    const isDailyGoalCompleted = false; // Simplified for now, or could check total duration today
+    // Today's session count including this one, from the dailyStatistics
+    // row read (and about to be patched) above. Exact-match, not >=, so the
+    // bonus fires once on the session that crosses the threshold rather
+    // than on every session for the rest of the day.
+    const todaysSessionCount = existingDaily ? existingDaily.scoreCount + 1 : 1;
+    const isDailyGoalCompleted = todaysSessionCount === DAILY_PLAN_SIZE;
     const gamificationResult = await processGamification(
       ctx.db,
       user._id,

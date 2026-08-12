@@ -148,7 +148,7 @@ export function ComprehensionScreen() {
       <XStack ai="center" jc="space-between">
         <Text color="$color11">Soru {currentQuestionIndex + 1} / {questions.length}</Text>
         <Progress value={progress} max={100} width={150}>
-          <Progress.Indicator />
+          <Progress.Indicator transition="quick" />
         </Progress>
       </XStack>
 

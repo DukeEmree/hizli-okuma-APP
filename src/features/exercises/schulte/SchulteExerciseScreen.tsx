@@ -5,6 +5,8 @@ import { useSchulteEngine } from './useSchulteEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface SchulteExerciseScreenProps {
   gridSize: number;
@@ -46,6 +48,10 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted || isTimeUp) haptics.success();
+  }, [isCompleted, isTimeUp]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -71,9 +77,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
         <Text fontSize="$4" color="$color11">
           Hedef: {expectedNumber - 1} / {gridSize * gridSize} | Hata: {errors}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="schulte" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }
@@ -118,7 +122,11 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
                       height={cellSize}
                       padding={0}
                       bg={isPressed ? '$green5' : '$backgroundHover'}
-                      onPress={() => handleNumberPress(num)}
+                      onPress={() => {
+                        if (num === expectedNumber) haptics.light();
+                        else haptics.error();
+                        handleNumberPress(num);
+                      }}
                       disabled={isPressed || session.state !== 'running'}
                     >
                       <Text fontSize={cellFontSize} fontWeight="bold" color={isPressed ? '$green11' : '$color'}>

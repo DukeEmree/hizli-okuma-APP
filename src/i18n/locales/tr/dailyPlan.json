@@ -1,0 +1,23 @@
+{
+  "card": {
+    "title": "Bugünün antrenmanı",
+    "subtitle": "{{count}} egzersiz, yaklaşık {{minutes}} dk",
+    "start": "Başla",
+    "continue": "Devam et",
+    "completedTitle": "Bugünkü planı tamamladın!",
+    "viewSummary": "Özeti gör"
+  },
+  "actions": {
+    "next": "Sıradaki",
+    "finishPlan": "Planı tamamla"
+  },
+  "complete": {
+    "title": "Bugünün planını tamamladın!",
+    "premiumSummary": "{{xp}} XP kazandın",
+    "streakLabel": "Seri: {{days}} gün",
+    "freeSummary": "{{minutes}} dakika, {{count}} egzersiz tamamladın",
+    "premiumTeaser": "Premium ile sınırsız günlük egzersiz ve zayıf yönüne özel plan",
+    "premiumTeaserCta": "İncele",
+    "backHome": "Ana ekrana dön"
+  }
+}

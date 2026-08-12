@@ -157,7 +157,7 @@ export default function ExerciseInfoScreen() {
                 <H4>{t('labels.purpose', 'Amacı')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
-                {t(`${exercise.type}.purpose`, '')}
+                {t(exercise.nameKey.replace('.name', '.purpose'), '')}
               </Paragraph>
             </YStack>
 
@@ -167,7 +167,7 @@ export default function ExerciseInfoScreen() {
                 <H4>{t('labels.howItWorks', 'Nasıl Çalışır?')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
-                {t(`${exercise.type}.howItWorks`, '')}
+                {t(exercise.nameKey.replace('.name', '.howItWorks'), '')}
               </Paragraph>
             </YStack>
           </YStack>

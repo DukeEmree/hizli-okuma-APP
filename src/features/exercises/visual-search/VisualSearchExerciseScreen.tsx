@@ -5,6 +5,8 @@ import { useVisualSearchEngine } from './useVisualSearchEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface VisualSearchExerciseScreenProps {
   timeLimitMs: number;
@@ -45,6 +47,10 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -68,9 +74,7 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
         <Text fontSize="$4" color="$color11">
           Doğru: {correctCount} / {totalAttempts} | Doğruluk: %{accuracy}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="visual-search" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }
@@ -115,7 +119,11 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
                         h="100%" 
                         p={0} 
                         bg="$backgroundHover"
-                        onPress={() => handleSelection(word)}
+                        onPress={() => {
+                          if (word === targetWord) haptics.light();
+                          else haptics.error();
+                          handleSelection(word);
+                        }}
                       >
                         <Text fontSize={Math.min(itemWidth * 0.15, 14)} color="$color" fontFamily="$body" numberOfLines={1}>{word}</Text>
                       </Button>

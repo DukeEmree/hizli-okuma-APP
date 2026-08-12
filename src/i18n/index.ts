@@ -4,6 +4,7 @@ import * as Localization from 'expo-localization';
 
 import auth from './locales/tr/auth.json';
 import common from './locales/tr/common.json';
+import dailyPlan from './locales/tr/dailyPlan.json';
 import errors from './locales/tr/errors.json';
 import exercises from './locales/tr/exercises.json';
 import home from './locales/tr/home.json';
@@ -20,6 +21,7 @@ export const resources = {
   tr: {
     auth,
     common,
+    dailyPlan,
     errors,
     exercises,
     home,

@@ -5,6 +5,8 @@ import { useMainIdeaEngine } from './useMainIdeaEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface MainIdeaExerciseScreenProps {
   timeLimitMs: number;
@@ -45,6 +47,10 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -68,9 +74,7 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
         <Text fontSize="$4" color="$color11">
           Doğru: {correctCount} / {totalAttempts} | Doğruluk: %{accuracy}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="main-idea" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }

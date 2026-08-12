@@ -119,7 +119,7 @@ export function OnboardingScreen() {
   return (
     <YStack flex={1} backgroundColor="$background" padding="$4" paddingTop={insets.top + 16} paddingBottom={insets.bottom + 16}>
       <Progress value={progress} size="$2" marginBottom="$6">
-        <Progress.Indicator />
+        <Progress.Indicator transition="quick" />
       </Progress>
 
       {step === 1 && (

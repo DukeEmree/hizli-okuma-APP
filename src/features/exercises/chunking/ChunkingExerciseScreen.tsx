@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
 import { ExerciseResult } from '@/types/exercise';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface ChunkingExerciseScreenProps {
   text: string;
@@ -49,6 +51,10 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -71,9 +77,7 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
         <Text fontSize="$4" color="$color11">
           WPM: {wpm} | Chunk: {chunkSize}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="chunking" onFinish={() => router.back()} />
       </YStack>
     );
   }
@@ -84,7 +88,7 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
         <View style={{ flex: 1, marginHorizontal: 20 }}>
           <Progress value={progress * 100}>
-            <Progress.Indicator />
+            <Progress.Indicator transition="quick" />
           </Progress>
         </View>
         <Text color="$color11" fontSize="$3">{Math.round(progress * 100)}%</Text>

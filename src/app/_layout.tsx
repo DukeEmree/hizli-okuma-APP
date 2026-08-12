@@ -78,6 +78,8 @@ function RootNavigation() {
 
     const inAppGroup = segments[0] === "(app)";
     const inOnboardingGroup = segments[0] === "(onboarding)";
+    const inAuthGroup = segments[0] === "(auth)";
+    const inPaywall = segments[0] === "paywall";
 
     const isCloudOnboarded =
       convexUser !== null && convexUser?.isOnboarded === true;
@@ -95,7 +97,7 @@ function RootNavigation() {
 
     if (!userIsOnboarded) {
       if (!inOnboardingGroup) router.replace("/(onboarding)");
-    } else if (!inAppGroup) {
+    } else if (!inAppGroup && !inAuthGroup && !inPaywall) {
       router.replace("/(app)/(tabs)");
     }
   }, [
@@ -127,6 +129,7 @@ function CurrentToast() {
       key={currentToast.id}
       duration={currentToast.duration}
       viewportName={currentToast.viewportName}
+      transition="quick"
       enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
       exitStyle={{ opacity: 0, scale: 1, y: -20 }}
       y={0}

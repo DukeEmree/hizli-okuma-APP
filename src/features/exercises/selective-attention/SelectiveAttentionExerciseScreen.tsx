@@ -4,6 +4,8 @@ import { useSelectiveAttentionEngine } from './useSelectiveAttentionEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface SelectiveAttentionExerciseScreenProps {
   timeLimitMs: number;
@@ -45,6 +47,10 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -69,9 +75,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
         <Text fontSize="$4" color="$color11">
           Doğru: {correctCount} | Hatalı: {errorCount} | Doğruluk: %{accuracy}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="selective-attention" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }
@@ -120,8 +124,12 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
 
                     return (
                       <Button 
-                        key={i} 
-                        onPress={() => handleSelection(word)} 
+                        key={i}
+                        onPress={() => {
+                          if (isCorrect) haptics.light();
+                          else haptics.error();
+                          handleSelection(word);
+                        }}
                         size="$3"
                         minWidth={100}
                         bg={bg as any}

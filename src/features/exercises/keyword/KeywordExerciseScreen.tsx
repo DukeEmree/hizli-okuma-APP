@@ -5,6 +5,8 @@ import { useKeywordEngine } from './useKeywordEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface KeywordExerciseScreenProps {
   timeLimitMs: number;
@@ -43,6 +45,10 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -66,9 +72,7 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
         <Text fontSize="$4" color="$color11">
           Doğru: {correctCount} / {totalAttempts} | Doğruluk: %{accuracy}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="keyword" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }

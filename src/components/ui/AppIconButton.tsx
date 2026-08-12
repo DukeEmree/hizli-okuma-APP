@@ -5,6 +5,7 @@ export const AppIconButton = styled(Button, {
   circular: true,
   size: '$4',
   backgroundColor: 'transparent',
+  transition: 'quick',
   hoverStyle: {
     backgroundColor: '$backgroundHover',
   },

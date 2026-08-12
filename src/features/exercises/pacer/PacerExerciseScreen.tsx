@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
 import { useMetronome } from '@/hooks/useMetronome';
 import { MetronomeControl } from '@/components/exercises/MetronomeControl';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface PacerExerciseScreenProps {
   text: string;
@@ -63,6 +65,10 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -85,9 +91,7 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
         <Text fontSize="$4" color="$color11">
           WPM: {wpm}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="pacer" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }
@@ -98,7 +102,7 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
         <View style={{ flex: 1, marginHorizontal: 20 }}>
           <Progress value={progress * 100}>
-            <Progress.Indicator />
+            <Progress.Indicator transition="quick" />
           </Progress>
         </View>
         <Text color="$color11" fontSize="$3">{Math.round(progress * 100)}%</Text>

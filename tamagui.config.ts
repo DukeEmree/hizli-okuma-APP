@@ -1,6 +1,6 @@
 import { createTamagui } from 'tamagui'
 import { defaultConfig } from '@tamagui/config/v5'
-import { config as v3Config } from '@tamagui/config/v3'
+import { animations } from '@tamagui/config/v5-reanimated'
 import { themes as customThemes } from './src/config/tamagui/themes'
 import { shorthands } from '@tamagui/shorthands'
 
@@ -11,7 +11,7 @@ export const tamaguiConfig = createTamagui({
     ...defaultConfig.settings,
     onlyAllowShorthands: false,
   },
-  animations: v3Config.animations,
+  animations,
   themes: customThemes,
 })
 

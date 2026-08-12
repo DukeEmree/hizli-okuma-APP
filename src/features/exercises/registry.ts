@@ -28,6 +28,10 @@ class ExerciseRegistry {
     return this.exercises.get(id);
   }
 
+  public getByType(type: string): ExerciseDefinition | undefined {
+    return this.getAll().find((definition) => definition.type === type);
+  }
+
   public getAll(): ExerciseDefinition[] {
     return Array.from(this.exercises.values());
   }

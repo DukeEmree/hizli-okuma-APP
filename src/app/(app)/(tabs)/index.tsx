@@ -11,6 +11,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useUserProgressStore } from '@/stores/userProgressStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
+import { DailyPlanCard } from '@/features/dailyPlan/DailyPlanCard';
 import { WeeklySummaryCard } from '@/features/weeklySummary/WeeklySummaryCard';
 
 export default function HomeScreen() {
@@ -117,7 +118,7 @@ export default function HomeScreen() {
                 <Text fontWeight="bold">{progressPercent}%</Text>
               </XStack>
               <Progress value={progressPercent} size="$2">
-                <Progress.Indicator />
+                <Progress.Indicator transition="quick" />
               </Progress>
               <Text color="$color11" fontSize="$2">
                 {Math.floor(todayTrainingMs / 60000)} / {user.trainingGoalMins} dakika tamamlandı
@@ -125,13 +126,16 @@ export default function HomeScreen() {
             </YStack>
           </Card>
 
+          {/* Daily Plan */}
+          <DailyPlanCard />
+
           {/* Weekly Summary */}
           <WeeklySummaryCard />
 
           {/* Main CTA */}
-          <Button 
-            size="$5" 
-            theme="accent" 
+          <Button
+            size="$5"
+            theme="accent"
             fontWeight="bold"
             onPress={() => router.push('/(app)/(tabs)/exercises')}
           >

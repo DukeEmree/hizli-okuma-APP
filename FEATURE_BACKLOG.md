@@ -2,7 +2,7 @@
 
 > Planlanan özellikler ve karar bekleyen teknik borç. 1, 3-5 ve 8. maddeler henüz koda girmedi — bu dosya onlar için kapsam, teknik plan ve açık soruları tutar; sıra geldikçe birlikte ekleyeceğiz. Tamamlananlar başlıklarında **UYGULANDI** olarak işaretli ve ne yapıldığı yazılı.
 
-Son güncelleme: 2026-08-12 (2 uygulandı)
+Son güncelleme: 2026-08-12 (2, 6, 7.1, 7.2 ve 8 uygulandı)
 İlgili dokümanlar: `PRODUCTION_AUDIT.md` (mevcut durum ve bulgular), `PROJECT_STATUS.md` (mimari), `PRODUCTION_CHECKLIST.md` (yayın öncesi işler).
 
 ---
@@ -24,6 +24,8 @@ Yani "kullanıcıyı elde tutma" mekanizmasının tamamı, parayı zaten ödemi�
 ---
 
 ## 1. Günlük Plan
+
+**Durum: Tamamlandı.** Sabit 4 egzersizlik plan, "Sıradaki: X" zinciri, plan tamamlandı ekranı (premium: XP+streak, free/guest: özet + soft paywall kartı), `isDailyGoalCompleted` server-side gerçek hesaplama. Kod: `src/utils/dailyPlan.ts`, `src/stores/dailyPlanStore.ts`, `src/features/dailyPlan/`, `src/features/exercises/shared/ExerciseCompletionActions.tsx`, `convex/exerciseSessions.ts`, `convex/gamification.ts`.
 
 **Kullanıcı problemi.** Egzersizler sekmesinde 15 eşit seçenek var. Kullanıcı ne yapacağını, hangi sırayla yapacağını, bugün ne kadar yapması gerektiğini bilmiyor. Seçim yükü her açılışta tekrar ediyor ve "bugün neden açayım" sorusunun cevabı yok.
 
@@ -153,7 +155,7 @@ Not: özgün tasarım kartın henüz bu dalda bulunmayan bir "günlük plan" kar
 - `gamificationStore` **persist edilmeli** (şu an sadece bellekte, uygulama kapanınca bekleyen popup kayboluyor).
 - Bazı yeni koşullar sunucuda ek veri ister: "15 farklı egzersiz" için `exerciseStatistics` zaten yeterli; "bir ayda 20 gün" için `dailyStatistics` yeterli. Ücretsiz kullanıcı tarafında aynı koşullar `localHistoryStore`'daki son 6 aydan hesaplanabilir. Yeni tablo gerekmiyor.
 - **Konfeti:** yeni bağımlılık eklemeden `react-native-reanimated` ile yazılabilir (30-60 parça, her biri rastgele başlangıç hızı + yerçekimi + dönme; `AchievementPopupGlobal` zaten Reanimated kullanıyor). Hazır kütüphane (`react-native-confetti-cannon`) bakımsız ve Reanimated 4 ile uyumu belirsiz — önce kendi implementasyonumuzu deneyelim. Düşük seviye cihazda kare düşürmemesi için parça sayısı ölçülmeli.
-- Haptik: `settingsStore.hapticsEnabled` zaten var ama hiçbir yerde kullanılmıyor; 8. madde ile birlikte ele alınmalı (`expo-haptics` gerekir — tek yeni bağımlılık, Expo destekli).
+- Haptik: 8. madde ile `expo-haptics` ve `src/lib/haptics.ts` sarmalayıcısı zaten geldi (doğru/yanlış + egzersiz tamamlandı). Kişisel rekor/başarım anındaki güçlü `Success` + konfeti kombinasyonu hâlâ bu maddeyi (5) bekliyor — rekor tespiti henüz yok.
 
 **Retention etkisi.** Orta-yüksek, özellikle ücretsiz kullanıcıya açıldığında. Şu an ilerleme hissi veren tek şey streak.
 
@@ -181,9 +183,21 @@ Bunlar özellik değil ama yukarıdakilerin önünü kesiyor.
 
 **7.3 Bekleyen başarım popup'ları kalıcı değil.** `gamificationStore` persist edilmiyor; uygulama kapanırsa gösterilmemiş kutlama kaybolur. 5. madde ile birlikte çözülür.
 
+**7.4 Sync kuyruğu batch değil.** `SyncProvider.syncQueue` bekleyen her session için ayrı `createSession` mutation çağırıyor (`for (const session of pendingSessions) { await createSession(...) }`, [SyncProvider.tsx:41-51](src/providers/SyncProvider.tsx#L41-L51)). N bekleyen session = N call. Şu anki ölçekte (premium+giriş yapmış kullanıcı, ~600 call/ay) maliyet sorunu yok, ama uzun süre offline kalıp sonra dönen kullanıcıda gereksiz call artışı yapıyor. Çözüm: `createSession`'ı array kabul edecek şekilde batch mutation'a çevirmek, queue tek call'da yollasın. Öncelik düşük — call sayısı artmadan (kullanıcı tabanı büyümeden) yapılmasa da olur.
+
 ---
 
-## 8. Egzersiz Sırasında Haptik Geri Bildirim
+## 8. Egzersiz Sırasında Haptik Geri Bildirim — UYGULANDI (2026-08-11)
+
+`expo-haptics` eklendi. `src/lib/haptics.ts` sarmalayıcısı (`light`, `success`, `error`) `settingsStore.hapticsEnabled`'ı kendi içinde kontrol ediyor; her çağrı sessizce `.catch` ile hataya karşı korunuyor. Ekran katmanından çağrılıyor, motor (`use*Engine.ts`) dosyalarına dokunulmadı.
+
+- Schulte, visual-search, selective-attention: doğru hedef/kelime seçiminde `Light`, yanlışta `Error` — her üçünde de hook zaten doğru/yanlış ayrımını (`expectedNumber`, `targetWord`, `correctWordsInGrid`) prop olarak veriyordu, ekran `onPress` içinde kendi hesaplıyor.
+- Tüm 15 egzersiz ekranında tamamlanma anında (`isCompleted`, Schulte/scanning'de ayrıca `isTimeUp`) `Success` hapti.
+
+Kapsam dışı bırakıldı (kullanıcı kararı): geri sayım son saniye hapti (15 ekranda kopya kod, paylaşılan bileşen yok — önce o refactor gerekir), metronom vuruş hapti (zaten spec'te varsayılan kapalı, ayrı ayar ister), kişisel rekor hapti (rekor tespiti hiç yok, 5. maddeyle birlikte çözülecek).
+
+<details>
+<summary>Orijinal plan</summary>
 
 **Kullanıcı problemi.** Egzersizler tamamen görsel. Kullanıcı doğru mu yanlış mı yaptığını, ritmi tutturup tutturamadığını ancak ekrana bakarak anlıyor. Özellikle Schulte tablosu, tarama ve seçici dikkat gibi hızlı tepki gerektiren egzersizlerde ekrandaki renk değişimini fark etmek dikkati bölüyor. Ayrıca `settingsStore.hapticsEnabled` ayarı zaten var ama hiçbir yerde kullanılmıyor — kullanıcı açıp kapatıyor, hiçbir şey değişmiyor.
 
@@ -209,3 +223,5 @@ Bunlar özellik değil ama yukarıdakilerin önünü kesiyor.
 **MVP zorluğu.** Düşük. Asıl iş nereye konulacağına karar vermek, kodun kendisi değil.
 
 **Açık sorular.** Metronom titreşimi ayrı ayar olarak mı sunulacak yoksa hiç eklenmeyecek mi? Ayarlar ekranındaki mevcut `hapticsEnabled` anahtarı tek bir genel anahtar olarak mı kalsın?
+
+</details>

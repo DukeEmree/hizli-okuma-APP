@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useComprehensionSpeedEngine } from './useComprehensionSpeedEngine';
-import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
+import { haptics } from '@/lib/haptics';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 interface ComprehensionSpeedExerciseScreenProps {
   timeLimitMs: number;
@@ -12,7 +13,6 @@ interface ComprehensionSpeedExerciseScreenProps {
 }
 
 export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: ComprehensionSpeedExerciseScreenProps) {
-  const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
 
@@ -47,6 +47,10 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
     }
   }, [countdown, start]);
 
+  useEffect(() => {
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
+
   const handleExit = () => {
     pause();
     router.back();
@@ -73,9 +77,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
         <Text fontSize="$4" color="$color11">
           Doğru: {correctCount} / {totalAttempts} | Kavrama: %{accuracy}
         </Text>
-        <Button size="$5" theme="accent" onPress={() => onComplete ? onComplete() : router.back()}>
-          {t('common.done', 'Bitir')}
-        </Button>
+        <ExerciseCompletionActions exerciseType="comprehension-speed" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
     );
   }
