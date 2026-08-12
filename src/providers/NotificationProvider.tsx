@@ -22,9 +22,12 @@ export function AppNotificationProvider({
   usePushNotificationToken();
 
   useEffect(() => {
+    scheduleWeeklySummaryNotification(isPremium).catch(console.error);
+  }, [isPremium]);
+
+  useEffect(() => {
     // 1. Setup Channels
     setupNotificationChannels();
-    scheduleWeeklySummaryNotification(isPremium).catch(console.error);
 
     const navigateToScreen = (
       response: Notifications.NotificationResponse | null,
@@ -59,7 +62,7 @@ export function AppNotificationProvider({
       subscription.remove();
       appStateSubscription.remove();
     };
-  }, [router, isPremium]);
+  }, [router]);
 
   return <>{children}</>;
 }
