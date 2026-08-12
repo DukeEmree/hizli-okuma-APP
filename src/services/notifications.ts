@@ -205,20 +205,16 @@ const WEEKLY_SUMMARY_IDENTIFIER = 'weekly-summary';
 const WEEKLY_SUMMARY_SCREEN = '/(app)/weekly-summary';
 
 /**
- * Free/guest users have no server-side data, so there's no personalized
- * push to send - instead a generic native WEEKLY trigger recurs every
+ * Schedules a generic native WEEKLY trigger that recurs every
  * Sunday 20:00 on-device forever, with no per-week rescheduling needed.
  * Content is static (no numbers) because it's set once, days before the
  * real numbers exist; the summary screen it deep-links to computes those
  * from live local data when opened.
- *
- * Premium users get the personalized server push (see convex/weeklySummary.ts)
- * instead, so this cancels any stale local one rather than doubling up.
  */
-export async function scheduleWeeklySummaryNotification(isPremium: boolean) {
+export async function scheduleWeeklySummaryNotification() {
   const settings = useSettingsStore.getState();
 
-  if (isPremium || !settings.notificationsEnabled || !settings.progressNotificationsEnabled) {
+  if (!settings.notificationsEnabled || !settings.progressNotificationsEnabled) {
     await Notifications.cancelScheduledNotificationAsync(WEEKLY_SUMMARY_IDENTIFIER).catch(() => {});
     return;
   }

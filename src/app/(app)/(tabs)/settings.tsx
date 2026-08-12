@@ -106,7 +106,7 @@ export default function SettingsScreen() {
     }
     setNotificationsEnabled(val);
     rescheduleAllReminders().catch(console.error);
-    scheduleWeeklySummaryNotification(isPremium).catch(console.error);
+    scheduleWeeklySummaryNotification().catch(console.error);
   };
 
   const handleTimeChange = (event: any, selectedDate?: Date) => {
@@ -360,7 +360,7 @@ export default function SettingsScreen() {
                 switchValue={progressNotificationsEnabled}
                 onSwitchChange={(val) => {
                   setProgressNotificationsEnabled(val);
-                  scheduleWeeklySummaryNotification(isPremium).catch(console.error);
+                  scheduleWeeklySummaryNotification().catch(console.error);
                   if (isSignedIn) {
                     syncProgressNotificationsEnabled({ enabled: val }).catch(console.error);
                   }

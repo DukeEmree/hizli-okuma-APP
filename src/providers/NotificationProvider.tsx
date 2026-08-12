@@ -4,7 +4,6 @@ import {
   setupNotificationChannels,
 } from "@/services/notifications";
 import { usePushNotificationToken } from "@/hooks/usePushNotificationToken";
-import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
@@ -17,13 +16,12 @@ export function AppNotificationProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isPremium } = useRevenueCat();
 
   usePushNotificationToken();
 
   useEffect(() => {
-    scheduleWeeklySummaryNotification(isPremium).catch(console.error);
-  }, [isPremium]);
+    scheduleWeeklySummaryNotification().catch(console.error);
+  }, []);
 
   useEffect(() => {
     // 1. Setup Channels
