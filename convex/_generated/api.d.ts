@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
 import type * as exerciseProgress from "../exerciseProgress.js";
 import type * as exerciseSessions from "../exerciseSessions.js";
 import type * as expoPush from "../expoPush.js";
@@ -22,6 +23,7 @@ import type * as statistics from "../statistics.js";
 import type * as streaks from "../streaks.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as users from "../users.js";
+import type * as weeklySummary from "../weeklySummary.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +32,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   exerciseProgress: typeof exerciseProgress;
   exerciseSessions: typeof exerciseSessions;
   expoPush: typeof expoPush;
@@ -44,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   streaks: typeof streaks;
   subscriptions: typeof subscriptions;
   users: typeof users;
+  weeklySummary: typeof weeklySummary;
 }>;
 
 /**
