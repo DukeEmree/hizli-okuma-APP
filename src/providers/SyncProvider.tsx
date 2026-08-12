@@ -14,7 +14,7 @@ import { captureException } from '@/lib/sentry';
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
   const pendingSessionsLength = useSyncStore((state) => state.pendingSessions.length);
-  const createSession = useMutation(api.exerciseSessions.createSession);
+  const createSessions = useMutation(api.exerciseSessions.createSessions);
   const addAchievement = useGamificationStore((state) => state.addAchievement);
   const { isSignedIn } = useAuth();
   const { isPremium } = useRevenueCat();
@@ -36,72 +36,86 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     let syncSuccessCount = 0;
     let syncFailCount = 0;
     
-    analytics.track('sync_started', { pendingCount: pendingSessions.length });
-
-    for (const session of pendingSessions) {
-      // Exponential backoff logic
+    // Exponential backoff logic - drop anything still cooling down before
+    // it even goes into the batch call.
+    const sessionsToSync = pendingSessions.filter((session) => {
       if (session.retryCount > 0 && session.lastRetryAt) {
         const backoffMs = Math.min(1000 * Math.pow(2, session.retryCount), 1000 * 60 * 60); // Max 1 hour delay
         if (Date.now() - session.lastRetryAt < backoffMs) {
-          continue; // Skip this session for now, wait for backoff
+          return false;
         }
       }
+      return true;
+    });
+
+    if (sessionsToSync.length > 0) {
+      analytics.track('sync_started', { pendingCount: sessionsToSync.length });
 
       try {
-        const result = await createSession({
-          clientSessionId: session.clientSessionId,
-          exerciseId: session.exerciseId,
-          exerciseType: session.exerciseType,
-          startedAt: session.startedAt,
-          completedAt: session.completedAt,
-          durationMs: session.durationMs,
-          difficulty: session.difficulty,
-          score: session.score,
-          metrics: session.metrics,
-          algorithmVersion: session.algorithmVersion,
+        const results = await createSessions({
+          sessions: sessionsToSync.map((session) => ({
+            clientSessionId: session.clientSessionId,
+            exerciseId: session.exerciseId,
+            exerciseType: session.exerciseType,
+            startedAt: session.startedAt,
+            completedAt: session.completedAt,
+            durationMs: session.durationMs,
+            difficulty: session.difficulty,
+            score: session.score,
+            metrics: session.metrics,
+            algorithmVersion: session.algorithmVersion,
+          })),
         });
 
-        // The mutation returns this sentinel (without writing anything)
-        // when Convex doesn't see an authenticated identity yet - this can
-        // happen right after sign-in while the Convex client is still
-        // attaching its auth token. Treat it as a retryable failure instead
-        // of removing the session, otherwise it's dropped from the queue
-        // as if synced while nothing was ever written server-side.
-        if (result?.sessionId === 'offline-pending') {
-          syncState.incrementRetryCount(session.clientSessionId);
-          syncFailCount++;
-          continue;
-        }
+        results.forEach((result, i) => {
+          const session = sessionsToSync[i];
 
-        if (result && typeof result === 'object' && 'gamification' in result && result.gamification) {
-          const { unlockedAchievements } = result.gamification;
-          unlockedAchievements.forEach((achId: string) => {
-            const achDef = ACHIEVEMENTS[achId];
-            if (achDef) {
-              addAchievement({
-                id: achDef.id,
-                title: achDef.title,
-                icon: achDef.icon,
-              });
-            }
-          });
-        }
+          if ('error' in result) {
+            captureException(new Error(result.error), { context: 'SyncProvider.syncQueue', clientSessionId: session.clientSessionId, retryCount: session.retryCount });
+            syncState.incrementRetryCount(session.clientSessionId);
+            syncFailCount++;
+            return;
+          }
 
-        // Successfully synced
-        syncState.removeSession(session.clientSessionId);
-        useLocalHistoryStore.getState().markSynced(session.clientSessionId);
-        syncSuccessCount++;
+          // The mutation returns this sentinel (without writing anything)
+          // when Convex doesn't see an authenticated identity yet - this can
+          // happen right after sign-in while the Convex client is still
+          // attaching its auth token. Treat it as a retryable failure instead
+          // of removing the session, otherwise it's dropped from the queue
+          // as if synced while nothing was ever written server-side.
+          if (result.sessionId === 'offline-pending') {
+            syncState.incrementRetryCount(session.clientSessionId);
+            syncFailCount++;
+            return;
+          }
+
+          if (result.gamification) {
+            const { unlockedAchievements } = result.gamification;
+            unlockedAchievements.forEach((achId: string) => {
+              const achDef = ACHIEVEMENTS[achId];
+              if (achDef) {
+                addAchievement({
+                  id: achDef.id,
+                  title: achDef.title,
+                  icon: achDef.icon,
+                });
+              }
+            });
+          }
+
+          // Successfully synced
+          syncState.removeSession(session.clientSessionId);
+          useLocalHistoryStore.getState().markSynced(session.clientSessionId);
+          syncSuccessCount++;
+        });
       } catch (error: unknown) {
-        // Increment retry if network otherwise if it's a fatal error (like schema mismatch), we might want to drop it
-        // But for safety, we just increment retry count. Convex usually throws for application errors.
-        captureException(error, { context: 'SyncProvider.syncQueue', clientSessionId: session.clientSessionId, retryCount: session.retryCount });
-        syncState.incrementRetryCount(session.clientSessionId);
-        syncFailCount++;
-        // Break out of the loop to try again later if the network went down
-        const currentState = await NetInfo.fetch();
-        if (!currentState.isConnected) {
-          break;
-        }
+        // Whole batch call failed (e.g. network dropped mid-request) -
+        // retry every session that was in it.
+        captureException(error, { context: 'SyncProvider.syncQueue', pendingCount: sessionsToSync.length });
+        sessionsToSync.forEach((session) => {
+          syncState.incrementRetryCount(session.clientSessionId);
+        });
+        syncFailCount += sessionsToSync.length;
       }
     }
 
@@ -112,7 +126,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
 
     isSyncingRef.current = false;
-  }, [createSession, addAchievement, canSync]);
+  }, [createSessions, addAchievement, canSync]);
 
   // Listen to network changes
   useEffect(() => {
