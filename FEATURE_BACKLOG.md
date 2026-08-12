@@ -1,8 +1,8 @@
 # Feature Backlog
 
-> Planlanan özellikler ve karar bekleyen teknik borç. 1-5 ve 8. maddeler henüz koda girmedi — bu dosya onlar için kapsam, teknik plan ve açık soruları tutar; sıra geldikçe birlikte ekleyeceğiz. Tamamlananlar başlıklarında **UYGULANDI** olarak işaretli ve ne yapıldığı yazılı.
+> Planlanan özellikler ve karar bekleyen teknik borç. 1, 3-5 ve 8. maddeler henüz koda girmedi — bu dosya onlar için kapsam, teknik plan ve açık soruları tutar; sıra geldikçe birlikte ekleyeceğiz. Tamamlananlar başlıklarında **UYGULANDI** olarak işaretli ve ne yapıldığı yazılı.
 
-Son güncelleme: 2026-08-11 (6, 7.1 ve 7.2 uygulandı)
+Son güncelleme: 2026-08-12 (2 uygulandı)
 İlgili dokümanlar: `PRODUCTION_AUDIT.md` (mevcut durum ve bulgular), `PROJECT_STATUS.md` (mimari), `PRODUCTION_CHECKLIST.md` (yayın öncesi işler).
 
 ---
@@ -59,30 +59,13 @@ Seçim, kullanıcının en zayıf kategorisine ağırlık vermeli ve arka arkaya
 
 ---
 
-## 2. Haftalık Özet
+## 2. Haftalık Özet — UYGULANDI (2026-08-12)
 
-**Kullanıcı problemi.** Okuma hızındaki gelişme yavaş ve gün gün görünmez. Kullanıcı ilerlediğini hissetmezse bırakır. Şu an istatistik sekmesine kendi girip grafiğe bakması gerekiyor — kimse yapmıyor.
+Haftalık özet hem premium hem ücretsiz/guest kullanıcı için uygulandı, tasarlanan iki ayrı yoldan.
 
-**Çözüm.** Haftada bir (pazar akşamı) push bildirimi + uygulama içinde özet kartı: bu hafta kaç dakika çalıştın, WPM'in geçen haftaya göre ne değişti, en çok gelişme gösterdiğin egzersiz, streak durumu.
+Nerede: paylaşılan saf hesaplayıcı `src/utils/weeklySummary.ts` (`buildWeeklySummary`, `getWeekBounds`) — hem sunucu hem istemci aynı fonksiyonu çağırıyor. Premium tarafında `convex/crons.ts` her saat başı çalışan bir cron kaydediyor, `convex/weeklySummary.ts`'teki `sendWeeklyDigest` handler'ını tetikliyor; gönderim kararı saf fonksiyonlara ayrıldı (`decideWeeklySummaryNotification`, `isWeeklyDigestHour`) ki kullanıcının kendi saatinde pazar 20:00'e denk gelip gelmediği DB'ye dokunmadan test edilebilsin. Ücretsiz/guest kullanıcı için `src/services/notifications.ts` içindeki `scheduleWeeklySummaryNotification()` yerel `WEEKLY` tekrarlı native bildirim kuruyor (yine pazar 20:00), sunucuya hiç gitmiyor. UI tarafı `src/features/weeklySummary/` altında: `useWeeklySummary.ts` (premium/ücretsiz ayrımını saran ortak hook), `WeeklySummaryCard.tsx` (ana ekranda "Günlük Hedef" kartının hemen altında) ve `WeeklySummaryScreen.tsx` (tam ekran, `/(app)/weekly-summary` route'u). Metinler `src/i18n/locales/tr/weeklySummary.json` içinde.
 
-**UX akışı.**
-1. Pazar 20:00'de push: "Bu hafta 47 dakika çalıştın, hızın %8 arttı 📈".
-2. Dokunma → haftalık özet ekranı (tam sayfa, paylaşılabilir kart formatında).
-3. Push kapalıysa özet ana ekranda bir hafta boyunca kart olarak durur.
-4. Ekranın sonunda "Bu haftayı da tamamla" CTA'sı → günlük plan.
-
-**Teknik mimari.**
-- `convex/crons.ts` (henüz yok) — haftalık cron `internalAction`. `dailyStatistics` zaten kullanıcı başına günlük agregat tuttuğu için sorgu ucuz: 14 günlük aralık okuması yeter, ham session'lara dokunmaya gerek yok.
-- Bildirim gönderimi için `internal.expoPush.sendPushToUser` hazır, `pushTokens` tablosu ve ölü token temizliği de hazır — yeni altyapı gerekmiyor.
-- Kullanıcı tercihi: `settingsStore.progressNotificationsEnabled` ve sunucudaki `users.pushNotificationsEnabled` zaten var, ikisi de kontrol edilmeli.
-- Zaman dilimi: `users.timezone` mevcut; cron UTC çalışır, kullanıcıya kendi saatinde ulaşması için ya saat başı çalışıp timezone'u eşleşenleri seçmeli ya da tek bir makul saatte gönderilmeli.
-- Ücretsiz kullanıcıda sunucuda veri olmadığı için özet **yerelde** `localHistoryStore` üzerinden hesaplanmalı (son 6 ay orada) ve push yerine uygulama içi kart olarak gösterilmeli.
-
-**Gamification / retention etkisi.** Orta-yüksek. Push altyapısının şu an sadece faturalama olaylarında kullanılıyor olması israf; bu onu ürün amaçlı kullanan ilk özellik.
-
-**MVP zorluğu.** Düşük-orta. Cron + mevcut push action + tek ekran.
-
-**Açık sorular.** Gün/saat sabit mi, kullanıcı seçebilir mi? Hiç çalışmadığı bir haftada ne yazacak (suçlayıcı olmayan bir ton gerekiyor)? Paylaşılabilir görsel kart (Instagram story formatı) ilk sürümde olsun mu?
+Not: özgün tasarım kartın henüz bu dalda bulunmayan bir "günlük plan" kartının altına gelmesini varsayıyordu; o özellik bu dalda yok, bu yüzden kart doğrudan "Günlük Hedef" kartının altına yerleştirildi (bkz. madde 1).
 
 ---
 

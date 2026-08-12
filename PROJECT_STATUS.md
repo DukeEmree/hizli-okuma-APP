@@ -128,6 +128,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - **Statistics** — daily WPM/comprehension/accuracy trends and per-exercise bests over 7d/30d/90d/all, from Convex for premium users and from the 6-month on-device history for everyone else (`buildLocalStats` returns the same shape, so the dashboard is identical).
 - **Subscription** — RevenueCat hosted paywall and Customer Center; free tier capped at 6 exercises per day.
 - **Notifications** — local daily/streak/inactivity reminders plus server-sent push on subscription events.
+- **Weekly summary** — home card (below the "Daily Goal" card) plus a full `/(app)/weekly-summary` screen recapping the past week's minutes, WPM change and streak, from the shared `buildWeeklySummary` calculator. Premium users get it as a server push (hourly cron, sent at each user's own Sunday-20:00); free/guest users get an equivalent local recurring notification instead.
 - **Onboarding** — a reading test that seeds initial WPM, comprehension and starting difficulty.
 
 ## Completed
@@ -144,6 +145,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - Local 6-month exercise history separated from the upload queue, with backfill to Convex on upgrade
 - Streak freezes (earn one per 7-day run, max 2, spent automatically on a missed day)
 - Single green brand hue across the splash, notification colour, adaptive icon background and every screen token
+- Weekly summary: shared `buildWeeklySummary` calculator, premium server push via hourly cron (`convex/crons.ts` + `convex/weeklySummary.ts`), local `WEEKLY` recurring notification for free/guest users, home card and full-screen view
 - Validation: typecheck clean, lint clean, 113 tests passing, i18n check passing, production bundle export succeeds
 
 ## In Progress
@@ -189,4 +191,4 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 2. Produce a production build and smoke-test the full path on a physical device: onboarding → exercise → completion → statistics → paywall → sandbox purchase → settings.
 3. Confirm Sentry, Amplitude and Convex traffic actually arrives from that build. Amplitude in particular has never delivered a single event before this pass, so its dashboard is the fastest way to prove the fix.
 4. Then decide the two deferred design questions: the free-tier history model, and one brand hue.
-5. Planned features live in `FEATURE_BACKLOG.md` — daily plan, weekly recap, interstitial paywall, RevenueCat custom paywall, and the achievement overhaul with confetti. Read the note at the top of that file first: gamification currently only runs for premium users, and that decision gates most of the list.
+5. Planned features live in `FEATURE_BACKLOG.md` — daily plan, interstitial paywall, RevenueCat custom paywall, and the achievement overhaul with confetti (weekly summary already shipped, see `## Completed` above). Read the note at the top of that file first: gamification currently only runs for premium users, and that decision gates most of the list.
