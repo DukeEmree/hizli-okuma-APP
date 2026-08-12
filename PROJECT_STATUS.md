@@ -146,7 +146,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - Streak freezes (earn one per 7-day run, max 2, spent automatically on a missed day)
 - Single green brand hue across the splash, notification colour, adaptive icon background and every screen token
 - Weekly summary: shared `buildWeeklySummary` calculator, premium server push via hourly cron (`convex/crons.ts` + `convex/weeklySummary.ts`), local `WEEKLY` recurring notification for free/guest users, home card and full-screen view
-- Validation: typecheck clean, lint clean, 113 tests passing, i18n check passing, production bundle export succeeds
+- Validation: typecheck clean, lint clean, 150 tests passing, i18n check passing, production bundle export succeeds
 
 ## In Progress
 
@@ -166,7 +166,7 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 
 ## Production Readiness
 
-**Code: ready.** No open CRITICAL or HIGH findings. `bun run typecheck`, `bun run lint` (0 warnings), `bun test` (113 pass) and `bunx expo export` all succeed against this tree.
+**Code: ready.** No open CRITICAL or HIGH findings. `bun run typecheck`, `bun run lint` (0 warnings), `bun test` (150 pass) and `bunx expo export` all succeed against this tree.
 
 **Release configuration: not ready.** Every remaining blocker is external:
 
