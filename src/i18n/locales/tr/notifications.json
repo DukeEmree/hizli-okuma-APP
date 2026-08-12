@@ -21,6 +21,10 @@
     "title": "Tebrikler! 🎉",
     "body": "Harika! {{days}} günlük seriye ulaştın. Böyle devam et!"
   },
+  "weeklySummaryReady": {
+    "title": "Haftalık Özetin Hazır 📊",
+    "body": "Bu haftaki okuma özetini görmek için dokun."
+  },
   "settings": {
     "title": "Bildirimler",
     "enableNotifications": "Genel Bildirimler",

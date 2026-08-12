@@ -51,7 +51,7 @@ import {
   Flame,
   TrendingUp,
 } from "lucide-react-native";
-import { requestNotificationPermissions, rescheduleAllReminders } from '@/services/notifications';
+import { requestNotificationPermissions, rescheduleAllReminders, scheduleWeeklySummaryNotification } from '@/services/notifications';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
@@ -106,6 +106,7 @@ export default function SettingsScreen() {
     }
     setNotificationsEnabled(val);
     rescheduleAllReminders().catch(console.error);
+    scheduleWeeklySummaryNotification(isPremium).catch(console.error);
   };
 
   const handleTimeChange = (event: any, selectedDate?: Date) => {
@@ -356,7 +357,10 @@ export default function SettingsScreen() {
                 title={t("notifications.progressNotifications", "İlerleme Bildirimleri")}
                 isSwitch
                 switchValue={progressNotificationsEnabled}
-                onSwitchChange={setProgressNotificationsEnabled}
+                onSwitchChange={(val) => {
+                  setProgressNotificationsEnabled(val);
+                  scheduleWeeklySummaryNotification(isPremium).catch(console.error);
+                }}
               />
             </>
           )}

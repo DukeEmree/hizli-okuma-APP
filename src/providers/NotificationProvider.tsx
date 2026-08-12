@@ -1,8 +1,10 @@
 import {
   rescheduleAllReminders,
+  scheduleWeeklySummaryNotification,
   setupNotificationChannels,
 } from "@/services/notifications";
 import { usePushNotificationToken } from "@/hooks/usePushNotificationToken";
+import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
@@ -15,12 +17,14 @@ export function AppNotificationProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { isPremium } = useRevenueCat();
 
   usePushNotificationToken();
 
   useEffect(() => {
     // 1. Setup Channels
     setupNotificationChannels();
+    scheduleWeeklySummaryNotification(isPremium).catch(console.error);
 
     const navigateToScreen = (
       response: Notifications.NotificationResponse | null,
@@ -46,7 +50,10 @@ export function AppNotificationProvider({
       (nextAppState: AppStateStatus) => {
         if (nextAppState === "background" || nextAppState === "inactive") {
           // App backgrounda atıldığında tüm takvimi ileri sarıp güncelliyoruz
+          // (rescheduleAllReminders cancels ALL scheduled notifications, so the
+          // weekly summary trigger must be re-armed right after or it gets wiped)
           rescheduleAllReminders().catch(console.error);
+          scheduleWeeklySummaryNotification(isPremium).catch(console.error);
         }
       },
     );
@@ -55,7 +62,7 @@ export function AppNotificationProvider({
       subscription.remove();
       appStateSubscription.remove();
     };
-  }, [router]);
+  }, [router, isPremium]);
 
   return <>{children}</>;
 }

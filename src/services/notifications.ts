@@ -190,3 +190,42 @@ export async function sendMilestoneNotification(days: number) {
 
   settings.addNotifiedMilestone(days);
 }
+
+/** Stable ID so re-scheduling replaces the existing request instead of stacking a duplicate. */
+const WEEKLY_SUMMARY_IDENTIFIER = 'weekly-summary';
+const WEEKLY_SUMMARY_SCREEN = '/(app)/weekly-summary';
+
+/**
+ * Free/guest users have no server-side data, so there's no personalized
+ * push to send - instead a generic native WEEKLY trigger recurs every
+ * Sunday 20:00 on-device forever, with no per-week rescheduling needed.
+ * Content is static (no numbers) because it's set once, days before the
+ * real numbers exist; the summary screen it deep-links to computes those
+ * from live local data when opened.
+ *
+ * Premium users get the personalized server push (see convex/weeklySummary.ts)
+ * instead, so this cancels any stale local one rather than doubling up.
+ */
+export async function scheduleWeeklySummaryNotification(isPremium: boolean) {
+  const settings = useSettingsStore.getState();
+
+  if (isPremium || !settings.notificationsEnabled || !settings.progressNotificationsEnabled) {
+    await Notifications.cancelScheduledNotificationAsync(WEEKLY_SUMMARY_IDENTIFIER).catch(() => {});
+    return;
+  }
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: WEEKLY_SUMMARY_IDENTIFIER,
+    content: {
+      title: i18n.t('notifications:weeklySummaryReady.title', 'Haftalık Özetin Hazır 📊'),
+      body: i18n.t('notifications:weeklySummaryReady.body', 'Bu haftaki okuma özetini görmek için dokun.'),
+      data: { screen: WEEKLY_SUMMARY_SCREEN },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: 1, // expo-notifications: 1 = Sunday
+      hour: 20,
+      minute: 0,
+    },
+  });
+}
