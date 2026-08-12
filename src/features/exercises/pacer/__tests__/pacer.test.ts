@@ -3,9 +3,8 @@ import { expect, test, describe } from 'bun:test';
 import { renderHook } from '@testing-library/react-hooks';
 import { usePacerEngine } from "@/features/exercises/pacer/usePacerEngine";
 
-// Shared mocks (convex/react, @clerk/clerk-expo, react-native-mmkv,
-// @amplitude/analytics-react-native) are registered in test-setup.ts via
-// bunfig.toml's [test].preload - see that file for why.
+// Shared mocks (react-native-mmkv, @amplitude/analytics-react-native)
+// are registered in test-setup.ts via bunfig.toml's [test].preload.
 
 describe('PacerEngine', () => {
   test('should initialize and hold words', () => {

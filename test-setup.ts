@@ -14,19 +14,10 @@ import { mock } from 'bun:test';
 // modules reached via top-level `import` statements (only dynamic imports
 // made after that point would see it), so central preload is required here.
 //
-// convex/react, @clerk/clerk-expo, and react-native-mmkv/@amplitude's
-// packages all transitively require react-native's untranspiled (Flow-typed)
-// source, which bun's parser cannot handle, so any test that imports app
-// code touching Convex, Clerk, MMKV-backed storage, or analytics needs
+// react-native-mmkv/@amplitude's packages transitively require react-native's
+// untranspiled (Flow-typed) source, which bun's parser cannot handle, so any
+// test that imports app code using MMKV-backed storage or analytics needs
 // these mocked out.
-mock.module('convex/react', () => ({
-  useMutation: () => () => Promise.resolve(),
-  useQuery: () => undefined,
-}));
-
-mock.module('@clerk/clerk-expo', () => ({
-  useAuth: () => ({ isSignedIn: false, userId: null }),
-}));
 
 mock.module('react-native-mmkv', () => {
   const store = new Map<string, string>();
