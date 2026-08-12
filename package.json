@@ -82,7 +82,7 @@
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
     "i18n:check": "bun ./scripts/i18n-check.ts",
-    "postinstall": "bunx install-skia"
+    "postinstall": "node node_modules/@shopify/react-native-skia/scripts/install-libs.js"
   },
   "private": true,
   "overrides": {
