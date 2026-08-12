@@ -11,6 +11,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useUserProgressStore } from '@/stores/userProgressStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
+import { WeeklySummaryCard } from '@/features/weeklySummary/WeeklySummaryCard';
 
 export default function HomeScreen() {
 
@@ -123,6 +124,9 @@ export default function HomeScreen() {
               </Text>
             </YStack>
           </Card>
+
+          {/* Weekly Summary */}
+          <WeeklySummaryCard />
 
           {/* Main CTA */}
           <Button 
