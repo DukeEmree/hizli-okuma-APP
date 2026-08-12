@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { userScopedStorageAdapter } from "./storage";
-import type { PendingSession } from "./syncStore";
+import type { ExerciseMetrics } from "@/types/exercise";
 
 /**
  * Local exercise history, kept on the device for every user.
@@ -24,8 +24,17 @@ import type { PendingSession } from "./syncStore";
 /** ~6 months. Sessions older than this are dropped on the next write. */
 export const LOCAL_HISTORY_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 
-export type LocalSession = Omit<PendingSession, "retryCount" | "lastRetryAt"> & {
-  /** True once Convex has accepted this session (premium users only). */
+export type LocalSession = {
+  clientSessionId: string;
+  exerciseId: string;
+  exerciseType: string;
+  startedAt: number;
+  completedAt: number;
+  durationMs: number;
+  difficulty: number;
+  score: number;
+  metrics?: Partial<ExerciseMetrics>;
+  algorithmVersion: number;
   synced: boolean;
 };
 

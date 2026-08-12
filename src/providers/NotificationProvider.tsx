@@ -3,7 +3,6 @@ import {
   scheduleWeeklySummaryNotification,
   setupNotificationChannels,
 } from "@/services/notifications";
-import { usePushNotificationToken } from "@/hooks/usePushNotificationToken";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
@@ -16,8 +15,6 @@ export function AppNotificationProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-
-  usePushNotificationToken();
 
   useEffect(() => {
     scheduleWeeklySummaryNotification().catch(console.error);
