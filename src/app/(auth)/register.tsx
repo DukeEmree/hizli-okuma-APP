@@ -9,6 +9,21 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      fontFamily="$body"
+      fontSize={13}
+      fontWeight="600"
+      color="$color11"
+      letterSpacing={0.6}
+      textTransform="uppercase"
+    >
+      {children}
+    </Text>
+  );
+}
+
 export default function RegisterScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { t } = useTranslation('auth');
@@ -102,11 +117,11 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-          <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
+          <YStack flex={1} padding="$5" paddingTop="$8" backgroundColor="$background">
             <YStack gap="$4">
-          <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" textAlign="center">{t('registerTitle', 'Kayıt Ol')}</Text>
+          <Text fontSize={30} lineHeight={34} fontWeight="800" color="$color" fontFamily="$heading" letterSpacing={-0.5}>{t('registerTitle', 'Kayıt Ol')}</Text>
 
-          {!!errorMsg && <Text fontSize="$2" color="$red10" fontFamily="$body">{errorMsg}</Text>}
+          <Text fontSize="$2" color="$red10" fontFamily="$body" minHeight={18}>{errorMsg}</Text>
 
           {!pendingVerification && (
             <>
@@ -115,7 +130,9 @@ export default function RegisterScreen() {
                 name="email"
                 render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <YStack gap="$2">
-                    <Input 
+                    <FieldLabel>{t('emailLabel', 'E-posta')}</FieldLabel>
+                    <Input
+                      size="$5"
                       autoCapitalize="none"
                       keyboardType="email-address"
                       autoComplete="email"
@@ -130,13 +147,15 @@ export default function RegisterScreen() {
                   </YStack>
                 )}
               />
-              
+
               <Controller
                 control={registerForm.control}
                 name="password"
                 render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <YStack gap="$2">
-                    <Input 
+                    <FieldLabel>{t('passwordLabel', 'Şifre')}</FieldLabel>
+                    <Input
+                      size="$5"
                       value={value}
                       onBlur={onBlur}
                       onChangeText={onChange}
@@ -155,7 +174,9 @@ export default function RegisterScreen() {
                 name="passwordConfirmation"
                 render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <YStack gap="$2">
-                    <Input 
+                    <FieldLabel>{t('passwordConfirmationLabel', 'Şifre Tekrar')}</FieldLabel>
+                    <Input
+                      size="$5"
                       value={value}
                       onBlur={onBlur}
                       onChangeText={onChange}
@@ -170,22 +191,14 @@ export default function RegisterScreen() {
               />
 
               <Button
-                backgroundColor="$green10"
-                color="white"
-                hoverStyle={{ backgroundColor: '$green11' }}
-                pressStyle={{ backgroundColor: '$green9' }}
+                size="$5"
+                theme="accent"
+                fontWeight="700"
                 onPress={onSignUpPress}
                 disabled={registerForm.formState.isSubmitting}
               >
                 {registerForm.formState.isSubmitting ? t('loading', 'Yükleniyor...') : t('registerButton', 'Kayıt Ol')}
               </Button>
-
-              <XStack justifyContent="center" marginTop="$4">
-                <Text fontSize="$4" color="$color" fontFamily="$body">{t('haveAccount', 'Zaten hesabın var mı?')} </Text>
-                <Link href="/(auth)/login">
-                  <Text fontSize="$4" color="$green10" fontFamily="$body">{t('loginLink', 'Giriş Yap')}</Text>
-                </Link>
-              </XStack>
             </>
           )}
 
@@ -194,13 +207,13 @@ export default function RegisterScreen() {
               <Text fontSize="$4" color="$color" fontFamily="$body" textAlign="center">
                 {t('verifyInstruction', 'E-postanıza gönderilen doğrulama kodunu girin.')}
               </Text>
-              
+
               <Controller
                 control={codeForm.control}
                 name="code"
                 render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <YStack gap="$2">
-                    <Input 
+                    <Input
                       value={value}
                       onBlur={onBlur}
                       onChangeText={onChange}
@@ -215,10 +228,9 @@ export default function RegisterScreen() {
               />
 
               <Button
-                backgroundColor="$green10"
-                color="white"
-                hoverStyle={{ backgroundColor: '$green11' }}
-                pressStyle={{ backgroundColor: '$green9' }}
+                size="$5"
+                theme="accent"
+                fontWeight="700"
                 onPress={onPressVerify}
                 disabled={codeForm.formState.isSubmitting}
               >
@@ -226,7 +238,29 @@ export default function RegisterScreen() {
               </Button>
             </>
           )}
-        </YStack>
+            </YStack>
+
+            {!pendingVerification && (
+              <YStack marginTop="auto" gap="$3">
+                <XStack justifyContent="center">
+                  <Text fontSize="$4" color="$color" fontFamily="$body">{t('haveAccount', 'Zaten hesabın var mı?')} </Text>
+                  <Link href="/(auth)/login">
+                    <Text fontSize="$4" color="$accent9" fontFamily="$body">{t('loginLink', 'Giriş Yap')}</Text>
+                  </Link>
+                </XStack>
+
+                <Button
+                  size="$5"
+                  backgroundColor="transparent"
+                  color="$color11"
+                  borderWidth={1}
+                  borderColor="$borderColor"
+                  onPress={() => router.replace('/(app)/(tabs)')}
+                >
+                  {t('continueAsGuest', 'Misafir Olarak Devam Et')}
+                </Button>
+              </YStack>
+            )}
       </YStack>
         </ScrollView>
       </KeyboardAvoidingView>

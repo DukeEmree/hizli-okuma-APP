@@ -7,8 +7,29 @@ import { useAuth } from "@clerk/clerk-expo";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { Button, Card, H2, H4, Progress, Text, YStack } from "tamagui";
+import { Button, Card, H2, H4, Text, XStack, YStack } from "tamagui";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Track } from "@/components/ui/track/Track";
+
+function OptionRow({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <XStack
+      minHeight={56}
+      paddingHorizontal="$4"
+      borderRadius="$5"
+      backgroundColor="$backgroundHover"
+      borderWidth={1}
+      borderColor="$borderColor"
+      alignItems="center"
+      justifyContent="space-between"
+      pressStyle={{ borderColor: "$accent9" }}
+      onPress={onPress}
+    >
+      <Text fontSize="$5" fontWeight="500">{label}</Text>
+      <YStack width={18} height={18} borderRadius={999} borderWidth={1.5} borderColor="$borderColor" />
+    </XStack>
+  );
+}
 
 const REASONS = [
   "Ders çalışmak",
@@ -114,13 +135,13 @@ export function OnboardingScreen() {
     }
   };
 
-  const progress = (step / 3) * 100;
+  const stepTrackData = [1, 2, 3].map((s) => ({ value: 1, comprehension: s <= step ? 1 : 0 }));
 
   return (
     <YStack flex={1} backgroundColor="$background" padding="$4" paddingTop={insets.top + 16} paddingBottom={insets.bottom + 16}>
-      <Progress value={progress} size="$2" marginBottom="$6">
-        <Progress.Indicator transition="quick" />
-      </Progress>
+      <YStack marginBottom="$6">
+        <Track data={stepTrackData} size="compact" height={5} showBaseline={false} />
+      </YStack>
 
       {step === 1 && (
         <YStack flex={1} gap="$4">
@@ -131,9 +152,7 @@ export function OnboardingScreen() {
 
           <YStack gap="$3">
             {REASONS.map((r) => (
-              <Button key={r} size="$5" onPress={() => handleReasonSelect(r)}>
-                <Text>{r}</Text>
-              </Button>
+              <OptionRow key={r} label={r} onPress={() => handleReasonSelect(r)} />
             ))}
           </YStack>
         </YStack>
@@ -148,9 +167,7 @@ export function OnboardingScreen() {
 
           <YStack gap="$3">
             {GOALS.map((g) => (
-              <Button key={g} size="$5" onPress={() => handleGoalSelect(g)}>
-                <Text>{`Günde ${g} dakika`}</Text>
-              </Button>
+              <OptionRow key={g} label={`Günde ${g} dakika`} onPress={() => handleGoalSelect(g)} />
             ))}
           </YStack>
         </YStack>
@@ -158,7 +175,7 @@ export function OnboardingScreen() {
 
       {step === 3 && !showQuestion && (
         <YStack flex={1} gap="$4">
-          <H4 color="$green10">Başlangıç Değerlendirmesi</H4>
+          <H4 color="$accent9">Başlangıç Değerlendirmesi</H4>
           <Text color="$color11">
             Aşağıdaki metni kendi doğal hızınızda, anlayarak okuyun. Bittiğinde
             butona tıklayın.

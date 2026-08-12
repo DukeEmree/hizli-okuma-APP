@@ -19,7 +19,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { isPremium } = useRevenueCat();
   const { isLoaded, isSignedIn } = useAuth();
-  
+
   const bestWpm = useUserProgressStore(state => state.bestWpm);
   const bestComprehension = useUserProgressStore(state => state.bestComprehension);
   const dailyGoalMinutes = useSettingsStore(state => state.dailyGoalMinutes);
@@ -110,7 +110,7 @@ export default function HomeScreen() {
             <StreakBadge />
           </XStack>
 
-          {/* Daily Goal */}
+          {/* Daily Goal — hidden per product decision, code kept for a possible return.
           <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover" elevation="$1">
             <YStack gap="$2">
               <XStack justifyContent="space-between">
@@ -125,22 +125,13 @@ export default function HomeScreen() {
               </Text>
             </YStack>
           </Card>
+          */}
 
           {/* Daily Plan */}
           <DailyPlanCard />
 
           {/* Weekly Summary */}
           <WeeklySummaryCard />
-
-          {/* Main CTA */}
-          <Button
-            size="$5"
-            theme="accent"
-            fontWeight="bold"
-            onPress={() => router.push('/(app)/(tabs)/exercises')}
-          >
-            Bugünkü Antrenmana Başla
-          </Button>
 
           {/* Stats Row */}
           <XStack gap="$3" justifyContent="space-between">

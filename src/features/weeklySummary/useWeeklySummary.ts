@@ -6,7 +6,7 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { useStreakCacheStore } from '@/stores/streakCacheStore';
 import { getLocalDateString } from '@/utils/streak';
-import { buildLocalStats } from '@/utils/localStatistics';
+import { buildLocalStats, type PerformanceStats } from '@/utils/localStatistics';
 import { buildWeeklySummary, type DailyStatInput, type WeeklySummary } from '@/utils/weeklySummary';
 
 /**
@@ -14,7 +14,15 @@ import { buildWeeklySummary, type DailyStatInput, type WeeklySummary } from '@/u
  * screen: decides premium (server) vs free/guest (local) data source once,
  * so the two surfaces can never disagree on the numbers.
  */
-export function useWeeklySummary(): { summary: WeeklySummary | null; isLoading: boolean } {
+export function useWeeklySummary(): {
+  summary: WeeklySummary | null;
+  /** The same per-day series the summary was built from — e.g. for a track/chart. */
+  dailyTrends: PerformanceStats['dailyTrends'] | null;
+  /** The same "now" and timezone the summary was computed with, so a caller building its own date labels stays in sync. */
+  now: number;
+  timeZone: string;
+  isLoading: boolean;
+} {
   const { isPremium } = useRevenueCat();
   const { isLoaded, isSignedIn } = useAuth();
   const currentStreak = useStreakCacheStore((s) => s.currentStreak);
@@ -28,11 +36,12 @@ export function useWeeklySummary(): { summary: WeeklySummary | null; isLoading: 
   const [now] = useState(() => Date.now());
   const today = getLocalDateString(now, timeZone);
 
-  const summary = useMemo(() => {
-    const dailyTrends = shouldFetch
-      ? stats?.dailyTrends
-      : buildLocalStats(localSessions, '30d', now, timeZone).dailyTrends;
+  const dailyTrends = useMemo<PerformanceStats['dailyTrends'] | null>(() => {
+    if (shouldFetch) return stats?.dailyTrends ?? null;
+    return buildLocalStats(localSessions, '30d', now, timeZone).dailyTrends;
+  }, [shouldFetch, stats, localSessions, now, timeZone]);
 
+  const summary = useMemo(() => {
     if (!dailyTrends) return null;
 
     const dailyStats: DailyStatInput[] = dailyTrends.map((d) => ({
@@ -43,7 +52,7 @@ export function useWeeklySummary(): { summary: WeeklySummary | null; isLoading: 
     }));
 
     return buildWeeklySummary(dailyStats, today, currentStreak);
-  }, [shouldFetch, stats, localSessions, timeZone, now, today, currentStreak]);
+  }, [dailyTrends, today, currentStreak]);
 
-  return { summary, isLoading: shouldFetch && stats === undefined };
+  return { summary, dailyTrends, now, timeZone, isLoading: shouldFetch && stats === undefined };
 }

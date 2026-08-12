@@ -11,6 +11,32 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { captureException } from '@/lib/sentry';
+import { GoogleIcon } from '@/components/ui/GoogleIcon';
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      fontFamily="$body"
+      fontSize={13}
+      fontWeight="600"
+      color="$color11"
+      letterSpacing={0.6}
+      textTransform="uppercase"
+    >
+      {children}
+    </Text>
+  );
+}
+
+function OrSeparator({ label }: { label: string }) {
+  return (
+    <XStack alignItems="center" gap="$3">
+      <YStack flex={1} height={1} backgroundColor="$borderColor" />
+      <Text fontFamily="$body" fontSize={11} fontWeight="500" color="$color11">{label}</Text>
+      <YStack flex={1} height={1} backgroundColor="$borderColor" />
+    </XStack>
+  );
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -39,6 +65,9 @@ export default function LoginScreen() {
 
   const [ssoLoading, setSsoLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [mfaMode, setMfaMode] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaSubmitting, setMfaSubmitting] = useState(false);
 
   const onSignInPress = form.handleSubmit(async (data) => {
     if (!isLoaded) return;
@@ -51,6 +80,19 @@ export default function LoginScreen() {
       if (completeSignIn.status === 'complete') {
         await setActive({ session: completeSignIn.createdSessionId });
         router.replace('/(app)/(tabs)');
+      } else if (completeSignIn.status === 'needs_second_factor') {
+        const emailFactor = completeSignIn.supportedSecondFactors?.find(
+          (factor) => factor.strategy === 'email_code'
+        );
+        if (emailFactor && emailFactor.strategy === 'email_code') {
+          await signIn.prepareSecondFactor({
+            strategy: 'email_code',
+            emailAddressId: emailFactor.emailAddressId,
+          });
+          setMfaMode(true);
+        } else {
+          setErrorMsg(t('errors.mfaUnsupported', 'Bu hesap için doğrulama yöntemi desteklenmiyor.'));
+        }
       } else if (__DEV__) {
         console.error(JSON.stringify(completeSignIn, null, 2));
       }
@@ -62,6 +104,32 @@ export default function LoginScreen() {
       }
     }
   });
+
+  const onVerifyMfaCode = React.useCallback(async () => {
+    if (!isLoaded || mfaSubmitting) return;
+    setErrorMsg('');
+    setMfaSubmitting(true);
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: 'email_code',
+        code: mfaCode,
+      });
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
+        router.replace('/(app)/(tabs)');
+      } else if (__DEV__) {
+        console.error(JSON.stringify(result, null, 2));
+      }
+    } catch (err: unknown) {
+      if (isClerkAPIResponseError(err)) {
+        setErrorMsg(err.errors?.[0]?.message || t('errors.invalidCode', 'Kod hatalı. Tekrar deneyin.'));
+      } else {
+        setErrorMsg(t('errors.invalidCode', 'Kod hatalı. Tekrar deneyin.'));
+      }
+    } finally {
+      setMfaSubmitting(false);
+    }
+  }, [isLoaded, mfaSubmitting, signIn, mfaCode, setActive, router, t]);
 
   const onPressGoogle = React.useCallback(async () => {
     if (ssoLoading) return;
@@ -99,18 +167,44 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-          <YStack flex={1} padding="$4" justifyContent="center" backgroundColor="$background">
+          <YStack flex={1} padding="$5" paddingTop="$8" backgroundColor="$background">
             <YStack gap="$4">
-          <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" textAlign="center">{t('loginTitle', 'Giriş Yap')}</Text>
+          <Text fontSize={30} lineHeight={34} fontWeight="800" color="$color" fontFamily="$heading" letterSpacing={-0.5}>{t('loginTitle', 'Giriş Yap')}</Text>
 
-          {!!errorMsg && <Text fontSize="$2" color="$red10" fontFamily="$body">{errorMsg}</Text>}
+          <Text fontSize="$2" color="$red10" fontFamily="$body" minHeight={18}>{errorMsg}</Text>
 
+          {mfaMode ? (
+            <YStack gap="$2">
+              <FieldLabel>{t('mfaCodeLabel', 'Doğrulama Kodu')}</FieldLabel>
+              <Input
+                size="$5"
+                autoCapitalize="none"
+                keyboardType="number-pad"
+                value={mfaCode}
+                onChangeText={setMfaCode}
+                placeholder={t('mfaCodePlaceholder', 'E-postanıza gelen kod')}
+                placeholderTextColor={theme.color11?.val as ColorTokens}
+              />
+              <Button
+                size="$5"
+                theme="accent"
+                fontWeight="700"
+                onPress={onVerifyMfaCode}
+                disabled={mfaSubmitting}
+              >
+                {mfaSubmitting ? t('loading', 'Yükleniyor...') : t('mfaVerifyButton', 'Doğrula')}
+              </Button>
+            </YStack>
+          ) : (
+          <>
           <Controller
             control={form.control}
             name="email"
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <YStack gap="$2">
-                <Input 
+                <FieldLabel>{t('emailLabel', 'E-posta')}</FieldLabel>
+                <Input
+                  size="$5"
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoComplete="email"
@@ -131,7 +225,9 @@ export default function LoginScreen() {
             name="password"
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <YStack gap="$2">
-                <Input 
+                <FieldLabel>{t('passwordLabel', 'Şifre')}</FieldLabel>
+                <Input
+                  size="$5"
                   value={value}
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -146,36 +242,56 @@ export default function LoginScreen() {
           />
 
           <Button
-            backgroundColor="$green10"
-            color="white"
-            hoverStyle={{ backgroundColor: '$green11' }}
-            pressStyle={{ backgroundColor: '$green9' }}
+            size="$5"
+            theme="accent"
+            fontWeight="700"
             onPress={onSignInPress}
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting ? t('loading', 'Yükleniyor...') : t('loginButton', 'Giriş Yap')}
           </Button>
+          </>
+          )}
+
+          {!mfaMode && (
+          <>
+          <OrSeparator label={t('or', 'VEYA')} />
 
           <Button
+            size="$5"
             backgroundColor="transparent"
-            color="$green10"
+            color="$color"
             borderWidth={1}
-            borderColor="$green10"
-            hoverStyle={{ backgroundColor: '$green11' }}
-            pressStyle={{ backgroundColor: '$green9' }}
+            borderColor="$borderColor"
+            icon={<GoogleIcon size={18} />}
             onPress={onPressGoogle}
             disabled={ssoLoading}
           >
             {ssoLoading ? t('loading', 'Yükleniyor...') : t('loginGoogle', 'Google ile Giriş Yap')}
           </Button>
+          </>
+          )}
+            </YStack>
 
-          <XStack justifyContent="center" marginTop="$4">
-            <Text fontSize="$4" color="$color" fontFamily="$body">{t('noAccount', 'Hesabın yok mu?')} </Text>
-            <Link href="/(auth)/register">
-              <Text fontSize="$4" color="$green10" fontFamily="$body">{t('registerLink', 'Kayıt Ol')}</Text>
-            </Link>
-          </XStack>
-        </YStack>
+            <YStack marginTop="auto" gap="$3">
+              <XStack justifyContent="center">
+                <Text fontSize="$4" color="$color" fontFamily="$body">{t('noAccount', 'Hesabın yok mu?')} </Text>
+                <Link href="/(auth)/register">
+                  <Text fontSize="$4" color="$accent9" fontFamily="$body">{t('registerLink', 'Kayıt Ol')}</Text>
+                </Link>
+              </XStack>
+
+              <Button
+                size="$5"
+                backgroundColor="transparent"
+                color="$color11"
+                borderWidth={1}
+                borderColor="$borderColor"
+                onPress={() => router.replace('/(app)/(tabs)')}
+              >
+                {t('continueAsGuest', 'Misafir Olarak Devam Et')}
+              </Button>
+            </YStack>
       </YStack>
         </ScrollView>
       </KeyboardAvoidingView>
