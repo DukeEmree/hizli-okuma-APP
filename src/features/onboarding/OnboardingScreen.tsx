@@ -1,12 +1,10 @@
-import { api } from "@/convex/_generated/api";
 import { analytics } from "@/lib/analytics";
 import { captureException } from "@/lib/sentry";
-import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useUserProgressStore } from "@/stores/userProgressStore";
 import { Button, Card, H2, H4, Text, XStack, YStack } from "tamagui";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Track } from "@/components/ui/track/Track";
@@ -57,9 +55,10 @@ const ASSESSMENT_QUESTION = {
 
 export function OnboardingScreen() {
   const router = useRouter();
-  const { isSignedIn } = useAuth();
   const setHasCompletedOnboarding = useSettingsStore(s => s.setHasCompletedOnboarding);
-  const completeOnboarding = useMutation(api.users.completeOnboarding);
+  const setDailyGoalMinutes = useSettingsStore(s => s.setDailyGoalMinutes);
+  const updateBestWpm = useUserProgressStore(s => s.updateBestWpm);
+  const updateBestComprehension = useUserProgressStore(s => s.updateBestComprehension);
 
   const [step, setStep] = useState(1);
   const insets = useSafeAreaInsets();
@@ -116,15 +115,9 @@ export function OnboardingScreen() {
     else if (initialWpm > 150) startingDifficulty = 3;
 
     try {
-      if (isSignedIn) {
-        await completeOnboarding({
-          onboardingReason: reason || "Genel gelişim",
-          trainingGoalMins: goal || 10,
-          initialWpm,
-          initialComprehension: comprehension,
-          startingDifficulty,
-        });
-      }
+      setDailyGoalMinutes(goal || 10);
+      updateBestWpm(initialWpm);
+      updateBestComprehension(comprehension / 100);
 
       setHasCompletedOnboarding(true);
       analytics.track("onboarding_completed");
