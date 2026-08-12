@@ -9,9 +9,7 @@ Goals:
 - Hızlı ve akıcı UX
 - Exercise tabanlı öğrenme
 - İlerleme, istatistik ve gamification
-- Guest-first kullanım
-- Clerk authentication
-- Convex cloud sync
+- Guest-first, local-only kullanım (hesap/giriş yok)
 - RevenueCat subscriptions
 
 ---
@@ -27,7 +25,6 @@ Goals:
 - Lucide React Native
 - Victory Native
 - Zustand + react-native-mmkv
-- Convex + Clerk
 - RevenueCat
 - Amplitude + Sentry
 - expo-notifications
@@ -117,7 +114,6 @@ Prefer:
 @/hooks
 @/stores
 @/services
-@/convex
 @/lib
 @/utils
 
@@ -145,24 +141,17 @@ src/
 ├── utils/
 └── i18n/
 
-convex/ # Backend queries, mutations and actions
-
 Keep business logic in appropriate feature, service or store layers instead of screens.
 
 ---
 
 ## Sources of Truth
 
-- Authentication: Clerk
-- Authenticated cloud data: Convex
 - Subscriptions / entitlements: RevenueCat
-- Guest/local data: Zustand + MMKV
+- All app data: Zustand + MMKV (local, on-device only)
 
-Guest users must be able to use exercises without authentication.
-
-Never mix data between users.
-
-Never trust a client-provided user ID for authorization.
+There is no authentication and no backend. Every user is a guest; all data
+stays on the device.
 
 ---
 
@@ -181,20 +170,6 @@ Do not put temporary component state into global stores without a reason.
 Persist only data that needs persistence.
 
 Do not persist derived state unnecessarily.
-
-### Guest → Auth
-
-After Clerk login, guest data may be migrated to the authenticated Convex account.
-
-Migration must protect against:
-
-- data loss
-- duplicate sync
-- repeated migration
-- partial failures
-- cross-user data leakage
-
-Logout must never expose another user's data.
 
 ---
 
@@ -328,22 +303,6 @@ Do not create a separate fake/local subscription source of truth.
 Avoid duplicate RevenueCat listeners.
 
 Never expose RevenueCat secrets in client code.
-
----
-
-## Clerk & Convex
-
-Use APIs compatible with the installed versions.
-
-Authentication state should not be duplicated unnecessarily in Zustand.
-
-Convex authorization must always be enforced server-side.
-
-Never trust client-provided user IDs for authorization.
-
-Keep backend business logic inside convex/.
-
-Avoid unnecessary queries, mutations and duplicate requests.
 
 ---
 

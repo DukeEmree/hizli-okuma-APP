@@ -6,6 +6,8 @@ Method: direct code reading plus targeted greps, followed by `bun run typecheck`
 
 This audit tracks open findings and unverified items for production readiness. All previously resolved issues have been pruned from this document.
 
+> **Superseded (2026-08-13):** Clerk and Convex were removed from this app in the 2026-08-12 migration (see `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`). This entire audit was written against the pre-migration architecture — the **Convex Audit** section, the Clerk/`convex/` findings in **Security Audit**, **Architecture**, **State Management Audit** and **Dependency / Configuration Audit**, and REM-2 (a Convex-only issue) no longer apply to this tree. Read `PROJECT_STATUS.md` for the current architecture; the RevenueCat, UI/UX, performance and general code-quality findings below are otherwise still a reasonable historical reference.
+
 ---
 
 ## Executive Summary

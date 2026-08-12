@@ -4,6 +4,8 @@ Status as of the 2026-08-11 second audit pass. `[x]` means verified from the rep
 
 Source of detail: `PRODUCTION_AUDIT.md`.
 
+> **Superseded (2026-08-13):** Clerk and Convex were removed from this app (see `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`). Every item below that references Clerk, Convex, `convex/`, sign-in, auth tokens, or server-side sync describes a component that no longer exists in this tree and can be ignored — most concretely, the entire **Authentication** and **Convex** sections, plus the Clerk/Convex bullets under **Security**, **Backup / Recovery** and **Privacy Policy**. Items about RevenueCat, notifications, Android/iOS release config, accessibility and store metadata are still accurate. See `PROJECT_STATUS.md` for the current architecture.
+
 ## Code Quality
 
 - [x] `bun run typecheck` clean
