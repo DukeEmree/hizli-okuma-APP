@@ -50,10 +50,7 @@ export function AppNotificationProvider({
       (nextAppState: AppStateStatus) => {
         if (nextAppState === "background" || nextAppState === "inactive") {
           // App backgrounda atıldığında tüm takvimi ileri sarıp güncelliyoruz
-          // (rescheduleAllReminders cancels ALL scheduled notifications, so the
-          // weekly summary trigger must be re-armed right after or it gets wiped)
           rescheduleAllReminders().catch(console.error);
-          scheduleWeeklySummaryNotification(isPremium).catch(console.error);
         }
       },
     );

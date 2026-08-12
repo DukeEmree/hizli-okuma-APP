@@ -80,10 +80,16 @@ function getNextReminderDate(daysToAdd: number, timeString: string): Date | null
   return scheduledDate;
 }
 
+const DAILY_REMINDER_IDENTIFIER = 'daily-reminder';
+const INACTIVITY_3_IDENTIFIER = 'inactivity-3';
+const INACTIVITY_7_IDENTIFIER = 'inactivity-7';
+
 export async function rescheduleAllReminders() {
-  // Önce mevcut tüm bildirimleri iptal et
-  await Notifications.cancelAllScheduledNotificationsAsync();
-  
+  // Sadece bu fonksiyonun yönettiği bildirimleri iptal et (ör. weekly-summary'i etkilemesin)
+  await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_IDENTIFIER).catch(() => {});
+  await Notifications.cancelScheduledNotificationAsync(INACTIVITY_3_IDENTIFIER).catch(() => {});
+  await Notifications.cancelScheduledNotificationAsync(INACTIVITY_7_IDENTIFIER).catch(() => {});
+
   const settings = useSettingsStore.getState();
   const streakData = useStreakCacheStore.getState();
   
@@ -118,6 +124,7 @@ export async function rescheduleAllReminders() {
 
     if (title && body) {
       await Notifications.scheduleNotificationAsync({
+        identifier: DAILY_REMINDER_IDENTIFIER,
         content: {
           title,
           body,
@@ -136,6 +143,7 @@ export async function rescheduleAllReminders() {
     const day3Date = getNextReminderDate(3, settings.dailyReminderTime);
     if (day3Date) {
       await Notifications.scheduleNotificationAsync({
+        identifier: INACTIVITY_3_IDENTIFIER,
         content: {
           title: i18n.t('notifications:inactivity3.title', 'Seni Özledik 📚'),
           body: i18n.t('notifications:inactivity3.body', 'Bir süredir görüşmedik. Bugün kısa bir egzersizle devam edelim.'),
@@ -151,6 +159,7 @@ export async function rescheduleAllReminders() {
     const day7Date = getNextReminderDate(7, settings.dailyReminderTime);
     if (day7Date) {
       await Notifications.scheduleNotificationAsync({
+        identifier: INACTIVITY_7_IDENTIFIER,
         content: {
           title: i18n.t('notifications:inactivity7.title', 'Antrenmana Geri Dön! 🚀'),
           body: i18n.t('notifications:inactivity7.body', 'Okuma antrenmanına geri dönmeye hazır mısın?'),
