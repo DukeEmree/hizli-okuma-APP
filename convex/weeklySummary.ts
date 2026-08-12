@@ -57,7 +57,6 @@ export function isWeeklyDigestHour(nowUtc: number, timezone: string): boolean {
   }
 }
 
-// Append to convex/weeklySummary.ts
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import type { PaginationResult } from "convex/server";
