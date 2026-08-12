@@ -13,11 +13,10 @@ export function StreakWeeklyCalendar() {
   const [now] = useState(() => Date.now());
   const stats = buildLocalStats(localSessions, '7d', now, timeZone);
 
-  const today = new Date();
   const last7Days: { dateStr: string; label: string; isActive: boolean }[] = [];
 
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+    const d = new Date(now - i * 24 * 60 * 60 * 1000);
     const dateStr = getLocalDateString(d.getTime(), timeZone);
     const label = d.toLocaleDateString('tr-TR', { weekday: 'short' }).charAt(0).toUpperCase();
 
