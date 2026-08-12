@@ -4,15 +4,12 @@
     "strict": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@/convex/*": ["./convex/*"],
       "@/assets/*": ["./assets/*"]
     }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "convex/**/*.ts",
-    "convex/**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "tamagui.config.ts"

@@ -62,7 +62,6 @@ export function OnboardingScreen() {
 
   const [step, setStep] = useState(1);
   const insets = useSafeAreaInsets();
-  const [reason, setReason] = useState<string | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
 
   // Assessment State
@@ -76,8 +75,7 @@ export function OnboardingScreen() {
     analytics.track("onboarding_started");
   }, []);
 
-  const handleReasonSelect = (r: string) => {
-    setReason(r);
+  const handleReasonSelect = () => {
     setStep(2);
   };
 
@@ -107,12 +105,6 @@ export function OnboardingScreen() {
     const wordCount = ASSESSMENT_TEXT.trim().split(/\s+/).length;
     const durationSeconds = (readDurationMs || 10000) / 1000;
     const initialWpm = Math.round((wordCount / durationSeconds) * 60);
-
-    // Basic difficulty adaptation (1 to 10)
-    let startingDifficulty = 2; // Default
-    if (initialWpm > 300 && comprehension === 100) startingDifficulty = 5;
-    else if (initialWpm > 200 && comprehension === 100) startingDifficulty = 4;
-    else if (initialWpm > 150) startingDifficulty = 3;
 
     try {
       setDailyGoalMinutes(goal || 10);
@@ -145,7 +137,7 @@ export function OnboardingScreen() {
 
           <YStack gap="$3">
             {REASONS.map((r) => (
-              <OptionRow key={r} label={r} onPress={() => handleReasonSelect(r)} />
+              <OptionRow key={r} label={r} onPress={handleReasonSelect} />
             ))}
           </YStack>
         </YStack>
