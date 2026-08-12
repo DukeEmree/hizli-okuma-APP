@@ -35,9 +35,15 @@ export function useCreateSession() {
     // Idempotency guard: addLocalSession silently no-ops on a duplicate
     // clientSessionId, but streak/gamification below have no way to know
     // that happened, so a double-tap or retried call must not double-run them.
+    // Keyed on exerciseId + completedAt rather than clientSessionId: every
+    // call site builds clientSessionId as `${exerciseId}-${Date.now()}`, so a
+    // retried completion gets a *different* id each time and would slip past
+    // a clientSessionId-based check.
     const alreadyRecorded = useLocalHistoryStore
       .getState()
-      .sessions.some((s) => s.clientSessionId === args.clientSessionId);
+      .sessions.some(
+        (s) => s.exerciseId === args.exerciseId && s.completedAt === args.completedAt,
+      );
     if (alreadyRecorded) {
       return { sessionId: "local", gamification: null };
     }
