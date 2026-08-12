@@ -23,9 +23,10 @@ export interface GamificationResult {
 }
 
 /**
- * Pure client-side port of `convex/gamification.ts`'s `processGamification`.
- * Same thresholds, same order of checks, same xp_1000-awarded-after-adding-
- * this-session's-xp quirk — this is a platform migration, not a rebalance.
+ * Pure local gamification engine — there is no backend, so this is the only
+ * place XP, levels and achievements are computed. Kept deliberately simple
+ * and side-effect-free so it's trivial to test and to call from
+ * `useCreateSession` on every completed session.
  */
 export function processGamification(input: GamificationInput): GamificationResult {
   const unlocked = new Set(input.unlockedAchievementIds);

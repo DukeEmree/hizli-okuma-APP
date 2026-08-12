@@ -43,7 +43,7 @@ export function useExerciseLimits() {
       };
     }
 
-    // Free/guest: no Convex data, the count comes from the on-device history.
+    // Free/guest: the count comes from the on-device history (no backend to query).
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const sessionsToday = localSessions.filter(
       (s) => getLocalDateString(s.completedAt, timeZone) === todayStr

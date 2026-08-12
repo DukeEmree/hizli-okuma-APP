@@ -59,7 +59,7 @@ export function useChunkingEngine(config: ChunkingConfig, onCompleteCallback?: (
         },
         algorithmVersion: CURRENT_ALGORITHM_VERSION,
       }, result).catch(err => {
-        console.error('Failed to store chunking session in Convex', err);
+        console.error('Failed to store chunking session locally', err);
       });
     }
 

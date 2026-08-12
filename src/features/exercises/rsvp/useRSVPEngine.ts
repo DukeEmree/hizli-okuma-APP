@@ -28,7 +28,7 @@ export function useRSVPEngine(config: RSVPConfig, onCompleteCallback?: (result: 
 
   const handleComplete = useCallback((result: ExerciseResult) => {
     if (!config.skipDefaultStorage) {
-      // Convex'e kaydet
+      // Yerel geçmişe kaydet
       storeSession({
         clientSessionId: result.exerciseId + '-' + Date.now(),
         exerciseId: result.exerciseId,
@@ -44,7 +44,7 @@ export function useRSVPEngine(config: RSVPConfig, onCompleteCallback?: (result: 
         },
         algorithmVersion: CURRENT_ALGORITHM_VERSION,
       }, result).catch(err => {
-        console.error('Failed to store session in Convex', err);
+        console.error('Failed to store session locally', err);
       });
     }
 

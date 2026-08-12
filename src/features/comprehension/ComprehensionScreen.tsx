@@ -87,7 +87,7 @@ export function ComprehensionScreen() {
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
     };
 
-    // Convex'e kaydet
+    // Yerel geçmişe kaydet
     try {
       await createSession({
         // eslint-disable-next-line react-hooks/purity

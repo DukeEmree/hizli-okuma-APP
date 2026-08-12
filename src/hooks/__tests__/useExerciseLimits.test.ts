@@ -71,8 +71,8 @@ describe("useExerciseLimits", () => {
   });
 
   test("Free user at limit cannot start exercise", () => {
-    // Free tier never queries Convex (cloud sync is premium-only), so the
-    // daily count comes entirely from the on-device history.
+    // There is no backend to query, so the daily count for every tier comes
+    // entirely from the on-device history.
     mockUseRevenueCat.mockReturnValue({ isPremium: false, isConfigured: true });
     const max = SUBSCRIPTION_CONSTANTS.FREE_TIER.MAX_DAILY_EXERCISES;
     mockUseLocalHistoryStore.mockImplementation((selector) => selector({

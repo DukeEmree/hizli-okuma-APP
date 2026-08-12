@@ -6,19 +6,10 @@ import type { ExerciseMetrics } from "@/types/exercise";
 /**
  * Local exercise history, kept on the device for every user.
  *
- * This exists because `syncStore` used to serve two unrelated purposes: the
- * pending-upload queue AND the only history a non-premium user has. The
- * queue never drains for free users (the server refuses their writes), so it
- * grew without bound and was re-parsed in full on every launch.
- *
- * Now the split is explicit:
- * - `syncStore`  = strictly an upload queue; empties as sessions reach Convex.
- * - this store   = the last 6 months of sessions, on-device, for everyone.
- *
- * Premium users additionally get their sessions stored in Convex (the cloud
- * copy is the durable one and has no retention limit). Free users keep this
- * 6-month local window and nothing else, which is also what the statistics
- * and dashboard screens read for them.
+ * There is no backend and no cloud copy — this on-device, 6-month rolling
+ * window is the only copy of a session's history that exists, for every
+ * user regardless of subscription tier. It is what the statistics and
+ * dashboard screens read.
  */
 
 /** ~6 months. Sessions older than this are dropped on the next write. */

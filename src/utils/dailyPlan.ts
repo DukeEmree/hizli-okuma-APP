@@ -1,8 +1,7 @@
 /**
  * Deterministic daily-plan exercise selection. Pure: no store access, no
  * Math.random. Same inputs -> same 4-step plan, so it can be recomputed
- * client-side or (for the DAILY_PLAN_SIZE constant only) referenced from
- * Convex without duplicating logic - same pattern as `streak.ts`.
+ * client-side at any time - same pattern as `streak.ts`.
  */
 
 const WARMUP_POOL = ['peripheral', 'schulte', 'visual-search'] as const;

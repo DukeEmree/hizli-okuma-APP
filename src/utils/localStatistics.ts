@@ -4,9 +4,8 @@ import { getLocalDateString } from '@/utils/streak';
 export type TimeRange = '7d' | '30d' | '90d' | 'all';
 
 /**
- * Same shape `convex/statistics.ts` `getPerformanceStats` returns, so the
- * statistics dashboard can render on-device history for free users without
- * knowing where the numbers came from.
+ * Computed entirely from on-device history — there is no backend, so this
+ * is the only source the statistics dashboard has for any user.
  */
 export interface PerformanceStats {
   totalTrainingTimeMs: number;
