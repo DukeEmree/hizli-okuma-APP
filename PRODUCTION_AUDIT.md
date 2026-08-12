@@ -4,7 +4,7 @@ Date: 2026-08-11 (second pass)
 Scope: full repository — `src/`, `convex/`, root configuration, `app.json`, `eas.json`, `.env.example`.
 Method: direct code reading plus targeted greps, followed by `bun run typecheck`, `bun run lint` and `bun test` against the working tree. Nothing outside the repository (Convex, Clerk, RevenueCat, Sentry, Amplitude, EAS, Play Console dashboards) was reachable; anything that can only be confirmed there is marked **VERIFY**.
 
-This pass supersedes the first audit of the same date. Findings from that pass that were fixed in the working tree are listed under [Resolved Issues](#resolved-issues); everything still open is listed under [Remaining Issues](#remaining-issues).
+This audit tracks open findings and unverified items for production readiness. All previously resolved issues have been pruned from this document.
 
 ---
 
@@ -12,17 +12,7 @@ This pass supersedes the first audit of the same date. Findings from that pass t
 
 The backend authorization model is sound: every public Convex query and mutation resolves the caller from `ctx.auth.getUserIdentity()` and scopes reads/writes to that user's own rows, and no function trusts a client-supplied user id. Gamification, streaks and premium state are all computed or written server-side only. The offline sync queue, exercise engine lifecycle and RevenueCat identity handling are all better built than typical for an app at this stage.
 
-This pass found no new security holes. What it did find was a cluster of **silent correctness bugs** — code that runs without error but produces wrong numbers or never fires at all:
-
-- Amplitude was never initialised, so every analytics event was dropped in production.
-- Comprehension percentages were rendered from a 0–1 ratio, so the dashboard showed `1%` instead of `85%`.
-- The `comp_90` achievement compared that same 0–1 ratio against `90`, making it unreachable.
-- Two comprehension exercises never emitted `comprehensionAccuracy` at all, so they were invisible to scoring, adaptive difficulty and statistics.
-- Daily statistics and the daily-goal ring bucketed by UTC while streaks bucketed by the user's timezone, so for a UTC+3 user the two disagreed for three hours every night.
-
-All of the above are fixed in this pass, along with a Sentry sampling-cost issue, an unnecessary microphone permission, and the remaining lint warnings.
-
-**Findings this pass: 14.** CRITICAL 0 · HIGH 5 · MEDIUM 5 · LOW 4. **Fixed: 11. Open: 3** (plus 6 external VERIFY items).
+**Remaining Open Issues:** 1 LOW issue in code/config (LOW-1), 5 open technical debt items (REM-2 through REM-6), plus 6 external VERIFY items.
 
 **Production readiness: code is ready; release configuration is not yet verified.** The remaining blockers are all outside the repository — real production Clerk and RevenueCat keys, Android release signing, a Privacy Policy URL, and the Play Console Data Safety form. See `PRODUCTION_CHECKLIST.md`.
 
@@ -49,7 +39,7 @@ Data flows one way: an exercise completes → `useCreateSession` writes local pr
 
 **Authorization.** Every public function in `users.ts`, `exerciseSessions.ts`, `exerciseProgress.ts`, `streaks.ts`, `statistics.ts`, `home.ts` and `pushTokens.ts` follows the same shape: resolve identity → look up the caller's own `users` row by `by_clerkId` from the verified `identity.subject` → scope all access through `by_userId` indexes. No function accepts a `userId`/`clerkId` argument as an authorization input, so there is no IDOR surface.
 
-**Privilege separation.** `subscriptions.syncPremiumState` — the only writer of `users.isPremium` — is an `internalMutation` reachable only from the webhook handler, so a client cannot self-grant premium. `migrations.migrateAllUserStatistics` is likewise `internalMutation` (this was the first pass's CRITICAL finding, now fixed). `pushTokens.removeToken` verifies `existing.userId === user._id` before deleting, so a guessed token string cannot unregister another user's device.
+**Privilege separation.** `subscriptions.syncPremiumState` — the only writer of `users.isPremium` — is an `internalMutation` reachable only from the webhook handler, so a client cannot self-grant premium. `migrations.migrateAllUserStatistics` is likewise `internalMutation`. `pushTokens.removeToken` verifies `existing.userId === user._id` before deleting, so a guessed token string cannot unregister another user's device.
 
 **Server-side validation.** `createSession` bounds duration (≤ 4h), score (≤ 50000), WPM (≤ 5000), rejects future or inverted timestamps, and validates reaction-time arrays. `updateProgress` rejects out-of-range levels, negative counters and difficulty jumps larger than the one step the adaptive algorithm can produce. Both re-check `user.isPremium` server-side rather than trusting the client to skip the call. These are deliberately generous sanity ceilings, not a re-derivation of the scoring formula — a modified client can still inflate its own personal numbers within them. With no cross-user leaderboard in the product, the blast radius is the attacker's own statistics.
 
@@ -63,78 +53,6 @@ Data flows one way: an exercise completes → `useCreateSession` writes local pr
 
 ## Bug Audit
 
-### [HIGH-1] Amplitude was never initialised — all production analytics dropped
-
-- **Severity:** HIGH · **Status:** FIXED
-- **File:** `src/lib/analytics.ts`, `src/app/_layout.tsx`
-- **Description:** `analytics.init()` existed but had no caller anywhere in the codebase (`grep -rn "analytics.init"` returned only the definition). `analytics.track()` was called from the root layout, the exercise engine, the sync provider and onboarding, all of which invoked Amplitude's `track()` against an unconfigured SDK.
-- **Impact:** Zero product analytics in production — no funnel, no retention data, no way to tell whether a release regressed engagement. Silent: nothing throws.
-- **Resolution:** `analytics.init()` is now called at module scope in `src/app/_layout.tsx`, next to `initSentry()`, before the first `track()` call.
-
-### [HIGH-2] Comprehension shown as `1%` — a 0–1 ratio rendered as a percentage
-
-- **Severity:** HIGH · **Status:** FIXED
-- **File:** `convex/home.ts`, `src/app/(app)/(tabs)/index.tsx`
-- **Description:** `metrics.comprehensionAccuracy` is a 0–1 ratio (`src/types/exercise.ts:46`). `home.getDashboardData` averaged it and returned `Math.round(...)`, which is always 0 or 1, while its own fallback (`user.initialComprehension`, written by onboarding) is on a 0–100 scale. The home screen renders the result as `${avgComp}%`.
-- **Impact:** The "Kavrama" stat on the main dashboard read `0%` or `1%` for every user with comprehension history — the headline metric of a speed-reading app.
-- **Resolution:** Both the Convex branch and the local guest branch now scale to 0–100 at the point of return. `StatisticsDashboard` already did this correctly and was left alone.
-
-### [HIGH-3] Local dashboard read a metric key that does not exist
-
-- **Severity:** HIGH · **Status:** FIXED
-- **File:** `src/app/(app)/(tabs)/index.tsx`
-- **Description:** The guest/free branch summed `s.metrics?.comprehension`; the field is `comprehensionAccuracy`. `ExerciseMetrics` carries an index signature (`[key: string]: any`), so this typo was never a type error — it simply always read `undefined`.
-- **Impact:** Guest and free users never saw a comprehension average at all; the code fell through to a store field that nothing ever writes, yielding `-`.
-- **Resolution:** Reads the correct key and scales it.
-
-### [HIGH-4] `comp_90` achievement was unreachable
-
-- **Severity:** HIGH · **Status:** FIXED
-- **File:** `convex/gamification.ts:66`
-- **Description:** `if (sessionComp !== undefined && sessionComp >= 90)` — `sessionComp` is `metrics.comprehensionAccuracy`, a 0–1 ratio. The condition could never be true.
-- **Impact:** One of five achievements could never unlock, and its 100 XP was never awarded.
-- **Resolution:** Threshold changed to `>= 0.9`.
-
-### [HIGH-5] Two comprehension exercises never reported comprehension
-
-- **Severity:** HIGH · **Status:** FIXED
-- **File:** `src/features/exercises/comprehension-speed/useComprehensionSpeedEngine.ts`, `src/features/exercises/main-idea/useMainIdeaEngine.ts`
-- **Description:** Both exercises compute per-round accuracy. `comprehension-speed` sent it only as `comprehensionScore` (0–100), a field nothing consumes; `main-idea` did not send it at all. Scoring (`utils/scoring.ts`), adaptive difficulty (`utils/adaptiveDifficulty.ts`), the daily `compSum`/`compCount` aggregates and the `comp_90` achievement all key off `comprehensionAccuracy`.
-- **Impact:** Both exercises scored as if the user answered everything correctly (`accuracy` defaults to 1 when the field is absent), their difficulty never adapted on comprehension, and they contributed nothing to the comprehension trend chart.
-- **Resolution:** Both now emit `comprehensionAccuracy` alongside their existing metrics. Write-only `readingDurationMs`/`readingTimes`/`lastShowTime` state was removed at the same time (it was set on every round and never read, costing an extra render each time).
-
-### [MEDIUM-1] Daily statistics and the daily-goal ring used UTC days
-
-- **Severity:** MEDIUM · **Status:** FIXED
-- **File:** `convex/exerciseSessions.ts`, `convex/home.ts`
-- **Description:** Streaks bucket by the user's local date (`calculateStreakUpdate` with `user.timezone`), but `dailyStatistics` bucketed by `toISOString()` and the dashboard's "today" window started at UTC midnight.
-- **Impact:** For a UTC+3 user, sessions completed between 00:00 and 03:00 local counted toward the previous day, while yesterday's 03:00–24:00 sessions counted as today. The daily-goal progress bar was wrong for the first three hours of every day, and it disagreed with the streak, which used the correct boundary.
-- **Resolution:** Both now bucket with `getLocalDateString(..., user.timezone)`. `dailyStatistics.timestamp` remains the UTC instant of that local midnight, so existing `by_userId_and_timestamp` range queries are unaffected. Rows written before this change keep their old bucket; on a pre-launch deployment that is acceptable, and mixing is bounded to at most one day's boundary.
-
-### [MEDIUM-2] Dashboard scanned every session the user had ever completed
-
-- **Severity:** MEDIUM · **Status:** FIXED
-- **File:** `convex/home.ts`, `convex/schema.ts`
-- **Description:** "Today's training time" was computed with `.withIndex('by_userId').filter(q.gte('completedAt', todayStart))`. In Convex, `.filter()` is applied after the index scan, so this read the user's entire session history on every dashboard load — and it is a reactive query, so it re-ran on every write.
-- **Impact:** Read cost and latency grew linearly with lifetime session count for the app's most-visited screen.
-- **Resolution:** Added the `by_userId_and_completedAt` index (additive, no data migration) and replaced the scan with a bounded 48-hour range read, filtered in-process by local date. This is also DST-safe, which a fixed-offset calculation would not be.
-
-### [MEDIUM-3] Sentry sampled 100% of traces and profiles in production
-
-- **Severity:** MEDIUM · **Status:** FIXED
-- **File:** `src/lib/sentry.ts`
-- **Description:** `tracesSampleRate: 1.0` and `profilesSampleRate: 1.0`.
-- **Impact:** Every transaction from every user is sent and billed; the free/team Sentry quota is exhausted quickly by a consumer app, at which point errors — the thing that actually matters — start being dropped. Profiling at 100% also adds measurable JS-thread overhead.
-- **Resolution:** Both set to `0.2`. Error and crash capture is unaffected; only performance sampling changed.
-
-### [MEDIUM-4] Onboarding flash for already-onboarded users right after sign-in
-
-- **Severity:** MEDIUM · **Status:** FIXED
-- **File:** `src/app/_layout.tsx`
-- **Description:** The root gate treated a signed-in user as onboarded only if the Convex row said so. Immediately after sign-in, `getMe` resolves to `null` for the window before `AuthSync`'s `users.store` mutation creates that row, so the gate redirected to `(onboarding)` and then back out again once the row appeared.
-- **Impact:** A visible flash of the onboarding flow on every fresh sign-in.
-- **Resolution:** A signed-in user now counts as onboarded if either the cloud row or the device's local flag says so. `AuthSync` seeds the new row from that same local flag, so the two cannot disagree for long.
-
 ### [LOW-1] Unused Clerk secret key in `.env.local`
 
 - **Severity:** LOW · **Status:** OPEN (requires your action — it is your local file)
@@ -143,42 +61,16 @@ Data flows one way: an exercise completes → `useCreateSession` writes local pr
 - **Impact:** No leak today. A mobile client has no legitimate use for a Clerk secret key, and its presence is unnecessary exposure if that file is ever synced, backed up or shared.
 - **Resolution:** Delete the line. Nothing depends on it.
 
-### [LOW-2] `RECORD_AUDIO` and foreground-service permissions declared but unused
-
-- **Severity:** LOW · **Status:** FIXED
-- **File:** `app.json`
-- **Description:** The Android permission list declared `RECORD_AUDIO`, `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MEDIA_PLAYBACK`. The app's only audio usage is `useAudioPlayer` playing a metronome tick (`src/hooks/useMetronome.ts`); nothing records, and the metronome stops when the app backgrounds, so no foreground service is needed. `expo-audio` injects these transitively.
-- **Impact:** A microphone permission on the Play listing invites Data Safety scrutiny and scares users at install time, for a capability the app does not have.
-- **Resolution:** Removed from `permissions` and added to `blockedPermissions` so the transitive injection is stripped from the merged manifest. Verify with `npx expo prebuild --clean` before release.
-
-### [LOW-3] Lint warnings
-
-- **Severity:** LOW · **Status:** FIXED
-- **Description:** 20 warnings — unused imports (`View` ×4, `DifficultyLevel`, `router`, `isLoaded`, `reset` ×2, two unused test imports), write-only state (covered by HIGH-5), and `Array<T>` style violations ×5.
-- **Resolution:** All cleared. `bun run lint` now reports zero errors and zero warnings.
-
-### [LOW-4] Client-side errors that never reached Sentry
-
-- **Severity:** LOW · **Status:** FIXED
-- **File:** `src/app/(auth)/login.tsx`, `src/features/onboarding/OnboardingScreen.tsx`
-- **Description:** Google SSO failures and onboarding-submit failures were `console.error`'d only.
-- **Impact:** Two of the highest-value failure paths in the app — sign-in and onboarding completion — were invisible in production.
-- **Resolution:** Both routed through `captureException` with context. The Clerk response-object dumps in `login.tsx`/`register.tsx` are already `__DEV__`-gated and were left as is.
-
 ---
 
 ## Performance Audit
 
 | Area | Finding | Status |
 |---|---|---|
-| Convex dashboard query | Unindexed date filter scanning full session history (MEDIUM-2) | Fixed via new index + bounded range read |
 | Exercise tick loop | `useExerciseEngine` throttles tick-driven React state to ~1/s while the timer itself runs at 16–100 ms | Good as-is |
-| Render-time work | Dead write-only state in two engines caused a re-render per round (HIGH-5) | Fixed |
 | Lists | Exercise list is registry-driven (15 items), recent activity capped at 5, history charts capped at 15–100 points | No virtualisation needed |
 | Zustand | Selector-based subscriptions throughout; no whole-store subscriptions found | Good as-is |
 | Sync provider | 15 s interval always armed even with an empty queue | Open, negligible — the callback early-returns on a length check |
-| Local history | The MMKV sync queue doubles as free-tier history and is never pruned | Open, see REM-1 |
-| Sentry | 100% trace/profile sampling (MEDIUM-3) | Fixed |
 | Startup | `initSentry()`/`analytics.init()` at module scope, fonts gate the splash, no blocking network call before first paint | Good as-is |
 
 No `useMemo`/`useCallback` was added or removed for its own sake. A render-profile pass on a real low-end Android device was not possible in a static audit and is listed as VERIFY.
@@ -188,9 +80,9 @@ No `useMemo`/`useCallback` was added or removed for its own sake. A render-profi
 ## Convex Audit
 
 - **Function typing:** all 15 modules use the object form with `args` validators. Public vs internal separation is correct — `migrations`, `subscriptions`, `revenuecatEvents`, `expoPush` and the internal half of `pushTokens` are all `internal*`.
-- **Indexes:** every query in the codebase runs through an index; the only `.filter()` on an unindexed field was MEDIUM-2, now removed. `by_userId_and_completedAt` added this pass.
+- **Indexes:** every query in the codebase runs through an index; the only `.filter()` on an unindexed field was removed. `by_userId_and_completedAt` added.
 - **Transactions:** the RevenueCat dedup ledger relies on Convex's OCC retry to make check-then-insert race-safe, which is correct for Convex specifically and documented in the code.
-- **Unbounded reads:** `users.resetMyStatistics` and `users.deleteMyAccount` `collect()` every row across seven tables for the caller. Convex's per-transaction read limits (documents and bytes) would reject this for a very heavy long-term user. Not reachable at current data volumes — see REM-2.
+- **Unbounded reads:** `users.resetMyStatistics` and `users.deleteMyAccount` `collect()` every row across seven tables for the caller. Convex's per-transaction read limits (documents and bytes) would reject this for an extremely heavy account. Not reachable at current data volumes — see REM-2.
 - **Cost shape:** `home.getDashboardData` still issues three reads per dashboard load (5 recent, 48 h window, 100 for rolling averages), two of which duplicate data already aggregated in `userStatistics`/`dailyStatistics`. Correct, and now bounded; consolidating it is an optimisation, not a fix.
 - **Schema:** `metrics: v.any()` on `exerciseSessions` is deliberate (per-exercise shapes) and is bounds-checked in the mutation rather than by the validator.
 
@@ -231,11 +123,10 @@ This is a deliberate visual change (it also means regenerating the app icon and 
 **Open UI/UX items (not applied):**
 
 1. The home and statistics screens are the only two with hardcoded Turkish strings ("Merhaba", "Bugünkü Hedef", "Misafir", …) while 25 other files use `useTranslation`. `home.json` exists but is nearly empty. With Turkish as the only shipped locale this changes nothing visually today; it becomes a blocker the moment a second language is added.
-2. ~~Free and guest users see a completely empty statistics tab.~~ Resolved after the audit: the dashboard is now built from `localHistoryStore` (6 months on-device) for non-premium users, in the same shape the Convex query returns, so the component renders identically for both.
-3. The exercises tab shows a "En İyi" badge from `useStatisticsStore.stats['all']`, but nothing ever fetches the `'all'` time range (the statistics screen defaults to `'7d'`), so the badge never appears.
-4. Touch targets: `SettingsRow` rows are `paddingVertical="$2"` around a 20 px icon, which lands below the 48 dp Android minimum for the pressable rows. Bump to `$3`.
-5. No "Restore Purchases" entry point outside RevenueCat's hosted Customer Center. Acceptable if the Customer Center has restore enabled — VERIFY.
-6. No in-app Privacy Policy / Terms links (see the checklist).
+2. The exercises tab shows a "En İyi" badge from `useStatisticsStore.stats['all']`, but nothing ever fetches the `'all'` time range (the statistics screen defaults to `'7d'`), so the badge never appears.
+3. Touch targets: `SettingsRow` rows are `paddingVertical="$2"` around a 20 px icon, which lands below the 48 dp Android minimum for the pressable rows. Bump to `$3`.
+4. No "Restore Purchases" entry point outside RevenueCat's hosted Customer Center. Acceptable if the Customer Center has restore enabled — VERIFY.
+5. No in-app Privacy Policy / Terms links (see the checklist).
 
 **Micro-interaction proposals (not applied):** press-scale on the primary CTA (the exercise cards already do this via `pressStyle`); animate the daily-goal `Progress` value on mount instead of snapping; a brief success scale/fade on the exercise result card; a flame pulse on `StreakBadge` when the streak increments; haptic feedback on exercise completion (`hapticsEnabled` already exists in settings and currently has no consumer). All are Reanimated-only, no new dependencies.
 
@@ -244,41 +135,27 @@ This is a deliberate visual change (it also means regenerating the app icon and 
 ## Dependency / Configuration Audit
 
 - `bun run typecheck`: clean.
-- `bun run lint`: 0 errors, 0 warnings (was 20 warnings).
-- `bunx expo export --platform android`: succeeds, producing a 15 MB Hermes bundle. This also settles the previous pass's open question about the missing `babel.config.js`/`metro.config.js` — SDK 57's defaults are sufficient and the production bundle compiles.
+- `bun run lint`: 0 errors, 0 warnings.
+- `bunx expo export --platform android`: succeeds, producing a 15 MB Hermes bundle. SDK 57's defaults are sufficient and the production bundle compiles.
 - `bun run i18n:check`: passes.
-- `bun test`: 134 pass, 0 fail, 20 files. `act(...)` and `react-test-renderer is deprecated` notices are React 19 test-environment noise, not failures.
+- `bun test`: 134 pass, 0 fail, 20 files.
 - `package.json` has no `test` script even though `AGENTS.md` documents `bun test`; the command works because Bun's runner needs no script. Harmless, worth adding for discoverability.
 - `eslint` is pinned to major 8 while TypeScript is 6.x and React 19.2. Lint runs clean today; flagged for future compatibility only. No upgrade performed.
 - `app.json`: `versionCode: 1`, `version: 1.0.0`, consistent bundle/package ids, `extra.eas.projectId` matches what `usePushNotificationToken` reads. `eas.json` uses `appVersionSource: remote` with `autoIncrement` on production.
-- `.env.example` was rewritten this pass: all seven client variables plus the Convex-deployment variables (`CLERK_FRONTEND_API_URL`, `REVENUECAT_WEBHOOK_AUTH_HEADER`, `EXPO_ACCESS_TOKEN`) with placeholder values and comments on what each one breaks when missing. No real values.
-- Root housekeeping: `test-expo-router.js`, `test-export.ts`, `test-export2.ts` and `scratch/` were tracked in git but belonged to no lint, test or build path. Deleted with your approval; they remain recoverable from git history.
+- `.env.example`: all seven client variables plus the Convex-deployment variables (`CLERK_FRONTEND_API_URL`, `REVENUECAT_WEBHOOK_AUTH_HEADER`, `EXPO_ACCESS_TOKEN`) with placeholder values and comments on what each one breaks when missing. No real values.
 
 ---
 
 ## Critical Findings
 
-None open. The first pass's three CRITICAL findings are resolved or reclassified:
-
 | Finding | Outcome |
 |---|---|
-| Public unauthenticated `migrateAllUserStatistics` mutation | FIXED — now `internalMutation` |
 | Android release signed with the debug keystore | Reclassified: `android/` is gitignored and untracked, i.e. a local prebuild artifact, not the pipeline that produces the Play build. EAS-managed signing must still be VERIFIED (`eas credentials -p android`) |
 | No `EXPO_PUBLIC_*` variables on the EAS production profile | External VERIFY — see `PRODUCTION_CHECKLIST.md` |
 
 ---
 
-## Resolved Issues
-
-Fixed in this pass: HIGH-1 (Amplitude init), HIGH-2 (comprehension scale, server), HIGH-3 (comprehension key, client), HIGH-4 (`comp_90` threshold), HIGH-5 (missing `comprehensionAccuracy` in two exercises), MEDIUM-1 (timezone day buckets), MEDIUM-2 (unindexed dashboard scan), MEDIUM-3 (Sentry sampling), MEDIUM-4 (onboarding flash), LOW-2 (`RECORD_AUDIO`), LOW-3 (lint), LOW-4 (unreported client errors).
-
-Fixed in the previous pass and re-verified here: public migration mutation, missing `POST_NOTIFICATIONS`, `captureException` never called, orphaned push tokens on account deletion, partial account-deletion failure handling, guest-migration double-count window, unconditional RevenueCat `DEBUG` log level, missing AppState pause mid-exercise, `SYSTEM_ALERT_WINDOW` blocked.
-
----
-
 ## Remaining Issues
-
-**REM-1 · RESOLVED after the audit.** The sync queue used to double as free-tier history and grew without bound. It is now split: `syncStore` is a pure upload queue, filled only for signed-in premium users; `localHistoryStore` keeps the last 6 months of sessions on-device for everyone and is what the dashboard, daily limit and exercise charts read. Existing installs are migrated once by `importLegacyQueueIntoHistory`, and unsynced local sessions are backfilled to Convex when a user becomes premium.
 
 **REM-2 · `resetMyStatistics` / `deleteMyAccount` read every row in one transaction.** Seven `collect()` calls with no pagination. Convex's per-transaction limits would reject this for an extremely heavy account. The fix is batched deletion driven by the scheduler, which is a meaningful rewrite of both mutations. *Severity: MEDIUM (latent). Not reachable at current volumes.*
 
