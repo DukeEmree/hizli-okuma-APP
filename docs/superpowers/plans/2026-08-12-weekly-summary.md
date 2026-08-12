@@ -743,24 +743,22 @@ git commit -m "feat: add weeklySummary i18n namespace"
 
 ---
 
-### Task 6: Home screen card
+### Task 6: Shared hook + home screen card
 
 **Files:**
+- Create: `src/features/weeklySummary/useWeeklySummary.ts`
 - Create: `src/features/weeklySummary/WeeklySummaryCard.tsx`
 - Modify: `src/app/(app)/(tabs)/index.tsx`
 
 **Interfaces:**
 - Consumes: `buildWeeklySummary`, `DailyStatInput` from `@/utils/weeklySummary` (Task 1); `buildLocalStats` from `@/utils/localStatistics` (existing); `getLocalDateString` from `@/utils/streak` (existing); `useLocalHistoryStore`, `useStreakCacheStore`, `useRevenueCat`, `api.statistics.getPerformanceStats` (existing, same pattern as `DailyPlanCard`).
-- Produces: `WeeklySummaryCard` component, rendered on the home screen below `DailyPlanCard`. No props.
+- Produces: `useWeeklySummary(): { summary: WeeklySummary | null; isLoading: boolean }` — the single place that decides premium-vs-local data source, shared verbatim by the card (this task) and the full screen (Task 7, which otherwise would duplicate this exact block). `WeeklySummaryCard` component, rendered on the home screen below `DailyPlanCard`. No props on either.
 
-- [ ] **Step 1: Write the component**
+- [ ] **Step 1: Write the shared hook**
 
 ```typescript
-// src/features/weeklySummary/WeeklySummaryCard.tsx
+// src/features/weeklySummary/useWeeklySummary.ts
 import { useMemo, useState } from 'react';
-import { Card, H4, Text, YStack, Button } from 'tamagui';
-import { useRouter, Href } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { useQuery } from 'convex/react';
 import { useAuth } from '@clerk/clerk-expo';
 import { api } from '@/convex/_generated/api';
@@ -769,11 +767,14 @@ import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { useStreakCacheStore } from '@/stores/streakCacheStore';
 import { getLocalDateString } from '@/utils/streak';
 import { buildLocalStats } from '@/utils/localStatistics';
-import { buildWeeklySummary, type DailyStatInput } from '@/utils/weeklySummary';
+import { buildWeeklySummary, type DailyStatInput, type WeeklySummary } from '@/utils/weeklySummary';
 
-export function WeeklySummaryCard() {
-  const router = useRouter();
-  const { t } = useTranslation('weeklySummary');
+/**
+ * Single source of the weekly summary for both the home card and the full
+ * screen: decides premium (server) vs free/guest (local) data source once,
+ * so the two surfaces can never disagree on the numbers.
+ */
+export function useWeeklySummary(): { summary: WeeklySummary | null; isLoading: boolean } {
   const { isPremium } = useRevenueCat();
   const { isLoaded, isSignedIn } = useAuth();
   const currentStreak = useStreakCacheStore((s) => s.currentStreak);
@@ -804,8 +805,25 @@ export function WeeklySummaryCard() {
     return buildWeeklySummary(dailyStats, today, currentStreak);
   }, [shouldFetch, stats, localSessions, timeZone, now, today, currentStreak]);
 
-  if (shouldFetch && stats === undefined) return null; // loading
-  if (!summary) return null;
+  return { summary, isLoading: shouldFetch && stats === undefined };
+}
+```
+
+- [ ] **Step 2: Write the card**
+
+```typescript
+// src/features/weeklySummary/WeeklySummaryCard.tsx
+import { Card, H4, Text, YStack, Button } from 'tamagui';
+import { useRouter, Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { useWeeklySummary } from './useWeeklySummary';
+
+export function WeeklySummaryCard() {
+  const router = useRouter();
+  const { t } = useTranslation('weeklySummary');
+  const { summary, isLoading } = useWeeklySummary();
+
+  if (isLoading || !summary) return null;
 
   const handlePress = () => router.push('/(app)/weekly-summary' as Href);
 
@@ -842,7 +860,7 @@ export function WeeklySummaryCard() {
 }
 ```
 
-- [ ] **Step 2: Wire it into the home screen**
+- [ ] **Step 3: Wire it into the home screen**
 
 In `src/app/(app)/(tabs)/index.tsx`, add the import:
 
@@ -860,12 +878,12 @@ And render it directly below `<DailyPlanCard />` (`src/app/(app)/(tabs)/index.ts
           <WeeklySummaryCard />
 ```
 
-- [ ] **Step 3: Typecheck, lint, and commit**
+- [ ] **Step 4: Typecheck, lint, and commit**
 
 ```bash
 bun run typecheck
 bun run lint
-git add src/features/weeklySummary/WeeklySummaryCard.tsx src/app/\(app\)/\(tabs\)/index.tsx
+git add src/features/weeklySummary/useWeeklySummary.ts src/features/weeklySummary/WeeklySummaryCard.tsx src/app/\(app\)/\(tabs\)/index.tsx
 git commit -m "feat: add weekly summary card to home screen"
 ```
 
@@ -878,62 +896,25 @@ git commit -m "feat: add weekly summary card to home screen"
 - Create: `src/app/(app)/weekly-summary.tsx`
 
 **Interfaces:**
-- Consumes: same data hooks as `WeeklySummaryCard` (Task 6) — this screen duplicates the same computation rather than accepting it as a prop, since it's also the direct target of a cold-start notification tap (no card render happens first in that case).
+- Consumes: `useWeeklySummary()` from `./useWeeklySummary` (Task 6) — same hook the card uses, so this screen never duplicates that data-source logic and can never disagree with the card's numbers.
 - Produces: route `/(app)/weekly-summary`, reachable from the card (Task 6), the premium server push (Task 3, `data.screen`), and the free/guest local notification (Task 4, `data.screen`).
 
 - [ ] **Step 1: Write the screen**
 
 ```typescript
 // src/features/weeklySummary/WeeklySummaryScreen.tsx
-import { useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { YStack, Text, H2, H4, Card, Button, Spinner, View } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from 'convex/react';
-import { useAuth } from '@clerk/clerk-expo';
-import { api } from '@/convex/_generated/api';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
-import { useLocalHistoryStore } from '@/stores/localHistoryStore';
-import { useStreakCacheStore } from '@/stores/streakCacheStore';
-import { getLocalDateString } from '@/utils/streak';
-import { buildLocalStats } from '@/utils/localStatistics';
-import { buildWeeklySummary, type DailyStatInput } from '@/utils/weeklySummary';
+import { useWeeklySummary } from './useWeeklySummary';
 
 export function WeeklySummaryScreen() {
   const router = useRouter();
   const { t } = useTranslation('weeklySummary');
-  const { isPremium } = useRevenueCat();
-  const { isLoaded, isSignedIn } = useAuth();
-  const currentStreak = useStreakCacheStore((s) => s.currentStreak);
-  const localSessions = useLocalHistoryStore((s) => s.sessions);
+  const { summary, isLoading } = useWeeklySummary();
 
-  const shouldFetch = isLoaded && isSignedIn && isPremium;
-  const stats = useQuery(api.statistics.getPerformanceStats, shouldFetch ? { timeRange: '30d' } : 'skip');
-
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  // eslint-disable-next-line react-hooks/purity
-  const [now] = useState(() => Date.now());
-  const today = getLocalDateString(now, timeZone);
-
-  const summary = useMemo(() => {
-    const dailyTrends = shouldFetch
-      ? stats?.dailyTrends
-      : buildLocalStats(localSessions, '30d', now, timeZone).dailyTrends;
-
-    if (!dailyTrends) return null;
-
-    const dailyStats: DailyStatInput[] = dailyTrends.map((d) => ({
-      date: d.date,
-      durationMs: d.durationMs,
-      avgWpm: d.avgWpm,
-      sessionCount: d.sessionCount,
-    }));
-
-    return buildWeeklySummary(dailyStats, today, currentStreak);
-  }, [shouldFetch, stats, localSessions, timeZone, now, today, currentStreak]);
-
-  if (shouldFetch && stats === undefined) {
+  if (isLoading) {
     return (
       <View flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
         <Spinner size="large" />
