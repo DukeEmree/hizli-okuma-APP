@@ -1,21 +1,10 @@
 import { createMMKV } from 'react-native-mmkv';
 import { StateStorage } from 'zustand/middleware';
 
-// Ana MMKV instance
 export const mmkv = createMMKV({ id: 'hizli-okuma' });
 
 /**
- * Mevcut giriş yapmış kullanıcının ID'si. Clerk login/logout akışında
- * `setActiveUserId` ile güncellenir (bkz. AuthSync.tsx).
- */
-let activeUserId: string | null = 'guest';
-
-export const setActiveUserId = (userId: string | null) => {
-  activeUserId = userId;
-};
-
-/**
- * Global (cihaz seviyesi) ayarlar için (tema, dil vb.)
+ * Ana (cihaz seviyesi) depolama adaptörü.
  */
 export const globalStorageAdapter: StateStorage = {
   setItem: (name, value) => {
@@ -31,21 +20,9 @@ export const globalStorageAdapter: StateStorage = {
 };
 
 /**
- * Kullanıcıya özel veriler için (progress, stats vb.).
- * Key'leri `userId_` ile prefix'ler, böylece farklı kullanıcıların verileri izole edilir.
+ * Historically prefixed per-user storage; now just an alias of
+ * `globalStorageAdapter` since the app has no accounts and therefore only
+ * ever one local user. Kept as a separate export so the stores that use it
+ * don't need call-site changes.
  */
-export const userScopedStorageAdapter: StateStorage = {
-  setItem: (name, value) => {
-    const prefix = activeUserId || 'guest';
-    return mmkv.set(`${prefix}_${name}`, value);
-  },
-  getItem: (name) => {
-    const prefix = activeUserId || 'guest';
-    const value = mmkv.getString(`${prefix}_${name}`);
-    return value ?? null;
-  },
-  removeItem: (name) => {
-    const prefix = activeUserId || 'guest';
-    mmkv.remove(`${prefix}_${name}`);
-  },
-};
+export const userScopedStorageAdapter: StateStorage = globalStorageAdapter;
