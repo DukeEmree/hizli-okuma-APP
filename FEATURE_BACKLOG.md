@@ -1,73 +1,20 @@
 # Feature Backlog
 
-> Planlanan özellikler ve karar bekleyen teknik borç. 1, 3-5 ve 8. maddeler henüz koda girmedi — bu dosya onlar için kapsam, teknik plan ve açık soruları tutar; sıra geldikçe birlikte ekleyeceğiz. Tamamlananlar başlıklarında **UYGULANDI** olarak işaretli ve ne yapıldığı yazılı.
+> Planlanan özellikler ve karar bekleyen teknik borç. Tamamlanan maddeler bu dosyadan çıkarılmıştır.
 
-Son güncelleme: 2026-08-12 (2, 6, 7.1, 7.2 ve 8 uygulandı)
 İlgili dokümanlar: `PRODUCTION_AUDIT.md` (mevcut durum ve bulgular), `PROJECT_STATUS.md` (mimari), `PRODUCTION_CHECKLIST.md` (yayın öncesi işler).
 
 ---
 
 ## Önce bilinmesi gereken: gamification şu an sadece premium çalışıyor
 
-Bu, aşağıdaki özelliklerin çoğunu doğrudan etkiliyor, o yüzden başa yazıyorum.
+Bu, aşağıdaki özelliklerin bazılarını (ör. başarım sistemi) doğrudan etkiliyor:
 
-XP, level ve başarımlar **yalnızca** `convex/exerciseSessions.createSession` içinde, sunucuda hesaplanıyor. O mutation premium olmayan kullanıcı için hiçbir şey yazmadan erken dönüyor, ve `SyncProvider` zaten kuyruğu sadece premium kullanıcı için boşaltıyor. Sonuç:
-
+- XP, level ve başarımlar **yalnızca** `convex/exerciseSessions.createSession` içinde, sunucuda hesaplanıyor. O mutation premium olmayan kullanıcı için hiçbir şey yazmadan erken dönüyor, ve `SyncProvider` zaten kuyruğu sadece premium kullanıcı için boşaltıyor.
 - Guest ve ücretsiz kullanıcı **hiç XP kazanmıyor, hiç başarım açmıyor**, `AchievementPopupGlobal` onlar için hiç tetiklenmiyor.
 - `useGamificationStore` persist edilmiyor (sadece bellekte), yani premium kullanıcıda bile uygulama kapanınca bekleyen popup kayboluyor (bkz. 7.3).
-- `XP_SOURCES.DAILY_GOAL_COMPLETED` (50 XP) ve `XP_SOURCES.STREAK_DAY` (20 XP) tanımlı ama hiçbir yerde verilmiyor; `processGamification` çağrısında `isDailyGoalCompleted` sabit `false` geçiliyor.
 
-Yani "kullanıcıyı elde tutma" mekanizmasının tamamı, parayı zaten ödemiş olan kullanıcıya çalışıyor; ödemeyen kullanıcı hiç görmüyor. Aşağıdaki 1., 2. ve 5. maddeler bu karar netleşmeden tam anlamıyla yapılamaz.
-
-**Karar gereken:** gamification (XP/level/başarım/streak) ücretsiz kullanıcıda da çalışsın mı? Öneri: evet — hesaplamayı istemci tarafına da alıp (aynı saf fonksiyonlarla) yerel olarak çalıştırmak, cloud sync'i premium tutmaya devam etmek. Aksi halde ücretsiz kullanıcı için uygulama "ilerleme hissi" vermiyor ve premium'a geçmek için de bir sebep oluşmuyor.
-
----
-
-## 1. Günlük Plan
-
-**Durum: Tamamlandı.** Sabit 4 egzersizlik plan, "Sıradaki: X" zinciri, plan tamamlandı ekranı (premium: XP+streak, free/guest: özet + soft paywall kartı), `isDailyGoalCompleted` server-side gerçek hesaplama. Kod: `src/utils/dailyPlan.ts`, `src/stores/dailyPlanStore.ts`, `src/features/dailyPlan/`, `src/features/exercises/shared/ExerciseCompletionActions.tsx`, `convex/exerciseSessions.ts`, `convex/gamification.ts`.
-
-**Kullanıcı problemi.** Egzersizler sekmesinde 15 eşit seçenek var. Kullanıcı ne yapacağını, hangi sırayla yapacağını, bugün ne kadar yapması gerektiğini bilmiyor. Seçim yükü her açılışta tekrar ediyor ve "bugün neden açayım" sorusunun cevabı yok.
-
-**Çözüm.** Ana ekranda tek bir kart: "Bugünün antrenmanı" — sırayla yapılacak 3-5 egzersiz, tahmini süre, tamamlanma halkası. Bittiğinde günlük hedef tamamlanmış sayılır ve `DAILY_GOAL_COMPLETED` XP'si verilir.
-
-**UX akışı.**
-1. Ana ekran → "Bugünün antrenmanı" kartı, adımlar liste halinde (tamamlananlar işaretli).
-2. "Başla" → ilk egzersizin runner ekranı açılır (araya detay/ayar ekranı girmez).
-3. Egzersiz biter → sonuç ekranında "Sıradaki: X" butonu → doğrudan sıradaki egzersize.
-4. Son egzersiz biter → günlük plan tamamlandı ekranı: kazanılan XP, streak durumu, kısa özet.
-5. Gün içinde uygulamayı kapatıp dönerse plan kaldığı yerden devam eder.
-
-**Egzersiz sıralaması.** Uygulamadan önce araştırılacak — hızlı okuma antrenman literatüründe kabul gören bir ısınma/ana blok/soğuma yapısı var mı, kategori sırası (vision → focus → reading → comprehension → memory) gerçekten optimal mi, seans başına kaç egzersiz ideal. Şimdilik başlangıç hipotezi:
-- 1 ısınma (göz kası / periferik: `peripheral`, `schulte`, `visual-search`)
-- 1-2 ana blok (hız: `rsvp`, `pacer`, `chunking`)
-- 1 anlama (`comprehension-speed`, `main-idea`, `keyword`)
-- opsiyonel 1 hafıza/odak kapanış (`memory`, `selective-attention`)
-
-Seçim, kullanıcının en zayıf kategorisine ağırlık vermeli ve arka arkaya aynı egzersizi vermemeli (aynı "son N tekrarı" mantığı `contentSelection.ts`'te zaten var, oradan ödünç alınabilir).
-
-**Teknik mimari.**
-- Plan **deterministik türetilebilir**: `(userId, yerel tarih)` tohumundan + `exerciseStatistics`'teki kategori bazlı ortalamalardan. Bu durumda yeni tabloya gerek yok, plan her iki tarafta da aynı şekilde hesaplanır. Tercih edilen yol bu.
-- Alternatif: `dailyPlans` tablosu (`userId`, `date`, `exerciseIds[]`, `completedIds[]`). Sadece "planı sabitlemek" (kullanıcı gün içinde plan değişsin istemiyorsa) gerekiyorsa değer katar.
-- Ücretsiz kullanıcı için aynı türetme istemcide, `localHistoryStore` + `exerciseProgressStore` verisiyle çalışmalı — yoksa özellik premium'a hapsolur (bkz. yukarıdaki karar).
-- Tamamlanma durumu: yerelde `dailyPlanStore` (persist, user-scoped), sunucuda `dailyStatistics` zaten günlük süreyi tutuyor.
-- `processGamification`'a `isDailyGoalCompleted` artık gerçek değerle geçilir → `DAILY_GOAL_COMPLETED` XP'si ilk kez fiilen dağıtılır.
-
-**Gamification / retention etkisi.** Yüksek. Uygulamayı "ne istersen yap" havuzundan günlük ritüele çeviren tek özellik bu. Streak'in de anlamlı tetikleyicisi olur.
-
-**MVP zorluğu.** Orta. Sıralama araştırması + zincirleme navigasyon (egzersizden egzersize geçiş) en çok iş çıkaran kısımlar. Runner ekranları şu an tek egzersiz için tasarlı, "sıradaki" akışı eklenmeli.
-
-**Açık sorular.** Plan kaç egzersiz olmalı (kullanıcının `trainingGoalMins` hedefine göre değişken mi)? Kullanıcı plandaki bir egzersizi atlayabilmeli mi? Ücretsiz kullanıcının 6 egzersiz/gün limiti planla çakışırsa ne olur?
-
----
-
-## 2. Haftalık Özet — UYGULANDI (2026-08-12)
-
-Haftalık özet hem premium hem ücretsiz/guest kullanıcı için uygulandı, tasarlanan iki ayrı yoldan.
-
-Nerede: paylaşılan saf hesaplayıcı `src/utils/weeklySummary.ts` (`buildWeeklySummary`, `getWeekBounds`) — hem sunucu hem istemci aynı fonksiyonu çağırıyor. Premium tarafında `convex/crons.ts` her saat başı çalışan bir cron kaydediyor, `convex/weeklySummary.ts`'teki `sendWeeklyDigest` handler'ını tetikliyor; gönderim kararı saf fonksiyonlara ayrıldı (`decideWeeklySummaryNotification`, `isWeeklyDigestHour`) ki kullanıcının kendi saatinde pazar 20:00'e denk gelip gelmediği DB'ye dokunmadan test edilebilsin. Ücretsiz/guest kullanıcı için `src/services/notifications.ts` içindeki `scheduleWeeklySummaryNotification()` yerel `WEEKLY` tekrarlı native bildirim kuruyor (yine pazar 20:00), sunucuya hiç gitmiyor. UI tarafı `src/features/weeklySummary/` altında: `useWeeklySummary.ts` (premium/ücretsiz ayrımını saran ortak hook), `WeeklySummaryCard.tsx` (ana ekranda "Günlük Hedef" kartının hemen altında) ve `WeeklySummaryScreen.tsx` (tam ekran, `/(app)/weekly-summary` route'u). Metinler `src/i18n/locales/tr/weeklySummary.json` içinde.
-
-Not: özgün tasarım kartın henüz bu dalda bulunmayan bir "günlük plan" kartının altına gelmesini varsayıyordu; o özellik bu dalda yok, bu yüzden kart doğrudan "Günlük Hedef" kartının altına yerleştirildi (bkz. madde 1).
+**Karar gereken:** gamification (XP/level/başarım/streak) ücretsiz kullanıcıda da çalışsın mı? Öneri: evet — hesaplamayı istemci tarafına da alıp (aynı saf fonksiyonlarla) yerel olarak çalıştırmak, cloud sync'i premium tutmaya devam etmek.
 
 ---
 
@@ -155,7 +102,7 @@ Not: özgün tasarım kartın henüz bu dalda bulunmayan bir "günlük plan" kar
 - `gamificationStore` **persist edilmeli** (şu an sadece bellekte, uygulama kapanınca bekleyen popup kayboluyor).
 - Bazı yeni koşullar sunucuda ek veri ister: "15 farklı egzersiz" için `exerciseStatistics` zaten yeterli; "bir ayda 20 gün" için `dailyStatistics` yeterli. Ücretsiz kullanıcı tarafında aynı koşullar `localHistoryStore`'daki son 6 aydan hesaplanabilir. Yeni tablo gerekmiyor.
 - **Konfeti:** yeni bağımlılık eklemeden `react-native-reanimated` ile yazılabilir (30-60 parça, her biri rastgele başlangıç hızı + yerçekimi + dönme; `AchievementPopupGlobal` zaten Reanimated kullanıyor). Hazır kütüphane (`react-native-confetti-cannon`) bakımsız ve Reanimated 4 ile uyumu belirsiz — önce kendi implementasyonumuzu deneyelim. Düşük seviye cihazda kare düşürmemesi için parça sayısı ölçülmeli.
-- Haptik: 8. madde ile `expo-haptics` ve `src/lib/haptics.ts` sarmalayıcısı zaten geldi (doğru/yanlış + egzersiz tamamlandı). Kişisel rekor/başarım anındaki güçlü `Success` + konfeti kombinasyonu hâlâ bu maddeyi (5) bekliyor — rekor tespiti henüz yok.
+- Haptik: `expo-haptics` ve `src/lib/haptics.ts` sarmalayıcısı kuruldu. Kişisel rekor/başarım anındaki güçlü `Success` + konfeti kombinasyonu bu maddeyi bekliyor.
 
 **Retention etkisi.** Orta-yüksek, özellikle ücretsiz kullanıcıya açıldığında. Şu an ilerleme hissi veren tek şey streak.
 
@@ -165,63 +112,8 @@ Not: özgün tasarım kartın henüz bu dalda bulunmayan bir "günlük plan" kar
 
 ---
 
-## 6. Streak Freeze — UYGULANDI (2026-08-11)
-
-Duolingo'daki "seri dondurma" mantığı. Kullanıcı 7 ardışık günde bir "dondurma hakkı" kazanır (en fazla 2 birikir), bir gün kaçırdığında hak otomatik harcanır ve seri bozulmaz. Kaçırılan gün sayısı elde kalan haktan fazlaysa seri yine sıfırlanır; kazanılmış haklar sıfırlamada geri alınmaz.
-
-Nerede: `src/utils/streak.ts` (saf fonksiyon, `FREEZE_EARN_INTERVAL_DAYS` ve `MAX_FREEZES` sabitleri), `convex/schema.ts` → `streaks.freezesAvailable` (opsiyonel alan, eski satırlar 0 sayılır), `streakCacheStore` ve `StreakBadge` (seri rozetinin yanında ❄️ + sayı). 8 yeni birim testi eklendi.
-
-Sonraki adım (opsiyonel): dondurma harcandığında kullanıcıya "serini bir dondurma kurtardı" bildirimi/animasyonu göstermek. Şu an sessizce çalışıyor, yani kullanıcı hakkın işe yaradığını fark etmiyor.
-
 ## 7. Karar bekleyen teknik borç
-
-Bunlar özellik değil ama yukarıdakilerin önünü kesiyor.
-
-**7.1 Yeşil ana tema birleştirme — UYGULANDI (2026-08-11).** Ana tema rengi yeşil olarak kararlaştırıldı ve kod buna göre hizalandı: `app.json` içindeki splash arka planı ve bildirim rengi `#208AEF` → `#2DBE73` (uygulama ikonundaki yeşilin tam değeri), Android adaptive icon arka plan katmanı (mavi kalmış tek PNG) düz açık yeşile (`#E4F8EE`) yeniden üretildi, ve 18 dosyadaki 63 `$blue*` token'ı `$green*` karşılıklarına taşındı (`theme="blue"` → `theme="green"` dahil). Uygulama ikonunun kendisi zaten yeşildi, yeniden üretmeye gerek olmadı.
-
-**7.2 Ücretsiz kullanıcı geçmiş modeli — UYGULANDI (2026-08-11).** Seçilen yol: kuyruk ile geçmiş ayrıldı. Yeni `src/stores/localHistoryStore.ts` her kullanıcı için **son 6 ayın** seansını cihazda tutuyor (`LOCAL_HISTORY_RETENTION_MS`, her yazmada budanıyor); `syncStore` artık yalnızca yükleme kuyruğu ve sadece premium + giriş yapmış kullanıcıda doluyor. Ana ekran, günlük limit sayacı ve egzersiz geçmiş grafiği artık yerel geçmişi okuyor. Premium kullanıcı ayrıca Convex'te sınırsız süre saklanıyor. Ücretsiz kullanıcı premium'a geçtiğinde `SyncProvider` yerel geçmişteki senkronize olmamış seansları kuyruğa alıp buluta yüklüyor, yani abonelik bulut geçmişini sıfırdan başlatmıyor. Mevcut kurulumlar için tek seferlik `importLegacyQueueIntoHistory` taşıması eklendi.
 
 **7.3 Bekleyen başarım popup'ları kalıcı değil.** `gamificationStore` persist edilmiyor; uygulama kapanırsa gösterilmemiş kutlama kaybolur. 5. madde ile birlikte çözülür.
 
-**7.4 Sync kuyruğu batch değil.** `SyncProvider.syncQueue` bekleyen her session için ayrı `createSession` mutation çağırıyor (`for (const session of pendingSessions) { await createSession(...) }`, [SyncProvider.tsx:41-51](src/providers/SyncProvider.tsx#L41-L51)). N bekleyen session = N call. Şu anki ölçekte (premium+giriş yapmış kullanıcı, ~600 call/ay) maliyet sorunu yok, ama uzun süre offline kalıp sonra dönen kullanıcıda gereksiz call artışı yapıyor. Çözüm: `createSession`'ı array kabul edecek şekilde batch mutation'a çevirmek, queue tek call'da yollasın. Öncelik düşük — call sayısı artmadan (kullanıcı tabanı büyümeden) yapılmasa da olur.
-
----
-
-## 8. Egzersiz Sırasında Haptik Geri Bildirim — UYGULANDI (2026-08-11)
-
-`expo-haptics` eklendi. `src/lib/haptics.ts` sarmalayıcısı (`light`, `success`, `error`) `settingsStore.hapticsEnabled`'ı kendi içinde kontrol ediyor; her çağrı sessizce `.catch` ile hataya karşı korunuyor. Ekran katmanından çağrılıyor, motor (`use*Engine.ts`) dosyalarına dokunulmadı.
-
-- Schulte, visual-search, selective-attention: doğru hedef/kelime seçiminde `Light`, yanlışta `Error` — her üçünde de hook zaten doğru/yanlış ayrımını (`expectedNumber`, `targetWord`, `correctWordsInGrid`) prop olarak veriyordu, ekran `onPress` içinde kendi hesaplıyor.
-- Tüm 15 egzersiz ekranında tamamlanma anında (`isCompleted`, Schulte/scanning'de ayrıca `isTimeUp`) `Success` hapti.
-
-Kapsam dışı bırakıldı (kullanıcı kararı): geri sayım son saniye hapti (15 ekranda kopya kod, paylaşılan bileşen yok — önce o refactor gerekir), metronom vuruş hapti (zaten spec'te varsayılan kapalı, ayrı ayar ister), kişisel rekor hapti (rekor tespiti hiç yok, 5. maddeyle birlikte çözülecek).
-
-<details>
-<summary>Orijinal plan</summary>
-
-**Kullanıcı problemi.** Egzersizler tamamen görsel. Kullanıcı doğru mu yanlış mı yaptığını, ritmi tutturup tutturamadığını ancak ekrana bakarak anlıyor. Özellikle Schulte tablosu, tarama ve seçici dikkat gibi hızlı tepki gerektiren egzersizlerde ekrandaki renk değişimini fark etmek dikkati bölüyor. Ayrıca `settingsStore.hapticsEnabled` ayarı zaten var ama hiçbir yerde kullanılmıyor — kullanıcı açıp kapatıyor, hiçbir şey değişmiyor.
-
-**Çözüm.** Hafif ve kısa titreşimlerle dokunsal geri bildirim. Kural: bilgi taşımayan titreşim yok. Her titreşim bir olaya karşılık gelmeli ve varsayılan olarak "hafif" seviyede olmalı.
-
-**Nerede kullanılacak.**
-- Doğru seçim / doğru hedef: `Haptics.ImpactFeedbackStyle.Light`
-- Yanlış seçim / hata: `Haptics.NotificationFeedbackType.Error` (belirgin ama kısa)
-- Metronom vuruşu (pacer/chunking): opsiyonel, ayrı bir alt ayar — sürekli titreşim pil tüketir ve rahatsız edicidir, bu yüzden varsayılan **kapalı**
-- Egzersiz tamamlandı: `NotificationFeedbackType.Success`
-- Kişisel rekor / başarım: 5. maddedeki konfeti ile birlikte tek bir güçlü `Success`
-- Geri sayım son saniyesi: `Light`
-
-**Teknik mimari.**
-- `expo-haptics` eklenecek (tek yeni bağımlılık, Expo destekli, `bun expo install expo-haptics`).
-- Doğrudan `Haptics.*` çağrısı yapılmamalı; `src/lib/haptics.ts` altında ince bir sarmalayıcı: `haptics.success()`, `haptics.error()`, `haptics.tick()`. Sarmalayıcı `settingsStore.hapticsEnabled`'ı kendisi kontrol eder, böylece her çağrı yerinde `if (hapticsEnabled)` yazmak gerekmez ve ayar tek yerde uygulanır.
-- Android'de `Haptics` titreşim izni gerektirmez (expo-haptics `VIBRATE` iznini kendisi ekler) — `app.json` izin listesi buna göre kontrol edilmeli.
-- iOS'ta sessiz moddayken haptik çalışır, Android'de cihaz ayarına bağlıdır; her iki durumda da sessizce başarısız olmalı, hata fırlatmamalı.
-- Egzersiz motorlarında değil, **ekran** katmanında çağrılmalı — motor saf mantık kalmalı ki testleri cihaz API'sine bağlanmasın.
-
-**Retention etkisi.** Düşük-orta, ama algılanan kalite üzerindeki etkisi yüksek: dokunsal geri bildirim uygulamayı "hazır" hissettiren en ucuz detaylardan biri.
-
-**MVP zorluğu.** Düşük. Asıl iş nereye konulacağına karar vermek, kodun kendisi değil.
-
-**Açık sorular.** Metronom titreşimi ayrı ayar olarak mı sunulacak yoksa hiç eklenmeyecek mi? Ayarlar ekranındaki mevcut `hapticsEnabled` anahtarı tek bir genel anahtar olarak mı kalsın?
-
-</details>
+**7.4 Sync kuyruğu batch değil.** `SyncProvider.syncQueue` bekleyen her session için ayrı `createSession` mutation çağırıyor. N bekleyen session = N call. Çözüm: `createSession`'ı array kabul edecek şekilde batch mutation'a çevirmek, queue tek call'da yollasın. Öncelik düşük.
