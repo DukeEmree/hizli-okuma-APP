@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { TimeRange } from "@/convex/statistics";
+import { TimeRange } from "@/utils/localStatistics";
 
 export interface DailyTrend {
   date: string;

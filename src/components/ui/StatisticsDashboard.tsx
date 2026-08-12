@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { H1, H4, Text, XStack, YStack, Button, Spinner, ScrollView, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
-import { TimeRange } from "@/convex/statistics";
+import { TimeRange } from "@/utils/localStatistics";
 import { CartesianChart, Line, Bar } from 'victory-native';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { StreakWeeklyCalendar } from "@/features/streak/StreakWeeklyCalendar";
