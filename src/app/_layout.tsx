@@ -1,26 +1,17 @@
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
-import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { TamaguiProvider, Theme, YStack } from "tamagui";
 import { Toast, ToastProvider, ToastViewport, useToastState } from "@tamagui/toast";
 
-import { AuthSync } from "@/components/auth/AuthSync";
 import { AchievementPopupGlobal } from "@/components/gamification/AchievementPopup";
-import { api } from "@/convex/_generated/api";
-import { useSyncTimezone } from "@/hooks/useSyncTimezone";
 import { analytics } from "@/lib/analytics";
 import { initSentry } from "@/lib/sentry";
 import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
-import { SyncProvider } from "@/providers/SyncProvider";
 import { AppNotificationProvider } from "@/providers/NotificationProvider";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { useQuery } from "convex/react";
 
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -30,90 +21,29 @@ import "../i18n";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-const CLERK_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "missing_key";
-const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL || "missing_url";
-
-const convex = new ConvexReactClient(CONVEX_URL, {
-  unsavedChangesWarning: false,
-});
-
-const tokenCache = {
-  async getToken(key: string) {
-    try {
-      return await SecureStore.getItemAsync(key);
-    } catch {
-      return null;
-    }
-  },
-  async saveToken(key: string, value: string) {
-    try {
-      return await SecureStore.setItemAsync(key, value);
-    } catch {
-      return;
-    }
-  },
-};
-
 function RootNavigation() {
-  const { isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const hasCompletedOnboarding = useSettingsStore(
     (state) => state.hasCompletedOnboarding,
   );
 
-  // This might return undefined initially
-  const convexUser = useQuery(api.users.getMe);
-
-  useSyncTimezone();
-
   useEffect(() => {
-    if (!isLoaded) return;
-
-    if (isSignedIn && convexUser === undefined) {
-      // Still loading convex user, wait
-      return;
-    }
-
     const inAppGroup = segments[0] === "(app)";
     const inOnboardingGroup = segments[0] === "(onboarding)";
-    const inAuthGroup = segments[0] === "(auth)";
     const inPaywall = segments[0] === "paywall";
 
-    const isCloudOnboarded =
-      convexUser !== null && convexUser?.isOnboarded === true;
-    const isLocallyOnboarded = hasCompletedOnboarding;
-
-    // A signed-in user counts as onboarded if either side says so. Cloud
-    // alone isn't enough: right after sign-in `getMe` resolves to null for
-    // the moment before AuthSync's `users.store` mutation creates the row,
-    // which would bounce an already-onboarded device into the onboarding
-    // flow and straight back out again. AuthSync seeds the new row with
-    // this same local flag, so the two can't disagree for long.
-    const userIsOnboarded = isSignedIn
-      ? isCloudOnboarded || isLocallyOnboarded
-      : isLocallyOnboarded;
-
-    if (!userIsOnboarded) {
+    if (!hasCompletedOnboarding) {
       if (!inOnboardingGroup) router.replace("/(onboarding)");
-    } else if (!inAppGroup && !inAuthGroup && !inPaywall) {
+    } else if (!inAppGroup && !inPaywall) {
       router.replace("/(app)/(tabs)");
     }
-  }, [
-    isSignedIn,
-    isLoaded,
-    segments,
-    convexUser,
-    hasCompletedOnboarding,
-    router,
-  ]);
+  }, [segments, hasCompletedOnboarding, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen
         name="(onboarding)"
         options={{ headerShown: false, gestureEnabled: false }}
@@ -187,36 +117,26 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ClerkProvider
-        publishableKey={CLERK_PUBLISHABLE_KEY}
-        tokenCache={tokenCache}
-      >
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          <RevenueCatProvider>
-            <TamaguiProvider config={tamaguiConfig} defaultTheme={activeTheme}>
-              <Theme name={activeTheme}>
-                <ThemeProvider value={navigationTheme}>
-                  <StatusBar
-                    style={activeTheme === "dark" ? "light" : "dark"}
-                    animated
-                  />
-                  <ToastProvider swipeDirection="horizontal" duration={3000}>
-                    <AppNotificationProvider>
-                      <SyncProvider>
-                        <AuthSync />
-                        <RootNavigation />
-                        <AchievementPopupGlobal />
-                      </SyncProvider>
-                    </AppNotificationProvider>
-                    <CurrentToast />
-                    <AppToastViewport />
-                  </ToastProvider>
-                </ThemeProvider>
-              </Theme>
-            </TamaguiProvider>
-          </RevenueCatProvider>
-        </ConvexProviderWithClerk>
-      </ClerkProvider>
+      <RevenueCatProvider>
+        <TamaguiProvider config={tamaguiConfig} defaultTheme={activeTheme}>
+          <Theme name={activeTheme}>
+            <ThemeProvider value={navigationTheme}>
+              <StatusBar
+                style={activeTheme === "dark" ? "light" : "dark"}
+                animated
+              />
+              <ToastProvider swipeDirection="horizontal" duration={3000}>
+                <AppNotificationProvider>
+                  <RootNavigation />
+                  <AchievementPopupGlobal />
+                </AppNotificationProvider>
+                <CurrentToast />
+                <AppToastViewport />
+              </ToastProvider>
+            </ThemeProvider>
+          </Theme>
+        </TamaguiProvider>
+      </RevenueCatProvider>
     </SafeAreaProvider>
   );
 }
