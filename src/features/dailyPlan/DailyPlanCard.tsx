@@ -3,10 +3,6 @@ import { Card, H4, Text, YStack, XStack, Button } from 'tamagui';
 import { Check } from 'lucide-react-native';
 import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from 'convex/react';
-import { useAuth } from '@clerk/clerk-expo';
-import { api } from '@/convex/_generated/api';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 import { selectDailyPlan, ExercisePerformance } from '@/utils/dailyPlan';
@@ -14,15 +10,12 @@ import { getLocalDateString } from '@/utils/streak';
 import { buildLocalStats } from '@/utils/localStatistics';
 import { exerciseRegistry } from '@/features/exercises/registry';
 
-/** Rough estimate for the "yaklaşık N dk" subtitle - exercises aren't timed uniformly. */
 const ESTIMATED_MINUTES_PER_EXERCISE = 3;
 
 export function DailyPlanCard() {
   const router = useRouter();
   const { t } = useTranslation('dailyPlan');
   const { t: tExercises } = useTranslation('exercises');
-  const { isPremium } = useRevenueCat();
-  const { isLoaded, isSignedIn } = useAuth();
 
   const localSessions = useLocalHistoryStore((s) => s.sessions);
   const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
@@ -30,33 +23,25 @@ export function DailyPlanCard() {
   const lastPlanTypes = useDailyPlanStore((s) => s.lastPlanTypes);
   const ensureTodayPlan = useDailyPlanStore((s) => s.ensureTodayPlan);
 
-  const shouldFetch = isLoaded && isSignedIn && isPremium;
-  const stats = useQuery(api.statistics.getPerformanceStats, shouldFetch ? { timeRange: '30d' } : 'skip');
-
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   // eslint-disable-next-line react-hooks/purity
   const [now] = useState(() => Date.now());
   const today = getLocalDateString(now, timeZone);
 
   const performanceByType = useMemo(() => {
-    const exerciseStats = shouldFetch
-      ? stats?.exerciseStats
-      : buildLocalStats(localSessions, '30d', now, timeZone).exerciseStats;
+    const exerciseStats = buildLocalStats(localSessions, '30d', now, timeZone).exerciseStats;
 
     const map: Record<string, ExercisePerformance> = {};
-    for (const entry of exerciseStats ?? []) {
+    for (const entry of exerciseStats) {
       map[entry.type] = { averageScore: entry.averageScore, attemptCount: entry.attemptCount };
     }
     return map;
-  }, [shouldFetch, stats, localSessions, timeZone, now]);
-
-  const statsReady = !shouldFetch || stats !== undefined;
+  }, [localSessions, timeZone, now]);
 
   useEffect(() => {
-    if (!statsReady) return;
     ensureTodayPlan(today, () => selectDailyPlan({ dateSeed: today, performanceByType, lastPlanTypes }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statsReady, today]);
+  }, [today]);
 
   if (exerciseTypes.length === 0) return null;
 
