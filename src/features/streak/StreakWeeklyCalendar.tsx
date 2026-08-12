@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Text, XStack, YStack, Circle } from 'tamagui';
 import { getLocalDateString } from "@/utils/streak";
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,9 @@ export function StreakWeeklyCalendar() {
   const { t } = useTranslation();
   const localSessions = useLocalHistoryStore((s) => s.sessions);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  const stats = buildLocalStats(localSessions, '7d', Date.now(), timeZone);
+  // eslint-disable-next-line react-hooks/purity
+  const [now] = useState(() => Date.now());
+  const stats = buildLocalStats(localSessions, '7d', now, timeZone);
 
   const today = new Date();
   const last7Days: { dateStr: string; label: string; isActive: boolean }[] = [];
