@@ -1,33 +1,26 @@
 import React from 'react';
 import { Text, XStack, YStack, Circle } from 'tamagui';
-import { useQuery } from 'convex/react';
-import { api } from "@/convex/_generated/api";
 import { getLocalDateString } from "@/utils/streak";
 import { useTranslation } from 'react-i18next';
-import { useRevenueCat } from "@/providers/RevenueCatProvider";
+import { useLocalHistoryStore } from "@/stores/localHistoryStore";
+import { buildLocalStats } from "@/utils/localStatistics";
 
 export function StreakWeeklyCalendar() {
   const { t } = useTranslation();
-  const { isPremium } = useRevenueCat();
-  // Weekly activity is derived from cloud stats - premium-only.
-  const stats = useQuery(api.statistics.getPerformanceStats, isPremium ? { timeRange: '7d' } : "skip");
+  const localSessions = useLocalHistoryStore((s) => s.sessions);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const stats = buildLocalStats(localSessions, '7d', Date.now(), timeZone);
 
-  if (!stats) return null;
-
-  // Generate last 7 days strings
   const today = new Date();
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  
   const last7Days: { dateStr: string; label: string; isActive: boolean }[] = [];
-  
+
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
     const dateStr = getLocalDateString(d.getTime(), timeZone);
-    const label = d.toLocaleDateString('tr-TR', { weekday: 'short' }).charAt(0).toUpperCase(); // P, S, Ç vs.
-    
-    // Check if this date exists in stats.dailyTrends
+    const label = d.toLocaleDateString('tr-TR', { weekday: 'short' }).charAt(0).toUpperCase();
+
     const isActive = stats.dailyTrends.some(trend => trend.date === dateStr);
-    
+
     last7Days.push({ dateStr, label, isActive });
   }
 
@@ -37,9 +30,9 @@ export function StreakWeeklyCalendar() {
       <XStack justifyContent="space-between" paddingHorizontal="$2">
         {last7Days.map((day, index) => (
           <YStack key={index} alignItems="center" gap="$2">
-            <Circle 
-              size={32} 
-              backgroundColor={day.isActive ? '$orange9' : '$gray5'} 
+            <Circle
+              size={32}
+              backgroundColor={day.isActive ? '$orange9' : '$gray5'}
               borderWidth={2}
               borderColor={day.isActive ? '$orange10' : 'transparent'}
             >
