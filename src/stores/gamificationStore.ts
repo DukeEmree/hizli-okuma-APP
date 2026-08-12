@@ -54,6 +54,11 @@ export const useGamificationStore = create<GamificationState>()(
       name: 'gamification-store',
       storage: createJSONStorage(() => userScopedStorageAdapter),
       version: 1,
+      partialize: (state) => ({
+        xp: state.xp,
+        level: state.level,
+        unlockedAchievementIds: state.unlockedAchievementIds,
+      }),
     },
   ),
 );
