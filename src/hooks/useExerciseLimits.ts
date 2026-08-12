@@ -1,8 +1,6 @@
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
-import { api } from "@/convex/_generated/api";
 import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import { getLocalDateString } from "@/utils/streak";
-import { useQuery } from "convex/react";
 import { useMemo, useState, useEffect } from "react";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocalHistoryStore } from "@/stores/localHistoryStore";
@@ -24,13 +22,6 @@ export function useExerciseLimits() {
     }
   }, [appState]);
 
-  // Convex sync (and this stats query) is premium-only - free/guest daily
-  // counts come entirely from the local pending-sessions queue below.
-  const stats = useQuery(
-    api.statistics.getPerformanceStats,
-    isPremium ? { timeRange: "7d" } : "skip",
-  );
-
   const localSessions = useLocalHistoryStore(s => s.sessions);
 
   return useMemo(() => {
@@ -44,14 +35,6 @@ export function useExerciseLimits() {
     }
 
     if (isPremium) {
-      if (stats === undefined) {
-        return {
-          canStartExercise: false,
-          isLoading: true,
-          remainingExercises: 0,
-          isPremium,
-        };
-      }
       return {
         canStartExercise: true,
         isLoading: false,
@@ -75,5 +58,5 @@ export function useExerciseLimits() {
       remainingExercises: remaining,
       isPremium,
     };
-  }, [isPremium, isConfigured, stats, todayStr, localSessions]);
+  }, [isPremium, isConfigured, todayStr, localSessions]);
 }
