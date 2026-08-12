@@ -1,0 +1,21 @@
+{
+  "card": {
+    "title": "Bu Hafta",
+    "minutes": "{{minutes}} dakika çalıştın",
+    "trendUp": "Hızın %{{percent}} arttı 📈",
+    "trendDown": "Hızın %{{percent}} azaldı",
+    "streak": "{{days}} günlük seri",
+    "emptyTitle": "Bu hafta henüz başlamadın",
+    "emptyBody": "İlk adımı at, haftalık özetin burada görünsün.",
+    "emptyCta": "Egzersize başla"
+  },
+  "screen": {
+    "title": "Haftalık Özet",
+    "range": "{{start}} - {{end}}",
+    "minutesLabel": "Toplam Süre",
+    "wpmLabel": "Ortalama Hız",
+    "streakLabel": "Güncel Seri",
+    "noComparison": "Kıyaslamak için geçen hafta veri yok",
+    "completeWeekCta": "Bu haftayı da tamamla"
+  }
+}
