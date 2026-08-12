@@ -1,5 +1,3 @@
-import { useAuth, useUser } from "@clerk/clerk-expo";
-import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,10 +15,10 @@ import {
   XStack,
   YStack,
 } from "tamagui";
-import { api } from "@/convex/_generated/api";
 
 import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
+import { useGamificationStore } from "@/stores/gamificationStore";
 import {
   LanguageType,
   ThemeType,
@@ -28,7 +26,6 @@ import {
 } from "@/stores/settingsStore";
 import { useStreakCacheStore } from "@/stores/streakCacheStore";
 import { useStatisticsStore } from "@/stores/useStatisticsStore";
-import { useSyncStore } from "@/stores/syncStore";
 import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
 
@@ -38,14 +35,10 @@ import {
   CreditCard,
   Crown,
   Languages,
-  LogIn,
-  LogOut,
   Monitor,
   Moon,
   RotateCcw,
   Sun,
-  Trash2,
-  User,
   Bell,
   Clock,
   Flame,
@@ -55,8 +48,6 @@ import { requestNotificationPermissions, rescheduleAllReminders, scheduleWeeklyS
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
-import { captureException } from "@/lib/sentry";
-import { useToastController } from "@tamagui/toast";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation("settings");
@@ -80,15 +71,11 @@ export default function SettingsScreen() {
   const setProgressNotificationsEnabled = useSettingsStore(s => s.setProgressNotificationsEnabled);
 
   const { isPremium, customerInfo, isConfigured } = useRevenueCat();
-  const { isSignedIn, signOut } = useAuth();
-  const { user } = useUser();
-  const toast = useToastController();
 
   // States for Sheets and Pickers
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
   const [langSheetOpen, setLangSheetOpen] = useState(false);
   const [resetStatsSheetOpen, setResetStatsSheetOpen] = useState(false);
-  const [deleteAccountSheetOpen, setDeleteAccountSheetOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -138,13 +125,6 @@ export default function SettingsScreen() {
     setShowTimePicker(true);
   };
 
-  // Convex Mutations
-  const resetMyStatistics = useMutation(api.users.resetMyStatistics);
-  const deleteMyAccount = useMutation(api.users.deleteMyAccount);
-  const syncProgressNotificationsEnabled = useMutation(api.users.setProgressNotificationsEnabled);
-
-
-
   // Handlers
   const handleThemeChange = (val: ThemeType) => {
     setTheme(val);
@@ -157,21 +137,14 @@ export default function SettingsScreen() {
     setLangSheetOpen(false);
   };
 
-  const handleResetStats = async () => {
+  const handleResetStats = () => {
     setIsProcessing(true);
     try {
-      if (isSignedIn) {
-        await resetMyStatistics();
-      }
-      // Reset local stores
       useExerciseProgressStore.getState().resetAll();
       useStatisticsStore.getState().invalidate();
       useUserProgressStore.getState().resetProgress();
       useStreakCacheStore.getState().resetCache();
-      // Also clear the pending sync queue - otherwise SyncProvider's
-      // background sync re-writes the just-reset sessions/progress to
-      // Convex the next time it runs.
-      useSyncStore.getState().clearQueue();
+      useGamificationStore.getState().resetProgress();
       useLocalHistoryStore.getState().clear();
 
       setResetStatsSheetOpen(false);
@@ -187,85 +160,12 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    setIsProcessing(true);
-    // Tracks whether the Convex side (all progress/session data) already
-    // succeeded, so a later Clerk-side failure can't be reported as a plain
-    // "couldn't delete" - the data is already gone at that point, and we
-    // must still sign the user out rather than leave them signed in against
-    // a deleted profile (AuthSync would otherwise silently recreate a blank
-    // one on the next auth-state effect run).
-    let convexDataDeleted = false;
-    try {
-      if (isSignedIn) {
-        await deleteMyAccount();
-        convexDataDeleted = true;
-
-        if (user) {
-          await user.delete();
-        }
-        await signOut();
-      }
-
-      // Reset local stores
-      useExerciseProgressStore.getState().resetAll();
-      useStatisticsStore.getState().invalidate();
-      useUserProgressStore.getState().resetProgress();
-      useStreakCacheStore.getState().resetCache();
-      useSyncStore.getState().clearQueue();
-      useLocalHistoryStore.getState().clear();
-
-      setDeleteAccountSheetOpen(false);
-      router.replace("/");
-    } catch (error) {
-      captureException(error, { context: "handleDeleteAccount", convexDataDeleted });
-
-      if (convexDataDeleted) {
-        // Data is already deleted server-side; force sign-out so the app
-        // doesn't sit on a deleted profile, then tell the user plainly.
-        try {
-          await signOut();
-        } catch (signOutError) {
-          captureException(signOutError, { context: "handleDeleteAccount.signOutAfterPartialFailure" });
-        }
-        useExerciseProgressStore.getState().resetAll();
-        useStatisticsStore.getState().invalidate();
-        useUserProgressStore.getState().resetProgress();
-        useStreakCacheStore.getState().resetCache();
-        useSyncStore.getState().clearQueue();
-      useLocalHistoryStore.getState().clear();
-        setDeleteAccountSheetOpen(false);
-        Alert.alert(
-          "Hesap Silindi",
-          "Verilerin silindi ancak oturum kapatma sırasında bir sorun oluştu. Uygulamayı yeniden başlatman gerekebilir.",
-        );
-        router.replace("/");
-      } else {
-        Alert.alert("Hata", "Hesap silinemedi");
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const handleManageSubscription = async () => {
     try {
       await RevenueCatUI.presentCustomerCenter();
     } catch (error) {
       console.error("Customer Center error:", error);
       Alert.alert("Hata", t("subscription.errorCustomerCenter", "Abonelik yönetimi şu anda açılamıyor. Lütfen tekrar deneyin."));
-    }
-  };
-
-  const handleLogout = async () => {
-    setIsProcessing(true);
-    try {
-      await signOut();
-      router.replace("/");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -361,9 +261,6 @@ export default function SettingsScreen() {
                 onSwitchChange={(val) => {
                   setProgressNotificationsEnabled(val);
                   scheduleWeeklySummaryNotification().catch(console.error);
-                  if (isSignedIn) {
-                    syncProgressNotificationsEnabled({ enabled: val }).catch(console.error);
-                  }
                 }}
               />
             </>
@@ -402,51 +299,8 @@ export default function SettingsScreen() {
               icon={<CreditCard color={iconColor} size={20} />}
               title={t("subscription.freePlan")}
               subtitle={t("subscription.freeDesc")}
-              onPress={() => {
-                if (!isSignedIn) {
-                  router.push("/(auth)/login");
-                } else {
-                  router.push("/paywall");
-                }
-              }}
+              onPress={() => router.push("/paywall")}
               actionText={t("subscription.upgrade")}
-            />
-          )}
-        </SettingsSection>
-
-        {/* Account Section */}
-        <SettingsSection title={t("account.title")}>
-          {isSignedIn && user ? (
-            <>
-              <SettingsRow
-                icon={<User color={iconColor} size={20} />}
-                title={
-                  user.fullName ||
-                  user.emailAddresses[0]?.emailAddress ||
-                  "User"
-                }
-                subtitle={user.emailAddresses[0]?.emailAddress}
-              />
-              <Separator marginVertical="$2" borderColor="$borderColor" />
-              <SettingsRow
-                icon={<LogOut color={dangerColor} size={20} />}
-                title={t("account.logout")}
-                titleColor="$red10"
-                onPress={handleLogout}
-                loading={isProcessing}
-              />
-            </>
-          ) : (
-            <SettingsRow
-              icon={<LogIn color={iconColor} size={20} />}
-              title={
-                t("account.loginOrRegister") !== "account.loginOrRegister"
-                  ? t("account.loginOrRegister")
-                  : "Giriş Yap veya Kayıt Ol"
-              }
-              onPress={() => {
-                router.push("/(auth)/login");
-              }}
             />
           )}
         </SettingsSection>
@@ -468,33 +322,6 @@ export default function SettingsScreen() {
             }
             onPress={() => setResetStatsSheetOpen(true)}
           />
-          {isSignedIn && (
-            <>
-              <Separator marginVertical="$2" borderColor="$borderColor" />
-              <SettingsRow
-                icon={<Trash2 color={dangerColor} size={20} />}
-                title={
-                  t("dangerZone.deleteAccount") !== "dangerZone.deleteAccount"
-                    ? t("dangerZone.deleteAccount")
-                    : "Hesabı Sil"
-                }
-                titleColor="$red10"
-                subtitle={
-                  t("dangerZone.deleteAccountDesc") !==
-                  "dangerZone.deleteAccountDesc"
-                    ? t("dangerZone.deleteAccountDesc")
-                    : "Hesabını ve ilişkili verilerini kalıcı olarak sil."
-                }
-                onPress={() => {
-                  if (isPremium) {
-                    toast.show("Hesabınızı silmek için önce aboneliğinizi iptal etmelisiniz.");
-                    return;
-                  }
-                  setDeleteAccountSheetOpen(true);
-                }}
-              />
-            </>
-          )}
         </SettingsSection>
       </ScrollView>
 
@@ -549,19 +376,6 @@ export default function SettingsScreen() {
         confirmText={t("dangerZone.confirmReset")}
         cancelText={t("dangerZone.cancel")}
         onConfirm={handleResetStats}
-        isProcessing={isProcessing}
-        destructive
-      />
-
-      {/* Delete Account Confirmation */}
-      <ConfirmationSheet
-        open={deleteAccountSheetOpen}
-        onOpenChange={setDeleteAccountSheetOpen}
-        title={t("dangerZone.deleteAccount")}
-        description={t("dangerZone.deleteAccountConfirm")}
-        confirmText={t("dangerZone.confirmDelete")}
-        cancelText={t("dangerZone.cancel")}
-        onConfirm={handleDeleteAccount}
         isProcessing={isProcessing}
         destructive
       />
