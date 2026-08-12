@@ -5,18 +5,21 @@
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.6.8",
     "@clerk/clerk-expo": "^2.19.31",
-    "@expo/ui": "~57.0.9",
+    "@expo/ui": "~57.0.10",
     "@hookform/resolvers": "^5.7.1",
     "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-community/netinfo": "12.0.1",
     "@sentry/react-native": "~7.11.0",
+    "@shopify/react-native-skia": "2.6.2",
     "@tamagui/config": "^2.7.4",
     "@tamagui/core": "^2.7.4",
     "@tamagui/toast": "^2.7.4",
     "convex": "^1.43.0",
-    "expo": "~57.0.11",
+    "expo": "~57.0.12",
+    "expo-asset": "~57.0.10",
     "expo-audio": "~57.0.3",
-    "expo-constants": "~57.0.9",
+    "expo-auth-session": "~57.0.6",
+    "expo-constants": "~57.0.10",
     "expo-dev-client": "~57.0.11",
     "expo-device": "~57.0.1",
     "expo-font": "~57.0.1",
@@ -25,10 +28,10 @@
     "expo-image": "~57.0.2",
     "expo-linking": "~57.0.5",
     "expo-localization": "^57.0.1",
-    "expo-notifications": "~57.0.9",
-    "expo-router": "~57.0.11",
+    "expo-notifications": "~57.0.10",
+    "expo-router": "~57.0.12",
     "expo-secure-store": "^57.0.1",
-    "expo-splash-screen": "~57.0.5",
+    "expo-splash-screen": "~57.0.6",
     "expo-status-bar": "~57.0.1",
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.2",
@@ -78,7 +81,11 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
-    "i18n:check": "bun ./scripts/i18n-check.ts"
+    "i18n:check": "bun ./scripts/i18n-check.ts",
+    "postinstall": "bunx install-skia"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "expo-constants": "~57.0.10"
+  }
 }

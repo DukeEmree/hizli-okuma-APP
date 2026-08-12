@@ -61,7 +61,8 @@
           "organization": "react-native-duke",
           "project": "hizli-okuma-app"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
