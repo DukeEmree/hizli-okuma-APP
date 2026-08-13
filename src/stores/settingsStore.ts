@@ -19,7 +19,6 @@ export interface SettingsState {
   dailyGoalMinutes: number;
   hasCompletedOnboarding: boolean;
   metronomeEnabled: boolean;
-  metronomeBpm: number;
 
   setTheme: (theme: ThemeType) => void;
   setLanguage: (lang: LanguageType) => void;
@@ -34,7 +33,6 @@ export interface SettingsState {
   setDailyGoalMinutes: (minutes: number) => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
   setMetronomeEnabled: (enabled: boolean) => void;
-  setMetronomeBpm: (bpm: number) => void;
   resetSettings: () => void;
 }
 
@@ -52,7 +50,6 @@ const initialState = {
   dailyGoalMinutes: 15,
   hasCompletedOnboarding: false,
   metronomeEnabled: false,
-  metronomeBpm: 60,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -82,7 +79,6 @@ export const useSettingsStore = create<SettingsState>()(
       setHasCompletedOnboarding: (hasCompletedOnboarding) =>
         set({ hasCompletedOnboarding }),
       setMetronomeEnabled: (metronomeEnabled) => set({ metronomeEnabled }),
-      setMetronomeBpm: (metronomeBpm) => set({ metronomeBpm }),
       resetSettings: () => set(initialState),
     }),
     {

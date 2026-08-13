@@ -49,9 +49,10 @@ export function useNumberScanEngine(config: NumberScanConfig, onCompleteCallback
     // Grid size based on difficulty (3x3 up to 6x6 max initially, or generic amount)
     const gridSize = Math.min(36, 9 + (engine.session.currentDifficulty * 3)); 
     
-    // Generate numbers (e.g., 2 or 3 digit numbers depending on difficulty)
-    const minVal = engine.session.currentDifficulty > 5 ? 100 : 10;
-    const maxVal = engine.session.currentDifficulty > 5 ? 999 : 99;
+    // Number range grows gradually with difficulty instead of jumping once at
+    // the midpoint, so each level feels like a real step (2-digit -> 3-digit).
+    const minVal = 10;
+    const maxVal = Math.min(999, 99 + (engine.session.currentDifficulty - 1) * 100);
 
     let numbers: number[] = [];
     while(numbers.length < gridSize) {

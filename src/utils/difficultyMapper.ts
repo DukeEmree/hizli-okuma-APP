@@ -4,6 +4,18 @@ import { ChunkingConfig } from "@/features/exercises/chunking/useChunkingEngine"
 import { PacerConfig } from "@/features/exercises/pacer/usePacerEngine";
 import { SchulteConfig } from "@/features/exercises/schulte/useSchulteEngine";
 import { ScanningConfig } from "@/features/exercises/scanning/useScanningEngine";
+import { RSVP_ID } from "@/features/exercises/rsvp";
+
+// Exercises that can't measure their own difficulty (no right/wrong answer
+// to score) borrow the progression of an exercise that can, keyed by
+// exercise `type` -> the metrics-source exercise's `id`. Pacer is just a
+// paced highlight with no comprehension check, so its own accuracy is
+// always 1 and it would ratchet straight to max difficulty regardless of
+// whether the user can actually keep up - RSVP drives the same "read at
+// WPM X" skill and does measure comprehension, so Pacer follows it instead.
+export const CROSS_EXERCISE_METRICS_SOURCE: Record<string, string> = {
+  pacer: RSVP_ID,
+};
 
 /**
  * RSVP: Level 1 = 150 WPM

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useScanningEngine } from './useScanningEngine';
+import type { ScanningCell } from './useScanningEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Play, Pause, X } from 'lucide-react-native';
@@ -16,6 +17,45 @@ interface ScanningExerciseScreenProps {
   distractorSymbol: string;
   onComplete?: () => void;
 }
+
+// Responsive calculations - mirrors Schulte's sizing so cells never
+// clip/overflow on narrow screens at high grid sizes.
+const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
+const GAP_SIZE = 8; // gap="$2"
+
+// Memoized so a tap on one cell (or the once-a-second elapsed-time tick,
+// which re-renders the whole screen) doesn't force every other cell in the
+// grid through Tamagui's style resolution - that was the real cause of the
+// grid getting janky (and missed corner taps) the longer a run went on.
+const ScanCell = memo(function ScanCell({
+  cell,
+  cellSize,
+  cellFontSize,
+  disabled,
+  onCellPress,
+}: {
+  cell: ScanningCell;
+  cellSize: number;
+  cellFontSize: '$5' | '$6';
+  disabled: boolean;
+  onCellPress: (id: number, isTarget: boolean) => void;
+}) {
+  return (
+    <Button
+      width={cellSize}
+      height={cellSize}
+      padding={0}
+      hitSlop={{ top: GAP_SIZE / 2, bottom: GAP_SIZE / 2, left: GAP_SIZE / 2, right: GAP_SIZE / 2 }}
+      bg={cell.isFound ? '$green5' : '$backgroundHover'}
+      onPress={() => onCellPress(cell.id, cell.isTarget)}
+      disabled={disabled}
+    >
+      <Text fontSize={cellFontSize} fontWeight="bold" color={cell.isFound ? '$green11' : '$color'}>
+        {cell.symbol}
+      </Text>
+    </Button>
+  );
+});
 
 export function ScanningExerciseScreen({ 
   gridSize, 
@@ -75,6 +115,12 @@ export function ScanningExerciseScreen({
     router.back();
   };
 
+  const handleCellTap = useCallback((id: number, isTarget: boolean) => {
+    if (isTarget) haptics.light();
+    else haptics.error();
+    handleCellPress(id);
+  }, [handleCellPress]);
+
   const handleTogglePlay = () => {
     if (session.state === 'running') {
       pause();
@@ -104,10 +150,6 @@ export function ScanningExerciseScreen({
     rows.push(grid.slice(i * gridSize, (i + 1) * gridSize));
   }
 
-  // Responsive calculations - mirrors Schulte's sizing so cells never
-  // clip/overflow on narrow screens at high grid sizes.
-  const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
-  const GAP_SIZE = 8; // gap="$2"
   const availableWidth = screenWidth - HORIZONTAL_PADDING - ((gridSize - 1) * GAP_SIZE);
   const cellSize = Math.min(64, Math.floor(availableWidth / gridSize));
   const cellFontSize = cellSize > 45 ? '$6' : '$5';
@@ -131,23 +173,16 @@ export function ScanningExerciseScreen({
           <YStack gap="$2" w="100%" ai="center" jc="center">
             {rows.map((row, rowIndex) => (
               <XStack key={`row-${rowIndex}`} gap="$2" w="100%" jc="center">
-                {row.map((cell) => {
-                  return (
-                    <Button
-                      key={`cell-${cell.id}`}
-                      width={cellSize}
-                      height={cellSize}
-                      padding={0}
-                      bg={cell.isFound ? '$green5' : '$backgroundHover'}
-                      onPress={() => handleCellPress(cell.id)}
-                      disabled={cell.isFound || session.state !== 'running'}
-                    >
-                      <Text fontSize={cellFontSize} fontWeight="bold" color={cell.isFound ? '$green11' : '$color'}>
-                        {cell.symbol}
-                      </Text>
-                    </Button>
-                  );
-                })}
+                {row.map((cell) => (
+                  <ScanCell
+                    key={`cell-${cell.id}`}
+                    cell={cell}
+                    cellSize={cellSize}
+                    cellFontSize={cellFontSize}
+                    disabled={cell.isFound || session.state !== 'running'}
+                    onCellPress={handleCellTap}
+                  />
+                ))}
               </XStack>
             ))}
           </YStack>

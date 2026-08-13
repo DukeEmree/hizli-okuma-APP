@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View } from 'react-native';
-import { YStack, XStack, Text, Button, Progress, Theme } from 'tamagui';
+import { YStack, XStack, Text, Button, Progress } from 'tamagui';
 import { useRSVPEngine } from './useRSVPEngine';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -127,11 +127,8 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
   }
 
   return (
-    <Theme name="dark"> 
-      {/* RSVP ekranı dikkati toplamak için karanlık modda zorlanabilir veya sistem teması bırakılır.
-          Sistem temasına bırakmak için Theme'i kaldırıyorum. */}
       <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
-        
+
         {/* Üst Bar: İlerleme ve Çıkış */}
         <XStack w="100%" jc="space-between" ai="center">
           <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
@@ -170,6 +167,5 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
         </XStack>
 
       </YStack>
-    </Theme>
   );
 }

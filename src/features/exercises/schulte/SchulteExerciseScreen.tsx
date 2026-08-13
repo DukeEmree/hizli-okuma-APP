@@ -23,10 +23,13 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
   const {
     session,
     grid,
+    gridSize: currentGridSize,
     expectedNumber,
     isCompleted,
-    isTimeUp,
     errors,
+    roundsCompleted,
+    totalCorrect,
+    tableVersion,
     start,
     pause,
     resume,
@@ -49,8 +52,8 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
   }, [countdown, start]);
 
   useEffect(() => {
-    if (isCompleted || isTimeUp) haptics.success();
-  }, [isCompleted, isTimeUp]);
+    if (isCompleted) haptics.success();
+  }, [isCompleted]);
 
   const handleExit = () => {
     pause();
@@ -65,17 +68,14 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
     }
   };
 
-  if (isCompleted || isTimeUp) {
-    const isSuccess = expectedNumber > gridSize * gridSize;
+  if (isCompleted) {
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
-        <Text fontSize="$8" fontWeight="bold" color={isSuccess ? '$green10' : '$red10'}>
-          {isSuccess 
-            ? t('exercises.schulte.completed', 'Tabloyu başarıyla tamamladınız!') 
-            : t('common.timeUp', 'Süre doldu!')}
+        <Text fontSize="$8" fontWeight="bold" color="$color">
+          {t('common.timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Hedef: {expectedNumber - 1} / {gridSize * gridSize} | Hata: {errors}
+          Tablo: {roundsCompleted} | Doğru: {totalCorrect} | Hata: {errors}
         </Text>
         <ExerciseCompletionActions exerciseType="schulte" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -84,15 +84,15 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
 
   // Grid hesaplamaları
   const rows = [];
-  for (let i = 0; i < gridSize; i++) {
-    rows.push(grid.slice(i * gridSize, (i + 1) * gridSize));
+  for (let i = 0; i < currentGridSize; i++) {
+    rows.push(grid.slice(i * currentGridSize, (i + 1) * currentGridSize));
   }
 
   // Responsive calculations
   const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
   const GAP_SIZE = 8; // gap="$2"
-  const availableWidth = screenWidth - HORIZONTAL_PADDING - ((gridSize - 1) * GAP_SIZE);
-  const cellSize = Math.min(60, Math.floor(availableWidth / gridSize));
+  const availableWidth = screenWidth - HORIZONTAL_PADDING - ((currentGridSize - 1) * GAP_SIZE);
+  const cellSize = Math.min(60, Math.floor(availableWidth / currentGridSize));
   const cellFontSize = cellSize > 45 ? '$6' : '$5';
 
   return (
@@ -100,7 +100,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Sıradaki: <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
+          Tablo {roundsCompleted + 1} · Sıradaki: <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
         </Text>
       </XStack>
 
@@ -125,12 +125,12 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
               pointerEvents="none"
             />
             {rows.map((row, rowIndex) => (
-              <XStack key={`row-${rowIndex}`} gap="$2" w="100%" jc="center">
+              <XStack key={`row-${tableVersion}-${rowIndex}`} gap="$2" w="100%" jc="center">
                 {row.map((num, colIndex) => {
                   const isPressed = num < expectedNumber;
                   return (
                     <Button
-                      key={`cell-${rowIndex}-${colIndex}`}
+                      key={`cell-${tableVersion}-${rowIndex}-${colIndex}`}
                       width={cellSize}
                       height={cellSize}
                       padding={0}

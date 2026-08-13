@@ -102,9 +102,13 @@ export function SentenceMemoryExerciseScreen({ timeLimitMs, onComplete }: Senten
                 <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" mb="$4">{currentItem.question}</Text>
                 <YStack w="100%" gap="$3">
                   {currentItem.options.map((opt, i) => (
-                    <Button 
-                      key={i} 
-                      onPress={() => handleSelection(i)} 
+                    <Button
+                      key={i}
+                      onPress={() => {
+                        if (i === currentItem.correctIndex) haptics.light();
+                        else haptics.error();
+                        handleSelection(i);
+                      }}
                       size="$5"
                     >
                       {opt}

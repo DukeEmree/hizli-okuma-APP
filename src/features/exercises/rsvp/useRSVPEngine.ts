@@ -69,11 +69,14 @@ export function useRSVPEngine(config: RSVPConfig, onCompleteCallback?: (result: 
       return;
     }
 
-    const calculatedIndex = Math.min(lastIndex, Math.floor(ms / msPerWord));
-    if (calculatedIndex !== wordIndex) {
-      setWordIndex(calculatedIndex);
-    }
-  }, [words.length, isCompleted, msPerWord, wordIndex]);
+    // Step forward one word per tick instead of jumping straight to the
+    // time-derived index - after a JS thread hiccup that jump would skip
+    // rendering (and ticking the metronome for) every word in between,
+    // which is the "word never shown, sound still plays for it" bug.
+    // Stepping one at a time means a stall is caught up over the next few
+    // ticks instead of silently dropping words.
+    setWordIndex(prev => (prev < lastIndex && (prev + 1) * msPerWord <= ms) ? prev + 1 : prev);
+  }, [words.length, isCompleted, msPerWord]);
 
   const engine = useExerciseEngine(rsvpDefinition, config, handleComplete, handleTick);
 

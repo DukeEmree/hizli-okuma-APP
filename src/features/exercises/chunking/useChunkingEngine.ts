@@ -77,25 +77,35 @@ export function useChunkingEngine(config: ChunkingConfig, onCompleteCallback?: (
     }
   }, [storeSession, config.wpm, config.chunkSize, onCompleteCallback, config.skipDefaultStorage]);
 
-  const engine = useExerciseEngine(chunkingDefinition, config, handleComplete);
-
-  useEffect(() => {
+  // Chunk index is driven directly from the raw tick `ms`, not the throttled
+  // engine.elapsedMs (which only updates ~once/second) - otherwise the
+  // displayed chunk jumps several groups at a time instead of advancing
+  // group-by-group, making adjacent groups on screen non-adjacent in the
+  // source text (same fix as RSVP/Pacer's word index).
+  const handleTick = useCallback((ms: number) => {
     if (chunks.length === 0 || isCompleted) return;
 
-    const calculatedIndex = Math.floor(engine.elapsedMs / msPerChunk);
+    const calculatedIndex = Math.floor(ms / msPerChunk);
 
     if (calculatedIndex >= chunks.length) {
-      if (!isCompleted) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCompleted(true);
-        engine.updateMetrics({ completionRate: 1, wpm: config.wpm });
-        engine.complete();
-      }
-    } else if (calculatedIndex !== chunkIndex) {
+      return;
+    }
+
+    if (calculatedIndex !== chunkIndex) {
       setChunkIndex(calculatedIndex);
     }
-  }, [engine.elapsedMs, msPerChunk, chunks.length, isCompleted, chunkIndex, engine, config.wpm]);
+  }, [chunks.length, isCompleted, msPerChunk, chunkIndex]);
+
+  const engine = useExerciseEngine(chunkingDefinition, config, handleComplete, handleTick);
+
+  useEffect(() => {
+    if (isCompleted && engine.session.state === 'running') {
+      engine.updateMetrics({ completionRate: 1, wpm: config.wpm });
+      engine.complete();
+    }
+  }, [isCompleted, engine, config.wpm]);
 
   const reset = useCallback(() => {
     engine.reset();

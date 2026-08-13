@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { YStack, Text, H2, Button, Card } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +6,11 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useStreakCacheStore } from '@/stores/streakCacheStore';
 import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
+import { usePaywallPromptStore } from '@/stores/paywallPromptStore';
+import { shouldShowInterstitialPaywall } from '@/utils/paywall';
 import { XP_SOURCES } from '@/constants/gamification';
+
+const DAILY_PLAN_COMPLETE_TRIGGER = 'daily_plan_complete';
 
 export function DailyPlanCompleteScreen() {
   const router = useRouter();
@@ -15,6 +19,18 @@ export function DailyPlanCompleteScreen() {
   const currentStreak = useStreakCacheStore((s) => s.currentStreak);
   const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
   const localSessions = useLocalHistoryStore((s) => s.sessions);
+  const promptedRef = useRef(false);
+
+  useEffect(() => {
+    if (promptedRef.current || isPremium) return;
+    const { lastShownAt, markShown } = usePaywallPromptStore.getState();
+    const now = Date.now();
+    if (!shouldShowInterstitialPaywall({ lastShownAt, lastTrigger: null }, isPremium, now)) return;
+
+    promptedRef.current = true;
+    markShown(DAILY_PLAN_COMPLETE_TRIGGER, now);
+    router.push({ pathname: '/paywall', params: { trigger: DAILY_PLAN_COMPLETE_TRIGGER } });
+  }, [isPremium, router]);
 
   const todaysMinutes = useMemo(() => {
     const todayStart = new Date();

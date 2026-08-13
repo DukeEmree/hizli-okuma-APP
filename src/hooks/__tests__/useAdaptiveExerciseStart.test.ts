@@ -17,8 +17,10 @@ mock.module("@/stores/exerciseProgressStore", () => ({
 mock.module("@/utils/difficultyMapper", () => ({
   getAdaptiveConfig: mock((type, level) => {
     if (type === 'rsvp') return { wpm: 100 + (level * 50) };
+    if (type === 'pacer') return { wpm: 100 + (level * 50) };
     return {};
   }),
+  CROSS_EXERCISE_METRICS_SOURCE: { pacer: 'rsvp-reading' },
 }));
 
 describe("useAdaptiveExerciseStart", () => {
@@ -66,5 +68,29 @@ describe("useAdaptiveExerciseStart", () => {
     expect(result.current.isReady).toBe(true);
     expect(result.current.progressionState?.currentLevel).toBe(3);
     expect((result.current.config as any)?.wpm).toBe(250); // 100 + (3 * 50)
+  });
+
+  test("Pacer borrows RSVP's progression instead of its own (can't self-measure accuracy)", () => {
+    const pacerDef: ExerciseDefinition = {
+      id: "pacer-reading",
+      type: "pacer",
+      category: "reading",
+      nameKey: "pacer.name",
+      descriptionKey: "pacer.description",
+      defaultConfig: { wpm: 150 },
+      isPremium: true,
+    };
+    mockGetExerciseMetrics.mockReturnValue({
+      currentDifficulty: 7,
+      consecutiveSuccesses: 0,
+      consecutiveFailures: 0,
+      historicalBestLevel: 7,
+    });
+
+    const { result } = renderHook(() => useAdaptiveExerciseStart(pacerDef));
+
+    expect(mockGetExerciseMetrics).toHaveBeenCalledWith('rsvp-reading');
+    expect(result.current.progressionState?.currentLevel).toBe(7);
+    expect((result.current.config as any)?.wpm).toBe(450); // 100 + (7 * 50)
   });
 });

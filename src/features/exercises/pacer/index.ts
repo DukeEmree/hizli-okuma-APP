@@ -18,6 +18,5 @@ export const pacerDefinition: ExerciseDefinition = {
     highlightMode: 'word', // 'word' veya 'line'
     direction: 'forward', // ileri vs.
   },
-  isPremium: true,
 };
 

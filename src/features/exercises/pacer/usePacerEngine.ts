@@ -71,11 +71,10 @@ export function usePacerEngine(config: PacerConfig, onCompleteCallback?: (result
       return;
     }
 
-    const calculatedIndex = Math.min(lastIndex, Math.floor(ms / msPerWord));
-    if (calculatedIndex !== highlightIndex) {
-      setHighlightIndex(calculatedIndex);
-    }
-  }, [words.length, isCompleted, msPerWord, highlightIndex]);
+    // Step forward one word per tick instead of jumping straight to the
+    // time-derived index - see useRSVPEngine's handleTick for why.
+    setHighlightIndex(prev => (prev < lastIndex && (prev + 1) * msPerWord <= ms) ? prev + 1 : prev);
+  }, [words.length, isCompleted, msPerWord]);
 
   const engine = useExerciseEngine(pacerDefinition, config, handleComplete, handleTick);
 

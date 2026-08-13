@@ -53,7 +53,10 @@ export default function ExercisesScreen() {
   const categories = ['all', ...Array.from(new Set(allExercises.map(ex => ex.category)))];
 
   const handlePress = (exercise: ExerciseDefinition) => {
-    if (exercise.isPremium && !isPremium) {
+    // Free users can only run exercises through the daily-plan list, in
+    // order - picking any exercise standalone from this tab is a premium
+    // perk, regardless of that exercise's own isPremium flag.
+    if (!isPremium) {
       router.push('/paywall');
       return;
     }
@@ -108,7 +111,7 @@ export default function ExercisesScreen() {
             <YStack gap="$4">
               {filteredExercises.map(exercise => {
                 const IconComponent = CATEGORY_ICONS[exercise.category] || Dumbbell;
-                const isLocked = exercise.isPremium && !isPremium;
+                const isLocked = !isPremium;
                 const stat = getExerciseStat(exercise.type);
 
                 return (

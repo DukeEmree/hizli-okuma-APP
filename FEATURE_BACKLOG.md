@@ -22,54 +22,15 @@ Bu, aşağıdaki özelliklerin bazılarını (ör. başarım sistemi) doğrudan 
 
 **Kullanıcı problemi.** Şu an paywall'a yalnızca kullanıcı kendisi giderse (ayarlar, ana ekrandaki kart) veya günlük limite çarparsa ulaşıyor. Limit anı en kötü teklif anı: kullanıcı tam çalışmak isterken engelleniyor ve rahatsız oluyor.
 
-**Çözüm.** Doğru anda, seyrek, kapatılabilir tam ekran teklif. En iyi an: kullanıcının başarı hissi yaşadığı an — kişisel rekor kırınca, günlük planı bitirince, 3/7 günlük streak'e ulaşınca.
+**Çözüm.** Doğru anda, seyrek, kapatılabilir tam ekran teklif. Hosted `RevenueCatUI.Paywall` (`/paywall` route) kullanılır — ayrı bir custom paywall tasarımı yok.
 
-**UX akışı.**
-1. Tetikleyici olay (rekor / plan tamamlandı / streak kilometre taşı).
-2. Kutlama ekranından sonra tam ekran teklif: kullanıcının kendi verisiyle kişiselleştirilmiş ("Hızın 3 haftada 42 WPM arttı — premium ile detaylı analiz ve sınırsız egzersiz").
-3. Belirgin kapat (×) butonu, "şimdi değil" seçeneği.
-4. Frekans sınırı: en fazla 3-4 günde bir, art arda asla, kapatıldıktan sonra en az X gün sessizlik, satın alma sonrası tamamen kapalı.
+**Durum.** İki tetikleyici uygulandı, ortak `paywallPromptStore` + `shouldShowInterstitialPaywall` (`src/utils/paywall.ts`, 4 günlük sessizlik kuralı) üzerinden:
+- Günlük plan tamamlanma — `DailyPlanCompleteScreen`, premium olmayan kullanıcıda otomatik `/paywall`'a yönlendirir (`trigger=daily_plan_complete`). Var olan manuel giriş kartı bu sınırdan etkilenmeden ayrıca duruyor.
+- Streak kilometre taşı (3/7/14/30/50/100/365 gün, `streakCacheStore.STREAK_MILESTONES`) — `ExerciseCompletionActions` (her egzersiz tamamlama ekranının kullandığı tek ortak nokta) `currentStreak` bir kilometre taşındaysa otomatik `/paywall`'a yönlendirir (`trigger=streak_milestone`).
 
-**Teknik mimari.**
-- Tetikleme ve frekans mantığı için `paywallPromptStore` (persist, user-scoped): `lastShownAt`, `dismissCount`, `lastTrigger`. Tamamen yerel — sunucuya gerek yok.
-- Gösterim kararı tek bir saf fonksiyonda toplanmalı (`shouldShowInterstitial(state, trigger, now)`), böylece birim testi yazılabilir ve kural tek yerde durur.
-- Ekranın kendisi 4. maddedeki custom paywall bileşenini kullanır; ayrı bir tasarım yapılmamalı.
-- Analytics: `paywall_viewed` olayına `trigger` özelliği eklenmeli ki hangi tetikleyicinin dönüştüğü ölçülebilsin (şu an olay var ama kaynağı yok).
+**Kalan tetikleyici (henüz yok).** Kişisel rekor kırılınca — kod tabanında "kişisel rekor" kavramı henüz yok, önce WPM rekoru tespiti eklenmeli. Eklendiğinde aynı `paywallPromptStore`/`shouldShowInterstitialPaywall` çiftini kullanmalı.
 
-**Retention etkisi.** Dönüşüme etki eder, retention'a doğrudan etmez; yanlış ayarlanırsa retention'ı **düşürür**. Frekans sınırı bu özelliğin en önemli parçası, süsü değil.
-
-**MVP zorluğu.** Düşük — 4. madde bittikten sonra.
-
-**Açık sorular.** Hangi tetikleyiciler ilk sürümde açık olsun? Guest kullanıcıya gösterilecek mi (önce hesap açması mı istenmeli)? Play politikası açısından kapat butonunun görünürlüğü net olmalı.
-
----
-
-## 4. RevenueCat Custom Paywall Entegrasyonu
-
-**Kullanıcı problemi.** Şu an `RevenueCatUI.Paywall` (RevenueCat'in kendi hazır ekranı) kullanılıyor. Uygulamanın tipografisi, renk sistemi ve Türkçe dili ile tam uyuşmuyor, ürün mesajını (hangi özellik neden premium) anlatmıyor ve A/B denemesi yapmak zor.
-
-**Çözüm.** Uygulamanın kendi tasarım diliyle yazılmış paywall ekranı; ürün/fiyat verisi yine RevenueCat SDK'sından (`getOfferings`), satın alma yine `purchasePackage` ile.
-
-**UX akışı.**
-1. Başlık + tek cümlelik değer önerisi.
-2. Özellik listesi — ücretsiz vs premium karşılaştırması (sınırsız egzersiz, bulut yedekleme, detaylı analiz, tüm başarımlar).
-3. Paket seçimi: aylık / yıllık, yıllıkta "%X tasarruf" rozeti, varsayılan seçili yıllık.
-4. Tek birincil buton, altında küçük "Satın alımları geri yükle" ve şartlar/gizlilik linkleri.
-5. Satın alma sonrası başarı durumu ve geldiği yere dönüş.
-
-**Teknik mimari.**
-- `react-native-purchases` zaten kurulu: `getOfferings()`, `purchasePackage()`, `restorePurchases()`. Yeni bağımlılık yok.
-- `RevenueCatProvider` şu an `customerInfo` ve `isPremium` veriyor; `offerings` de aynı provider'a eklenmeli (tek yerden, ikinci bir listener açmadan).
-- Fiyatlar **asla** koda yazılmamalı — `package.product.priceString` kullanılmalı (yerel para birimi ve biçim).
-- Hata durumları: kullanıcı iptali (sessiz geç), ödeme hatası, ürün bulunamadı, offering boş → hepsi ayrı ayrı ele alınmalı; şu anki hosted ekran bunları kendi hallediyor, custom ekranda bizim işimiz.
-- `react-native-purchases-ui` yalnızca Customer Center için kalabilir (abonelik yönetimi), paywall için gerekmez.
-- Play politikası gereği abonelik şartları, süre ve otomatik yenileme bilgisi ekranda açıkça yazmalı.
-
-**Retention etkisi.** Dolaylı — dönüşüm oranı ve mesaj kontrolü. Asıl kazanç ölçülebilirlik: hangi paket, hangi metin, hangi giriş noktası çalışıyor.
-
-**MVP zorluğu.** Orta. Zor kısmı tasarım değil, satın alma hata durumlarının eksiksiz ele alınması ve sandbox'ta test edilmesi.
-
-**Açık sorular.** Deneme süresi (trial) olacak mı? Tek seferlik "lifetime" paket düşünülüyor mu? A/B testi RevenueCat Experiments ile mi yürütülecek?
+**Açık sorular.** Play politikası açısından hosted ekrandaki kapat (×) butonunun görünürlüğü RevenueCat dashboard paywall ayarından kontrol ediliyor — orada net olduğundan emin olunmalı.
 
 ---
 

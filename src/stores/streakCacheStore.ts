@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { userScopedStorageAdapter } from "./storage";
 
+/** Days on which a streak is celebrated (notification + interstitial paywall). */
+export const STREAK_MILESTONES = [3, 7, 14, 30, 50, 100, 365];
+
 interface StreakCacheState {
   currentStreak: number;
   longestStreak: number;
@@ -29,8 +32,7 @@ export const useStreakCacheStore = create<StreakCacheState>()(
         import("@/services/notifications").then((module) => {
           module.rescheduleAllReminders().catch(console.error);
 
-          const MILESTONES = [3, 7, 14, 30, 50, 100, 365];
-          if (MILESTONES.includes(streak.currentStreak)) {
+          if (STREAK_MILESTONES.includes(streak.currentStreak)) {
             module
               .sendMilestoneNotification(streak.currentStreak)
               .catch(console.error);

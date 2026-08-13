@@ -9,9 +9,10 @@ import { CartesianChart, Line } from 'victory-native';
 
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
-import { useExerciseLimits } from '@/hooks/useExerciseLimits';
 import { useAdaptiveExerciseStart } from '@/hooks/useAdaptiveExerciseStart';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 
 const CATEGORY_ICONS: Record<string, any> = {
   reading: BookOpen,
@@ -30,7 +31,14 @@ export default function ExerciseInfoScreen() {
   const updateExerciseConfig = useExerciseSettingsStore(state => state.updateExerciseConfig);
   const theme = useTheme();
   const exercise = exerciseRegistry.get(exerciseId as string);
-  const { canStartExercise, isLoading: isLimitsLoading } = useExerciseLimits();
+  const { isPremium, isConfigured } = useRevenueCat();
+  const activeFlowType = useDailyPlanStore((s) => s.activeFlowType);
+  // Free users may only start the exercise they just launched from the
+  // daily-plan list - same rule enforced at the engine-route layout
+  // (exercises/_layout.tsx), mirrored here so the Lock/paywall CTA shows
+  // immediately instead of flashing the engine screen before that redirect.
+  const canStartExercise = isPremium || (!!exercise && activeFlowType === exercise.type);
+  const isLimitsLoading = !isConfigured;
 
   // Adaptive difficulty logic
   const { isReady: isAdaptiveReady, config: adaptiveConfig, progressionState } = useAdaptiveExerciseStart(exercise);

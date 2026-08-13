@@ -18,6 +18,7 @@ export default function ChunkingRoute() {
   const initialDifficulty = (params.initialDifficulty ? parseInt(params.initialDifficulty as string, 10) : 5) as DifficultyLevel;
   const setComprehensionContext = useComprehensionStore(s => s.setComprehensionContext);
   const markStepCompleted = useDailyPlanStore(s => s.markStepCompleted);
+  const activeFlowType = useDailyPlanStore(s => s.activeFlowType);
 
   // eslint-disable-next-line react-hooks/purity
   const [pickedText] = React.useState(() => pickByDifficulty(COMPREHENSION_TEXTS, initialDifficulty));
@@ -30,10 +31,15 @@ export default function ChunkingRoute() {
   }, [textId, pickedText]);
 
   const handleComplete = (result: ExerciseResult) => {
-    // A daily-plan step always chains to the next plan step, taking
-    // precedence over chunking's own ad-hoc comprehension-text follow-up
-    // (the plan already has a dedicated comprehension slot).
-    if (markStepCompleted(result.exerciseType)) return;
+    // Always mark the plan step done if today's plan includes it - but only
+    // skip chunking's own ad-hoc comprehension-text follow-up when this run
+    // is actually the daily-plan's chained flow (activeFlowType is set only
+    // when launched from the daily-plan list). Otherwise `chunking` merely
+    // being a coincidental part of today's plan would silently swallow the
+    // follow-up for a standalone run started from the Egzersizler tab.
+    const isActiveFlowStep = activeFlowType === result.exerciseType;
+    markStepCompleted(result.exerciseType);
+    if (isActiveFlowStep) return;
     if (activeText) {
       setComprehensionContext(result, activeText);
       router.replace('/(app)/exercises/comprehension');

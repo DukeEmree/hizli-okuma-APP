@@ -3,6 +3,8 @@ import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
 import { useStreakCacheStore } from "@/stores/streakCacheStore";
 import { useGamificationStore } from "@/stores/gamificationStore";
 import { calculateNextProgression } from "@/utils/adaptiveDifficulty";
+import { CROSS_EXERCISE_METRICS_SOURCE } from "@/utils/difficultyMapper";
+import { sounds } from "@/lib/sounds";
 import { calculateStreakUpdate, getLocalDateString } from "@/utils/streak";
 import { processGamification } from "@/utils/gamification";
 import { DAILY_PLAN_SIZE } from "@/utils/dailyPlan";
@@ -48,7 +50,14 @@ export function useCreateSession() {
       return { sessionId: "local", gamification: null };
     }
 
-    if (result) {
+    // Exercises listed in CROSS_EXERCISE_METRICS_SOURCE (e.g. Pacer) can't
+    // measure their own accuracy - it's always 1 - so writing a "progression"
+    // for them would just ratchet straight to max difficulty. They read
+    // another exercise's progression instead (see useAdaptiveExerciseStart),
+    // so there's nothing meaningful to record here.
+    const hasOwnProgression = !(result?.exerciseType && CROSS_EXERCISE_METRICS_SOURCE[result.exerciseType]);
+
+    if (result && hasOwnProgression) {
       const currentMetrics = getExerciseMetrics(result.exerciseId);
       const currentProgression: ProgressionState = {
         currentLevel: currentMetrics.currentDifficulty,
@@ -58,6 +67,10 @@ export function useCreateSession() {
       };
 
       const newProgression = calculateNextProgression(result, currentProgression);
+
+      if (newProgression.currentLevel !== currentProgression.currentLevel) {
+        sounds.difficultyChanged();
+      }
 
       updateExerciseMetrics(result.exerciseId, {
         currentDifficulty: newProgression.currentLevel,

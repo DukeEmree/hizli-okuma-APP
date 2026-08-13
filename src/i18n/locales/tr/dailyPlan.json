@@ -8,8 +8,7 @@
     "viewSummary": "Özeti gör"
   },
   "actions": {
-    "next": "Sıradaki",
-    "finishPlan": "Planı tamamla"
+    "backToList": "Listeye dön"
   },
   "complete": {
     "title": "Bugünün planını tamamladın!",

@@ -114,12 +114,16 @@ export function NumberScanExerciseScreen({ timeLimitMs, onComplete }: NumberScan
                 }}>
                   {gridNumbers.map((num, i) => (
                     <View key={i} style={{ width: itemSize, height: itemSize, margin: 4 }}>
-                      <Button 
-                        w="100%" 
-                        h="100%" 
-                        p={0} 
+                      <Button
+                        w="100%"
+                        h="100%"
+                        p={0}
                         bg="$backgroundHover"
-                        onPress={() => handleSelection(num)}
+                        onPress={() => {
+                          if (num === targetNumber) haptics.light();
+                          else haptics.error();
+                          handleSelection(num);
+                        }}
                       >
                         <Text fontSize={itemSize * 0.4} fontWeight="bold" color="$color" fontFamily="$body">{num}</Text>
                       </Button>

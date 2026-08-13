@@ -111,10 +111,16 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
                   {options.map((opt, i) => {
                     const isSelected = selectedWords.includes(opt);
                     return (
-                      <Button 
-                        key={i} 
-                        onPress={() => handleSelection(opt)} 
-                        minWidth={120} 
+                      <Button
+                        key={i}
+                        onPress={() => {
+                          if (!isSelected) {
+                            if (targetWords.includes(opt)) haptics.light();
+                            else haptics.error();
+                          }
+                          handleSelection(opt);
+                        }}
+                        minWidth={120}
                         size="$4"
                         bg={isSelected ? '$green8' : '$backgroundHover'}
                       >

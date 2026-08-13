@@ -17,6 +17,5 @@ export const chunkingDefinition: ExerciseDefinition = {
     text: '',
     updateIntervalMs: 16,
   },
-  isPremium: true,
 };
 

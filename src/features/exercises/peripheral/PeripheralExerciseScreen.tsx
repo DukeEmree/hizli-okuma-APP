@@ -88,12 +88,18 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
   const maxHorizontalDistance = Math.max(40, screenWidth / 2 - WORD_SAFETY_MARGIN);
   const maxVerticalDistance = Math.max(40, screenHeight / 2 - WORD_SAFETY_MARGIN);
 
+  // Android measures an absolutely-positioned child's width against its tiny
+  // containing block even with a single inset set, wrapping the word letter
+  // by letter. An explicit width gives it room; alignItems keeps the visible
+  // edge anchored at the same spot as before.
+  const WORD_BOX_WIDTH = 400;
+
   const getPositionStyles = () => {
     switch (position) {
-      case 'left': return { right: Math.min(distance, maxHorizontalDistance) };
-      case 'right': return { left: Math.min(distance, maxHorizontalDistance) };
-      case 'top': return { bottom: Math.min(distance, maxVerticalDistance) };
-      case 'bottom': return { top: Math.min(distance, maxVerticalDistance) };
+      case 'left': return { right: Math.min(distance, maxHorizontalDistance), width: WORD_BOX_WIDTH, alignItems: 'flex-end' as const };
+      case 'right': return { left: Math.min(distance, maxHorizontalDistance), width: WORD_BOX_WIDTH, alignItems: 'flex-start' as const };
+      case 'top': return { bottom: Math.min(distance, maxVerticalDistance), width: WORD_BOX_WIDTH, alignItems: 'center' as const };
+      case 'bottom': return { top: Math.min(distance, maxVerticalDistance), width: WORD_BOX_WIDTH, alignItems: 'center' as const };
       default: return {};
     }
   };

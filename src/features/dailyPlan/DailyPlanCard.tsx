@@ -1,13 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Card, H4, Text, YStack, XStack, Button } from 'tamagui';
 import { Check } from 'lucide-react-native';
-import { useRouter, Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useLocalHistoryStore } from '@/stores/localHistoryStore';
-import { useDailyPlanStore } from '@/stores/dailyPlanStore';
-import { selectDailyPlan, ExercisePerformance } from '@/utils/dailyPlan';
-import { getLocalDateString } from '@/utils/streak';
-import { buildLocalStats } from '@/utils/localStatistics';
+import { useDailyPlan } from '@/features/dailyPlan/useDailyPlan';
 import { exerciseRegistry } from '@/features/exercises/registry';
 
 const ESTIMATED_MINUTES_PER_EXERCISE = 3;
@@ -17,45 +12,16 @@ export function DailyPlanCard() {
   const { t } = useTranslation('dailyPlan');
   const { t: tExercises } = useTranslation('exercises');
 
-  const localSessions = useLocalHistoryStore((s) => s.sessions);
-  const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
-  const completedTypes = useDailyPlanStore((s) => s.completedTypes);
-  const lastPlanTypes = useDailyPlanStore((s) => s.lastPlanTypes);
-  const ensureTodayPlan = useDailyPlanStore((s) => s.ensureTodayPlan);
-  const setActiveFlowType = useDailyPlanStore((s) => s.setActiveFlowType);
-
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  // eslint-disable-next-line react-hooks/purity
-  const [now] = useState(() => Date.now());
-  const today = getLocalDateString(now, timeZone);
-
-  const performanceByType = useMemo(() => {
-    const exerciseStats = buildLocalStats(localSessions, '30d', now, timeZone).exerciseStats;
-
-    const map: Record<string, ExercisePerformance> = {};
-    for (const entry of exerciseStats) {
-      map[entry.type] = { averageScore: entry.averageScore, attemptCount: entry.attemptCount };
-    }
-    return map;
-  }, [localSessions, timeZone, now]);
-
-  useEffect(() => {
-    ensureTodayPlan(today, () => selectDailyPlan({ dateSeed: today, performanceByType, lastPlanTypes }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today]);
+  const { exerciseTypes, completedTypes, isAllDone } = useDailyPlan();
 
   if (exerciseTypes.length === 0) return null;
 
   const completedCount = completedTypes.length;
-  const isAllDone = completedCount >= exerciseTypes.length;
-  const firstPendingType = exerciseTypes.find((type) => !completedTypes.includes(type));
 
-  const handlePress = () => {
-    if (firstPendingType) {
-      setActiveFlowType(firstPendingType);
-      router.push(`/(app)/exercises/${firstPendingType}` as Href);
-    }
-  };
+  // Navigates to the daily-plan list screen rather than straight into an
+  // exercise - the list is where sequencing/locking and the info-screen
+  // hop for the tapped step are handled.
+  const handlePress = () => router.push('/(app)/daily-plan');
 
   return (
     <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover" elevation="$1">

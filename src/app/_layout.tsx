@@ -8,6 +8,7 @@ import { Toast, ToastProvider, ToastViewport, useToastState } from "@tamagui/toa
 
 import { AchievementPopupGlobal } from "@/components/gamification/AchievementPopup";
 import { analytics } from "@/lib/analytics";
+import { setupDevMenu } from "@/lib/devMenu";
 import { initSentry } from "@/lib/sentry";
 import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
 import { AppNotificationProvider } from "@/providers/NotificationProvider";
@@ -88,6 +89,7 @@ SplashScreen.preventAutoHideAsync();
 // configured and every tracked event is silently dropped in production.
 initSentry();
 analytics.init();
+setupDevMenu();
 
 export default function RootLayout() {
   const systemColorScheme = useColorScheme();

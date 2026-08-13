@@ -103,7 +103,16 @@ export function WordRecognitionExerciseScreen({ timeLimitMs, onComplete }: WordR
                 )}
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {!showTarget && session.state === 'running' && options.map((opt, i) => (
-                    <Button key={i} onPress={() => handleSelection(opt)} minWidth={140} size="$5">
+                    <Button
+                      key={i}
+                      onPress={() => {
+                        if (opt === currentTarget) haptics.light();
+                        else haptics.error();
+                        handleSelection(opt);
+                      }}
+                      minWidth={140}
+                      size="$5"
+                    >
                       {opt}
                     </Button>
                   ))}
