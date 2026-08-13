@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hizli-okuma-legal",
+  "compatibility_date": "2025-06-01",
+  // Static assets only - there is no Worker script. `not_found_handling`
+  // serves 404.html; `html_handling` maps /privacy to privacy.html so the
+  // published URLs stay extension-free.
+  "assets": {
+    "directory": "./public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    {
+      "pattern": "privacy.dukeemree.xyz",
+      "custom_domain": true
+    }
+  ]
+}

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gizlilik Politikası — Hızlı Okuma</title>
+<meta name="description" content="Hızlı Okuma mobil uygulamasının gizlilik politikası.">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="dot"></span> Hızlı Okuma</a>
+    <nav class="site">
+      <a href="/privacy" aria-current="page">Gizlilik</a>
+      <a href="/terms">Koşullar</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<div class="langswitch" role="group" aria-label="Dil seçimi">
+  <button type="button" data-lang="tr" aria-pressed="true">Türkçe</button>
+  <button type="button" data-lang="en" aria-pressed="false">English</button>
+</div>
+
+<!-- ------------------------------- TÜRKÇE ------------------------------- -->
+<div data-lang-block="tr" class="active">
+
+<h1>Gizlilik Politikası</h1>
+<p class="updated">Son güncelleme: 13 Ağustos 2026</p>
+
+<div class="lede">
+  <p><strong>Kısaca:</strong> Hızlı Okuma’da hesap yoktur. Adınızı, e-postanızı, telefon numaranızı veya konumunuzu istemiyoruz ve toplamıyoruz. Egzersiz geçmişiniz, istatistikleriniz ve seriniz yalnızca cihazınızda saklanır; sunucumuz yoktur. Cihazdan dışarı çıkan tek şey isimsiz kullanım istatistikleri, hata raporları ve abonelik durumunuzdur.</p>
+</div>
+
+<p>Bu politika, <strong>DukeEmree</strong> tarafından geliştirilen <strong>Hızlı Okuma: Egzersizler ve Gelişim</strong> (paket adı <code>com.dukeemree.hizliokuma</code>, bundan sonra “Uygulama”) mobil uygulamasının kişisel verileri nasıl işlediğini açıklar.</p>
+
+<h2>1. Hesap yok, kimlik yok</h2>
+<p>Uygulamada kayıt olma, giriş yapma veya profil oluşturma özelliği yoktur. Her kurulum bağımsız bir misafir kullanıcıdır. Sizi bir kişi olarak tanımlayan hiçbir veri (ad, soyad, e-posta, telefon, adres, doğum tarihi, kimlik numarası, fotoğraf, konum) istenmez, toplanmaz veya saklanmaz.</p>
+
+<h2>2. Cihazınızda kalan veriler</h2>
+<p>Aşağıdaki veriler yalnızca telefonunuzun yerel deposunda (MMKV) tutulur. Bunlar hiçbir sunucuya gönderilmez, yedeklenmez ve tarafımızdan görülemez:</p>
+<ul>
+  <li>Tamamladığınız egzersiz oturumları: tür, süre, zorluk seviyesi, skor</li>
+  <li>Okuma hızı (WPM), kavrama ve doğruluk ölçümleriniz</li>
+  <li>Günlük seriniz ve biriken seri dondurma hakkınız</li>
+  <li>XP, seviye ve açtığınız başarımlar</li>
+  <li>Günlük planınız ve tamamladığınız adımlar</li>
+  <li>Uygulama ayarlarınız: tema, dil, bildirim tercihleri, hatırlatma saati, ses ve titreşim tercihi, günlük hedef</li>
+  <li>Onboarding sırasında ölçülen başlangıç okuma hızınız ve kavrama oranınız</li>
+</ul>
+<p>Egzersiz geçmişi cihazda yaklaşık 6 ay tutulur; daha eski oturumlar otomatik olarak silinir.</p>
+
+<h2>3. Cihazdan çıkan veriler</h2>
+<p>Uygulamanın çalışması ve iyileştirilmesi için üç hizmet sağlayıcı kullanıyoruz. Her birine giden veri aşağıda listelenmiştir.</p>
+
+<h3>3.1 Amplitude — kullanım istatistikleri</h3>
+<p>Hangi özelliklerin kullanıldığını anlamak için isimsiz olay kayıtları gönderilir. Gönderilen olaylar şunlardır: uygulama açılışı, onboarding başlangıcı ve bitişi, egzersiz başlatma, tamamlama ve yarıda bırakma, başarım açma, günlük plan başlatma ve tamamlama, ödeme ekranı görüntüleme, abonelik başlatma ve geri yükleme.</p>
+<p>Bu olaylarla birlikte yalnızca egzersiz türü, zorluk seviyesi, başarım kimliği, plan adım sayısı ve ödeme ekranını açan tetikleyici gibi teknik alanlar gider. Uygulama, olay özelliklerini göndermeden önce e-posta, parola, gizli anahtar, token, kullanıcı adı ve telefon gibi alan adlarını içeren her veriyi filtreler.</p>
+<p>Amplitude ayrıca kendi altyapısı gereği rastgele üretilmiş bir cihaz kimliği, cihaz modeli, işletim sistemi sürümü, uygulama sürümü ve IP adresinden türetilen ülke bilgisini kaydeder. IP adresi tarafımızca saklanmaz.</p>
+
+<h3>3.2 Sentry — hata ve çökme raporları</h3>
+<p>Uygulama beklenmedik şekilde hata verdiğinde teknik bir rapor gönderilir: hata mesajı, kod yığın izi, cihaz modeli, işletim sistemi sürümü, uygulama sürümü ve hatadan hemen önceki teknik adımlar. Sentry, kişisel veri toplama özelliği kapatılmış olarak yapılandırılmıştır (<code>sendDefaultPii: false</code>); IP adresi ve istek içerikleri gönderilmez. Bu raporlar yalnızca hataları düzeltmek için kullanılır.</p>
+
+<h3>3.3 RevenueCat ve Google Play Faturalandırma — abonelik</h3>
+<p>Premium abonelik satın alırsanız, satın alma işlemi Google Play tarafından yürütülür. Uygulama <strong>hiçbir zaman</strong> kart numaranızı, banka bilgilerinizi veya fatura adresinizi görmez ve saklamaz.</p>
+<p>Abonelik durumunuzu takip etmek için RevenueCat kullanılır. RevenueCat’e giden veriler: rastgele üretilmiş isimsiz bir uygulama kullanıcı kimliği, Google Play’in ürettiği satın alma makbuzu, ürün kimliği ve aboneliğin aktif olup olmadığı bilgisi. Uygulama RevenueCat’e herhangi bir hesap veya kişisel bilgi bağlamaz.</p>
+
+<h2>4. Ne toplamıyoruz</h2>
+<ul>
+  <li>Ad, soyad, e-posta adresi, telefon numarası, posta adresi</li>
+  <li>Konum bilgisi — Uygulama konum izni istemez</li>
+  <li>Rehber, fotoğraf, dosya veya takvim erişimi</li>
+  <li>Mikrofon veya kamera kaydı — <code>RECORD_AUDIO</code> izni uygulama yapılandırmasında açıkça engellenmiştir</li>
+  <li>Reklam kimliği — Uygulamada reklam yoktur ve reklam ağı entegrasyonu bulunmaz</li>
+  <li>Ödeme kartı bilgileri</li>
+</ul>
+
+<h2>5. Bildirimler</h2>
+<p>Uygulama günlük hatırlatma, seri hatırlatması, kilometre taşı kutlaması ve haftalık özet bildirimleri gönderebilir. Bu bildirimlerin tamamı <strong>cihazınızda yerel olarak</strong> planlanır. Sunucudan gönderilen push bildirim yoktur; bu nedenle bildirim jetonunuz hiçbir yere iletilmez. Bildirimleri Ayarlar ekranından veya cihazınızın sistem ayarlarından tamamen kapatabilirsiniz.</p>
+
+<h2>6. İzinler ve neden gerekli oldukları</h2>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>İzin</th><th>Amacı</th></tr></thead>
+  <tbody>
+    <tr><td><code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code></td><td>Abonelik doğrulaması, kullanım istatistikleri ve hata raporları</td></tr>
+    <tr><td><code>com.android.vending.BILLING</code></td><td>Google Play üzerinden abonelik satın alma</td></tr>
+    <tr><td><code>POST_NOTIFICATIONS</code></td><td>Yerel hatırlatma bildirimleri</td></tr>
+    <tr><td><code>MODIFY_AUDIO_SETTINGS</code></td><td>Metronom ve egzersiz seslerinin çalınması</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>7. Verilerinizi silme</h2>
+<ul>
+  <li><strong>Cihazdaki veriler:</strong> Uygulama içindeki <em>Ayarlar → Tehlikeli Bölge → İstatistikleri Sıfırla</em> seçeneği tüm egzersiz geçmişinizi, istatistiklerinizi, serinizi ve başarımlarınızı kalıcı olarak siler. Uygulamayı kaldırmanız da cihazdaki tüm verileri siler.</li>
+  <li><strong>Kullanım istatistikleri ve hata raporları:</strong> Bu kayıtlar bir kişiye değil rastgele bir cihaz kimliğine bağlıdır. Silinmesini talep etmek için aşağıdaki e-posta adresine yazabilirsiniz; talebinizi karşılayabilmemiz için ilgili cihaz kimliğini paylaşmanız gerekebilir.</li>
+  <li><strong>Abonelik:</strong> Aboneliğinizi Google Play hesabınızdan yönetebilir ve iptal edebilirsiniz. Satın alma kayıtları, yasal ve mali yükümlülükler gereği Google ve RevenueCat tarafından kendi saklama süreleri boyunca tutulur.</li>
+</ul>
+
+<h2>8. Saklama süreleri</h2>
+<ul>
+  <li>Cihazdaki egzersiz geçmişi: yaklaşık 6 ay, ardından otomatik silinir</li>
+  <li>Cihazdaki ayarlar, seri, XP ve başarımlar: siz silene veya uygulamayı kaldırana kadar</li>
+  <li>Amplitude ve Sentry kayıtları: ilgili sağlayıcının standart saklama süresi boyunca</li>
+</ul>
+
+<h2>9. Haklarınız</h2>
+<p>Bulunduğunuz ülkenin mevzuatına (Türkiye’de 6698 sayılı KVKK, Avrupa Birliği’nde GDPR) göre; işlenen verilere erişme, düzeltilmesini veya silinmesini isteme, işlemeye itiraz etme ve bir denetim makamına şikâyette bulunma haklarına sahipsiniz. Uygulama sizi kimliklendirmediği için bu hakların çoğu, cihazınızdaki verileri doğrudan silmenizle zaten kullanılabilir durumdadır. Ek talepleriniz için bize yazabilirsiniz.</p>
+<p>İşleme hukuki dayanağımız; kullanım istatistikleri ve hata raporları için meşru menfaat (uygulamanın çalışır ve kullanışlı kalması), abonelik verileri için ise sözleşmenin ifasıdır.</p>
+
+<h2>10. Çocukların gizliliği</h2>
+<p>Uygulama 13 yaşın altındaki çocuklara yönelik değildir ve bilerek bu yaş grubundan veri toplamaz.</p>
+
+<h2>11. Yurt dışına aktarım</h2>
+<p>Amplitude, Sentry ve RevenueCat Türkiye dışında (başta Amerika Birleşik Devletleri ve Avrupa Birliği olmak üzere) bulunan sunucularda faaliyet gösterir. Bu hizmetlere gönderilen isimsiz kullanım ve hata verileri bu ülkelerde işlenir.</p>
+
+<h2>12. Bu politikadaki değişiklikler</h2>
+<p>Politika güncellendiğinde bu sayfadaki “Son güncelleme” tarihi değişir. Önemli değişikliklerde uygulama içinde ayrıca bilgilendirme yapılır.</p>
+
+<h2>13. İletişim</h2>
+<p>Gizlilikle ilgili her türlü soru, talep ve şikâyet için: <a href="mailto:kozanfurkanemre@gmail.com">kozanfurkanemre@gmail.com</a></p>
+
+</div>
+
+<!-- ------------------------------- ENGLISH ------------------------------- -->
+<div data-lang-block="en">
+
+<h1>Privacy Policy</h1>
+<p class="updated">Last updated: 13 August 2026</p>
+
+<div class="lede">
+  <p><strong>In short:</strong> Hızlı Okuma has no accounts. We do not ask for or collect your name, email address, phone number or location. Your exercise history, statistics and streak stay on your device — we have no server for them. The only things that leave your device are anonymous usage statistics, crash reports and your subscription status.</p>
+</div>
+
+<p>This policy explains how <strong>Hızlı Okuma: Egzersizler ve Gelişim</strong> (package <code>com.dukeemree.hizliokuma</code>, the “App”), developed by <strong>DukeEmree</strong>, handles personal data.</p>
+
+<h2>1. No account, no identity</h2>
+<p>The App has no sign-up, sign-in or profile. Every installation is an independent guest user. No data that identifies you as a person (name, email, phone, address, date of birth, national ID, photo, location) is requested, collected or stored.</p>
+
+<h2>2. Data that stays on your device</h2>
+<p>The following is held only in your phone’s local storage (MMKV). It is never uploaded, never backed up by us, and we cannot see it:</p>
+<ul>
+  <li>Completed exercise sessions: type, duration, difficulty level, score</li>
+  <li>Your reading speed (WPM), comprehension and accuracy measurements</li>
+  <li>Your daily streak and banked streak freezes</li>
+  <li>XP, level and unlocked achievements</li>
+  <li>Your daily plan and which steps you finished</li>
+  <li>App settings: theme, language, notification preferences, reminder time, sound and haptics preference, daily goal</li>
+  <li>The starting reading speed and comprehension measured during onboarding</li>
+</ul>
+<p>Exercise history is kept on the device for roughly 6 months; older sessions are deleted automatically.</p>
+
+<h2>3. Data that leaves your device</h2>
+<p>We use three service providers to run and improve the App. Everything sent to each is listed below.</p>
+
+<h3>3.1 Amplitude — usage statistics</h3>
+<p>Anonymous event records are sent so we can understand which features are used. The events are: app opened, onboarding started and completed, exercise started, completed and abandoned, achievement unlocked, daily plan started and completed, paywall viewed, subscription started and restored.</p>
+<p>Only technical fields travel with those events: exercise type, difficulty level, achievement id, plan step count, and which trigger opened the paywall. Before sending, the App filters out any property whose name matches email, password, secret, token, username or phone.</p>
+<p>Amplitude additionally records, as part of its own operation, a randomly generated device identifier, device model, OS version, app version, and a country derived from your IP address. We do not store your IP address.</p>
+
+<h3>3.2 Sentry — error and crash reports</h3>
+<p>When the App fails unexpectedly, a technical report is sent: error message, stack trace, device model, OS version, app version, and the technical steps immediately preceding the failure. Sentry is configured with personal-data collection turned off (<code>sendDefaultPii: false</code>); IP addresses and request bodies are not sent. These reports are used only to fix bugs.</p>
+
+<h3>3.3 RevenueCat and Google Play Billing — subscriptions</h3>
+<p>If you buy a premium subscription, the transaction is handled by Google Play. The App <strong>never</strong> sees or stores your card number, bank details or billing address.</p>
+<p>RevenueCat is used to track your subscription status. What it receives: a randomly generated anonymous app user id, the purchase receipt issued by Google Play, the product id, and whether the subscription is active. The App links no account or personal information to RevenueCat.</p>
+
+<h2>4. What we do not collect</h2>
+<ul>
+  <li>Name, email address, phone number, postal address</li>
+  <li>Location — the App never requests location permission</li>
+  <li>Contacts, photos, files or calendar access</li>
+  <li>Microphone or camera recording — <code>RECORD_AUDIO</code> is explicitly blocked in the app configuration</li>
+  <li>Advertising identifier — the App has no ads and no ad network integration</li>
+  <li>Payment card details</li>
+</ul>
+
+<h2>5. Notifications</h2>
+<p>The App can send daily reminders, streak reminders, milestone celebrations and a weekly summary. All of these are scheduled <strong>locally on your device</strong>. There are no server-sent push notifications, so no notification token is transmitted anywhere. You can turn notifications off entirely from the App’s Settings screen or from your device’s system settings.</p>
+
+<h2>6. Permissions and why they are needed</h2>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Permission</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code></td><td>Subscription validation, usage statistics and crash reports</td></tr>
+    <tr><td><code>com.android.vending.BILLING</code></td><td>Purchasing a subscription through Google Play</td></tr>
+    <tr><td><code>POST_NOTIFICATIONS</code></td><td>Local reminder notifications</td></tr>
+    <tr><td><code>MODIFY_AUDIO_SETTINGS</code></td><td>Playing the metronome and exercise sounds</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>7. Deleting your data</h2>
+<ul>
+  <li><strong>On-device data:</strong> <em>Settings → Danger Zone → Reset Statistics</em> inside the App permanently deletes your entire exercise history, statistics, streak and achievements. Uninstalling the App also removes all local data.</li>
+  <li><strong>Usage statistics and crash reports:</strong> these records are tied to a random device identifier, not to a person. To request deletion, email the address below; you may need to share the relevant device identifier so the request can be fulfilled.</li>
+  <li><strong>Subscription:</strong> manage or cancel your subscription from your Google Play account. Purchase records are retained by Google and RevenueCat for their own retention periods, as required by legal and financial obligations.</li>
+</ul>
+
+<h2>8. Retention</h2>
+<ul>
+  <li>On-device exercise history: roughly 6 months, then deleted automatically</li>
+  <li>On-device settings, streak, XP and achievements: until you delete them or uninstall the App</li>
+  <li>Amplitude and Sentry records: for the respective provider’s standard retention period</li>
+</ul>
+
+<h2>9. Your rights</h2>
+<p>Depending on where you live (KVKK Law No. 6698 in Türkiye, the GDPR in the European Union), you have the right to access the data processed about you, request its correction or deletion, object to processing, and lodge a complaint with a supervisory authority. Because the App does not identify you, most of these rights are already directly exercisable by deleting the data on your device. Contact us for anything further.</p>
+<p>Our legal basis is legitimate interest for usage statistics and crash reports (keeping the App working and useful), and performance of a contract for subscription data.</p>
+
+<h2>10. Children’s privacy</h2>
+<p>The App is not directed at children under 13 and does not knowingly collect data from them.</p>
+
+<h2>11. International transfers</h2>
+<p>Amplitude, Sentry and RevenueCat operate servers outside Türkiye, primarily in the United States and the European Union. The anonymous usage and error data sent to these services is processed in those countries.</p>
+
+<h2>12. Changes to this policy</h2>
+<p>When this policy is updated, the “Last updated” date on this page changes. Significant changes will also be announced inside the App.</p>
+
+<h2>13. Contact</h2>
+<p>For any privacy question, request or complaint: <a href="mailto:kozanfurkanemre@gmail.com">kozanfurkanemre@gmail.com</a></p>
+
+</div>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© 2026 DukeEmree</span>
+    <span><a href="/privacy">Gizlilik</a> · <a href="/terms">Koşullar</a> · <a href="mailto:kozanfurkanemre@gmail.com">İletişim</a></span>
+  </div>
+</footer>
+
+<script src="/lang.js"></script>
+</body>
+</html>

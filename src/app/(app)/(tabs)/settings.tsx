@@ -42,12 +42,16 @@ import {
   Clock,
   Flame,
   TrendingUp,
+  Shield,
+  FileText,
 } from "lucide-react-native";
 import { requestNotificationPermissions, rescheduleAllReminders, scheduleWeeklySummaryNotification } from '@/services/notifications';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
 import { captureException } from "@/lib/sentry";
+import { LEGAL_URLS } from "@/constants/legal";
+import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation("settings");
@@ -153,6 +157,19 @@ export default function SettingsScreen() {
       Alert.alert(t("dangerZone.errorTitle"), t("dangerZone.errorReset"));
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleOpenLegal = async (url: string) => {
+    // In-app browser rather than a raw Linking.openURL: the user stays in the
+    // app's task, which matters because these are reached mid-settings.
+    try {
+      await openBrowserAsync(url, {
+        presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
+      });
+    } catch (error) {
+      captureException(error, { context: "SettingsScreen.handleOpenLegal", url });
+      Alert.alert(t("subscription.errorTitle"), t("legal.openError"));
     }
   };
 
@@ -299,6 +316,22 @@ export default function SettingsScreen() {
               actionText={t("subscription.upgrade")}
             />
           )}
+        </SettingsSection>
+
+        {/* Legal — the Privacy Policy URL is a Play Store listing requirement,
+            and both documents have to be reachable from inside the app too. */}
+        <SettingsSection title={t("legal.title")}>
+          <SettingsRow
+            icon={<Shield color={iconColor} size={20} />}
+            title={t("legal.privacyPolicy")}
+            onPress={() => handleOpenLegal(LEGAL_URLS.privacyPolicy)}
+          />
+          <Separator marginVertical="$2" borderColor="$borderColor" />
+          <SettingsRow
+            icon={<FileText color={iconColor} size={20} />}
+            title={t("legal.termsOfService")}
+            onPress={() => handleOpenLegal(LEGAL_URLS.termsOfService)}
+          />
         </SettingsSection>
 
         {/* Danger Zone */}

@@ -106,6 +106,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - **Subscription** — RevenueCat hosted paywall and Customer Center. The free tier is **daily-plan-only**: a free user may run an exercise only as the current step of today's 4-step daily plan (`dailyPlanStore.activeFlowType`), enforced in both `app/(app)/exercises/_layout.tsx` and `app/(app)/exercise/[exerciseId].tsx`. Picking any exercise standalone from the Egzersizler tab is premium. There is no per-day count cap.
 - **Notifications** — local daily/streak/inactivity reminders (`expo-notifications`); there is no server-sent push, since there is no server.
 - **Weekly summary** — home card (below the "Daily Goal" card) plus a full `/(app)/weekly-summary` screen recapping the past week's minutes, WPM change and streak, from the shared `buildWeeklySummary` calculator, driven off local history for everyone. Delivered via a local recurring `WEEKLY` notification.
+- **Legal** — Privacy Policy and Terms of Service, Turkish and English, hosted on Cloudflare Workers at `privacy.dukeemree.xyz` (source in `legal/`, see its README). Linked from Settings via `src/constants/legal.ts`.
 - **Onboarding** — a reading test that seeds the daily-goal minutes, `bestWpm`/`bestComprehension` in `userProgressStore`, and the starting difficulty of the reading exercises (RSVP and Chunking, via `startingLevelFromWpm`; Pacer follows RSVP's progression).
 
 ## Completed
@@ -133,8 +134,8 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 | Issue | Severity | Notes |
 |---|---|---|
 | `.env.production` still holds a RevenueCat **Test Store** key (`test_…`) | HIGH | Any locally-produced release build would ship simulated purchases and earn nothing. EAS cloud builds are unaffected because they read the EAS-hosted `production` environment, not this gitignored file — but the value on EAS has not been verified from this tree |
-| EAS environments still carry `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_CONVEX_URL` | MEDIUM | Confirmed in `eas-build.log`. Both providers were removed; the variables are dead and should be deleted from every EAS environment |
-| No Privacy Policy / Terms links anywhere in Settings | MEDIUM | Play Store listing requirement; the Settings screen has Appearance, Notifications, Subscription and Danger Zone sections only |
+| The EAS `production` environment uses the **development** Amplitude key | HIGH | `EXPO_PUBLIC_AMPLITUDE_API_KEY` is one shared variable attached to development, preview *and* production, set to `57f66…` — the `hizli-okuma-development` project's key. Production traffic would land in the dev project. `.env.production` names `5b42…` (the `hizli-okuma-production` project, id 851786) as the intended value. Splitting the variable was blocked by a permission classifier in this session; the commands are in the handover |
+| `SENTRY_AUTH_TOKEN` is missing from the EAS `production` environment | HIGH | It exists only in `preview`, and being a secret it cannot be copied across without re-entering the value. Without it a production build cannot upload source maps, so every production crash report is an unsymbolicated minified stack. `SENTRY_ORG` and `SENTRY_PROJECT` were attached to production in this session |
 | Statistics dashboard and a few completion screens still use hardcoded Turkish strings | LOW | Home, onboarding, settings, exercise detail and the exercise-screen accessibility labels were moved to i18n in this pass; `StatisticsDashboard.tsx` and some per-exercise result copy were not. Invisible while Turkish is the only locale. `settingsStore.LanguageType` declares `en`/`de`, but only `tr` resources exist and only `tr` is offered in the language sheet |
 | `StatisticsDashboard` props are typed `any` | LOW | `currentStats: any` plus six `(d: any)` map callbacks; `PerformanceStats` from `utils/localStatistics.ts` is the type it should use |
 | Leaving an exercise with the X button does not clear `dailyPlanStore.activeFlowType` | LOW | A free user can re-enter and repeat that one exercise until the app restarts. Clearing it on exit would break the legitimate "back out, then restart the step" flow, so it needs a real decision rather than a quick guard |
@@ -186,8 +187,7 @@ Checked and **not** changed, because the premise did not survive verification:
 1. **RevenueCat production key.** `.env.production` currently holds a Test Store key (`test_…`). Confirm the EAS-hosted `production` environment carries the real `goog_…` key (and `appl_…` if iOS ships), plus products and entitlement linkage for `hizli-okuma Pro`.
 2. **EAS environment hygiene.** Delete the stale `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_CONVEX_URL` variables from every EAS environment, and confirm `EXPO_PUBLIC_SENTRY_DSN` / `EXPO_PUBLIC_AMPLITUDE_API_KEY` exist in `production`. EAS builds do **not** read the gitignored `.env.production` — `eas-build.log` shows `NODE_ENV` unset and "Proceeding without mode-specific .env" — so the dashboard values are the only ones that ship.
 3. **Android release keystore** verified via `eas credentials`.
-4. **Privacy Policy and Terms** hosted, linked in the Play listing *and* added to the Settings screen (no such rows exist today).
-5. **Play Console Data Safety form** completed.
+4. **Play Console Data Safety form** completed. The Privacy Policy now describes exactly what to declare: Amplitude usage events, Sentry crash reports, RevenueCat purchase status; no personal identifiers, no location, no ads.
 
 ## Remaining Work
 
@@ -195,6 +195,44 @@ Checked and **not** changed, because the premise did not survive verification:
 - Move the last hardcoded Turkish strings (`StatisticsDashboard`, per-exercise result copy) into i18n, and type `StatisticsDashboard`'s props with `PerformanceStats` instead of `any`
 - Accessibility pass: touch-target sizes and large-font layout (icon-only buttons already carry labels)
 - Manual device pass: background mid-exercise, double-tap completion, app kill mid-session, notification cold-start deep link, offline premium user
+
+## Handover — commands this session could not run
+
+Two EAS changes were blocked and one needs a secret only you hold. Everything
+else on the EAS side is done: the stale `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+and `EXPO_PUBLIC_CONVEX_URL` variables were deleted from all three
+environments, and `SENTRY_ORG` / `SENTRY_PROJECT` were attached to
+`production`.
+
+Split the Amplitude key so production stops reporting into the development
+project (blocked here by a permission classifier, not by EAS):
+
+```sh
+# 1. detach the shared dev key from production
+eas env:update --variable-name EXPO_PUBLIC_AMPLITUDE_API_KEY \
+  --variable-environment production \
+  --environment development --environment preview --non-interactive
+
+# 2. create a production-only variable with the production project's key
+eas env:create --name EXPO_PUBLIC_AMPLITUDE_API_KEY \
+  --value 5b42863dd7a145753b9f1c02cf49ca51 \
+  --environment production --visibility plaintext --type string --non-interactive
+```
+
+Add the Sentry auth token to `production` (the value is a secret and cannot be
+read back from `preview`, so it has to be re-entered or regenerated):
+
+```sh
+eas env:create --name SENTRY_AUTH_TOKEN --value <token> \
+  --environment production --visibility secret --type string --non-interactive
+```
+
+Replace the RevenueCat Test Store key with the real one:
+
+```sh
+eas env:update --variable-name EXPO_PUBLIC_RC_ANDROID_KEY \
+  --variable-environment production --value goog_<real_key> --non-interactive
+```
 
 ## Recommended Next Steps
 
