@@ -1,10 +1,13 @@
 import { expect, test, describe } from "bun:test";
 import { processGamification, type GamificationInput } from "../gamification";
 
+// A mid-run session: the user is past the count thresholds and has already
+// collected those achievements, so each test below isolates the one rule it
+// is actually about.
 const baseInput: GamificationInput = {
   xp: 0,
   level: 1,
-  unlockedAchievementIds: [],
+  unlockedAchievementIds: ["first_exercise"],
   sessionScore: 100,
   sessionWpm: undefined,
   sessionComp: undefined,
@@ -26,21 +29,33 @@ describe("processGamification", () => {
     expect(result.xp).toBe(60); // 10 + 50 (DAILY_GOAL_COMPLETED)
   });
 
-  test("unlocks first_exercise exactly on sessionCount === 1", () => {
-    const result = processGamification({ ...baseInput, sessionCount: 1 });
+  test("unlocks first_exercise on the first session", () => {
+    const result = processGamification({
+      ...baseInput,
+      sessionCount: 1,
+      unlockedAchievementIds: [],
+    });
     expect(result.newlyUnlockedAchievementIds).toEqual(["first_exercise"]);
     expect(result.unlockedAchievementIds).toEqual(["first_exercise"]);
     expect(result.xp).toBe(110); // 10 base + 100 achievement bonus
   });
 
   test("does not re-award an already-unlocked achievement", () => {
-    const result = processGamification({
-      ...baseInput,
-      sessionCount: 1,
-      unlockedAchievementIds: ["first_exercise"],
-    });
+    const result = processGamification({ ...baseInput, sessionCount: 1 });
     expect(result.newlyUnlockedAchievementIds).toEqual([]);
     expect(result.xp).toBe(10);
+  });
+
+  test("still unlocks a count achievement when the exact count was skipped", () => {
+    // Retention pruning can take the session count straight past 10, which an
+    // `=== 10` check would miss permanently.
+    const result = processGamification({ ...baseInput, sessionCount: 14 });
+    expect(result.newlyUnlockedAchievementIds).toEqual(["exercise_10"]);
+  });
+
+  test("does not unlock exercise_10 before the tenth session", () => {
+    const result = processGamification({ ...baseInput, sessionCount: 9 });
+    expect(result.newlyUnlockedAchievementIds).toEqual([]);
   });
 
   test("unlocks streak_7 at currentStreak >= 7", () => {

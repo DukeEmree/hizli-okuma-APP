@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { keywordDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { keywordItems, KeywordItem } from '../content';
 import { pickByDifficulty } from '../contentSelection';
@@ -13,6 +14,7 @@ export interface KeywordConfig extends Partial<ExerciseConfig> {
 
 export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [currentItem, setCurrentItem] = useState<KeywordItem | null>(null);
   // Each passage carries several questions that are asked back-to-back
@@ -99,7 +101,7 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
 
     // Stay on the same passage until all of its questions are answered,
     // then draw a new one.
-    setTimeout(() => {
+    scheduleTimeout(() => {
       if (hasMoreQuestions) {
         setQuestionIndex(prev => prev + 1);
         setLastShowTime(Date.now());
@@ -108,7 +110,7 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
       }
     }, 500);
 
-  }, [engine, isCompleted, currentItem, questionIndex, lastShowTime, generateNewRound]);
+  }, [engine, isCompleted, currentItem, questionIndex, lastShowTime, generateNewRound, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

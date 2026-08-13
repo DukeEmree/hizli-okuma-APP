@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { selectiveAttentionDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { categoryWords } from '../content';
 
@@ -12,6 +13,7 @@ export interface SelectiveAttentionConfig extends Partial<ExerciseConfig> {
 
 export function useSelectiveAttentionEngine(config: SelectiveAttentionConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [targetCategory, setTargetCategory] = useState<keyof typeof categoryWords>('animals');
   const [gridWords, setGridWords] = useState<string[]>([]);
@@ -118,7 +120,7 @@ export function useSelectiveAttentionEngine(config: SelectiveAttentionConfig, on
         // Check if all correct words are found
         const foundAll = correctWordsInGrid.every(w => newSelected.includes(w));
         if (foundAll) {
-            setTimeout(() => {
+            scheduleTimeout(() => {
                 // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewRound();
             }, 500);
@@ -127,7 +129,7 @@ export function useSelectiveAttentionEngine(config: SelectiveAttentionConfig, on
         setErrorCount(prev => prev + 1);
     }
     
-  }, [engine, isCompleted, selectedWords, correctWordsInGrid, generateNewRound]);
+  }, [engine, isCompleted, selectedWords, correctWordsInGrid, generateNewRound, scheduleTimeout]);
 
   const getCategoryName = (cat: keyof typeof categoryWords) => {
       switch(cat) {

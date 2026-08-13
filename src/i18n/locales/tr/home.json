@@ -1,4 +1,22 @@
 {
-  "welcome": "Hoş Geldiniz",
-  "placeholder": "Ana Sayfa Placeholder"
+  "greeting": "Merhaba 👋",
+  "greetingSubtitle": "Hoş geldin, hazır mısın?",
+  "stats": {
+    "avgWpm": "Ort. Hız",
+    "wpmUnit": "WPM",
+    "comprehension": "Kavrama",
+    "trainingTime": "Çalışma",
+    "minutesUnit": "dk"
+  },
+  "premiumCard": {
+    "title": "Premium'a Geç",
+    "subtitle": "Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.",
+    "cta": "İncele"
+  },
+  "recentActivity": {
+    "title": "Son Aktiviteler",
+    "empty": "Henüz bir egzersiz yapmadınız.",
+    "score": "Skor: {{score}}",
+    "wpm": "{{wpm}} WPM"
+  }
 }

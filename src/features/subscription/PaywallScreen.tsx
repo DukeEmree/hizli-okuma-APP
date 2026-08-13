@@ -26,6 +26,7 @@ export default function PaywallScreen() {
         }}
         onRestoreCompleted={({ customerInfo }) => {
           if (typeof customerInfo.entitlements.active[SUBSCRIPTION_CONSTANTS.ENTITLEMENT_ID] !== 'undefined') {
+            analytics.track('subscription_restored');
             router.back();
           }
         }}

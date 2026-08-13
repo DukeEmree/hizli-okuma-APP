@@ -26,18 +26,23 @@ export default function ExerciseInfoScreen() {
   const { exerciseId } = useLocalSearchParams();
   const router = useRouter();
   const { t } = useTranslation('exercises');
+  const { t: tCommon } = useTranslation('common');
   
   const getExerciseConfig = useExerciseSettingsStore(state => state.getExerciseConfig);
   const updateExerciseConfig = useExerciseSettingsStore(state => state.updateExerciseConfig);
   const theme = useTheme();
   const exercise = exerciseRegistry.get(exerciseId as string);
-  const { isPremium, isConfigured } = useRevenueCat();
+  const { isPremium, isConfigured, isEntitlementKnown } = useRevenueCat();
   const activeFlowType = useDailyPlanStore((s) => s.activeFlowType);
   // Free users may only start the exercise they just launched from the
   // daily-plan list - same rule enforced at the engine-route layout
   // (exercises/_layout.tsx), mirrored here so the Lock/paywall CTA shows
   // immediately instead of flashing the engine screen before that redirect.
-  const canStartExercise = isPremium || (!!exercise && activeFlowType === exercise.type);
+  // Kept identical to that layout's condition, `isEntitlementKnown` included,
+  // so the two can't disagree and show a "Başla" button that the layout then
+  // immediately redirects away from (or vice versa).
+  const canStartExercise =
+    isPremium || !isEntitlementKnown || (!!exercise && activeFlowType === exercise.type);
   const isLimitsLoading = !isConfigured;
 
   // Adaptive difficulty logic
@@ -88,7 +93,7 @@ export default function ExerciseInfoScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
         <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
           <Text>{t('detailPlaceholder', { id: exerciseId })}</Text>
-          <Button marginTop="$4" onPress={() => router.back()}>Geri</Button>
+          <Button marginTop="$4" onPress={() => router.back()}>{tCommon('back')}</Button>
         </YStack>
       </SafeAreaView>
     );
@@ -280,7 +285,7 @@ export default function ExerciseInfoScreen() {
                   <YStack gap="$2">
                     <XStack justifyContent="space-between">
                       <Text fontWeight="bold">{t('settings.timeLimitMs', 'Süre Limiti')}</Text>
-                      <Text color="$green10" fontWeight="bold">{config.timeLimitMs / 1000} sn</Text>
+                      <Text color="$green10" fontWeight="bold">{t('labels.estimatedTime', { time: config.timeLimitMs / 1000 })}</Text>
                     </XStack>
                     <Slider
                       value={[config.timeLimitMs / 1000]}
@@ -300,7 +305,7 @@ export default function ExerciseInfoScreen() {
                 {/* Eğer hiçbir ayar yoksa */}
                 {Object.keys(config).filter(k => ['wpm', 'chunkSize', 'gridSize', 'timeLimitMs'].includes(k)).length === 0 && (
                   <Text color="$color11" textAlign="center">
-                    Bu egzersiz için değiştirilebilir bir ayar bulunmuyor.
+                    {t('labels.noSettings')}
                   </Text>
                 )}
 
@@ -324,7 +329,7 @@ export default function ExerciseInfoScreen() {
           disabled={isLoading}
         >
           {isLoading 
-            ? "Yükleniyor..." 
+            ? t('buttons.loading')
             : (!canStartExercise 
               ? t('buttons.limitReached', "Limit Doldu - Premium'a Geç") 
               : t('buttons.start', 'Başla'))}

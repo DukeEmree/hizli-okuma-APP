@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useDailyPlan } from '@/features/dailyPlan/useDailyPlan';
 import { exerciseRegistry } from '@/features/exercises/registry';
+import { analytics } from '@/lib/analytics';
 
 const ESTIMATED_MINUTES_PER_EXERCISE = 3;
 
@@ -24,6 +25,13 @@ export function DailyPlanListScreen() {
       router.push('/paywall');
       return;
     }
+    // Only the first step of the day opens the funnel; later steps are
+    // continuations, and firing on each would make the plan look four times
+    // more popular than it is.
+    if (completedTypes.length === 0) {
+      analytics.track('daily_plan_started', { stepCount: exerciseTypes.length });
+    }
+
     const definition = exerciseRegistry.getByType(type);
     setActiveFlowType(type);
     router.push(`/exercise/${definition ? definition.id : type}` as Href);

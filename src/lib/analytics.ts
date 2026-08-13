@@ -16,8 +16,11 @@ type EventName =
   | 'exercise_completed'
   | 'exercise_abandoned'
   | 'achievement_unlocked'
+  | 'daily_plan_started'
+  | 'daily_plan_completed'
   | 'paywall_viewed'
-  | 'subscription_started';
+  | 'subscription_started'
+  | 'subscription_restored';
 
 /**
  * Property names that must never leave the device. Matched exactly rather

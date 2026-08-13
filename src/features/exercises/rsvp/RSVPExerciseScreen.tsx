@@ -131,7 +131,7 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
 
         {/* Üst Bar: İlerleme ve Çıkış */}
         <XStack w="100%" jc="space-between" ai="center">
-          <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
+          <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
           <View style={{ flex: 1, marginHorizontal: 20 }}>
             <Progress value={progress * 100}>
               <Progress.Indicator transition="quick" />
@@ -163,7 +163,7 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
             theme="accent"
             onPress={handleTogglePlay}
             disabled={countdown !== null}
-           icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
+           icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
         </XStack>
 
       </YStack>

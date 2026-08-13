@@ -25,7 +25,6 @@ import {
   useSettingsStore,
 } from "@/stores/settingsStore";
 import { useStreakCacheStore } from "@/stores/streakCacheStore";
-import { useStatisticsStore } from "@/stores/useStatisticsStore";
 import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
 
@@ -48,6 +47,7 @@ import { requestNotificationPermissions, rescheduleAllReminders, scheduleWeeklyS
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
+import { captureException } from "@/lib/sentry";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation("settings");
@@ -86,7 +86,7 @@ export default function SettingsScreen() {
     if (val) {
       const granted = await requestNotificationPermissions();
       if (!granted) {
-        Alert.alert(t("notifications.title", "Bildirimler"), t("notifications.permissionRequired", "Bildirimlere izin vermek için ayarlardan uygulamaya izin vermelisiniz."));
+        Alert.alert(t("notifications.title"), t("notifications.permissionRequired"));
         setNotificationsEnabled(false);
         return;
       }
@@ -141,20 +141,16 @@ export default function SettingsScreen() {
     setIsProcessing(true);
     try {
       useExerciseProgressStore.getState().resetAll();
-      useStatisticsStore.getState().invalidate();
       useUserProgressStore.getState().resetProgress();
       useStreakCacheStore.getState().resetCache();
       useGamificationStore.getState().resetProgress();
       useLocalHistoryStore.getState().clear();
 
       setResetStatsSheetOpen(false);
-      Alert.alert(
-        "Başarılı",
-        t("dangerZone.successReset") || "İstatistiklerin sıfırlandı.",
-      );
+      Alert.alert(t("dangerZone.successTitle"), t("dangerZone.successReset"));
     } catch (error) {
-      console.error(error);
-      Alert.alert("Hata", "İstatistikler sıfırlanamadı");
+      captureException(error, { context: "SettingsScreen.handleResetStats" });
+      Alert.alert(t("dangerZone.errorTitle"), t("dangerZone.errorReset"));
     } finally {
       setIsProcessing(false);
     }
@@ -164,8 +160,8 @@ export default function SettingsScreen() {
     try {
       await RevenueCatUI.presentCustomerCenter();
     } catch (error) {
-      console.error("Customer Center error:", error);
-      Alert.alert("Hata", t("subscription.errorCustomerCenter", "Abonelik yönetimi şu anda açılamıyor. Lütfen tekrar deneyin."));
+      captureException(error, { context: "SettingsScreen.presentCustomerCenter" });
+      Alert.alert(t("subscription.errorTitle"), t("subscription.errorCustomerCenter"));
     }
   };
 
@@ -309,17 +305,9 @@ export default function SettingsScreen() {
         <SettingsSection title={t("dangerZone.title")} titleColor="$red10">
           <SettingsRow
             icon={<RotateCcw color={dangerColor} size={20} />}
-            title={
-              t("dangerZone.resetStats") !== "dangerZone.resetStats"
-                ? t("dangerZone.resetStats")
-                : "İstatistikleri Sıfırla"
-            }
+            title={t("dangerZone.resetStats")}
             titleColor="$red10"
-            subtitle={
-              t("dangerZone.resetStatsDesc") !== "dangerZone.resetStatsDesc"
-                ? t("dangerZone.resetStatsDesc")
-                : "Okuma geçmişini ve performans verilerini sil."
-            }
+            subtitle={t("dangerZone.resetStatsDesc")}
             onPress={() => setResetStatsSheetOpen(true)}
           />
         </SettingsSection>

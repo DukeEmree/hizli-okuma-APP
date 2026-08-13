@@ -3,6 +3,7 @@ import { ScrollView } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useComprehensionSpeedEngine } from './useComprehensionSpeedEngine';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Play, Pause, X } from 'lucide-react-native';
 import { haptics } from '@/lib/haptics';
 import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
@@ -14,6 +15,7 @@ interface ComprehensionSpeedExerciseScreenProps {
 
 export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: ComprehensionSpeedExerciseScreenProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState<number | null>(3);
 
   const {
@@ -85,7 +87,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
+        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         {phase === 'questions' && (
           <Text color="$color11" fontSize="$3">
             Soru: <Text fontWeight="bold" color="$color">{currentQuestionIndex + 1}/{currentItem?.questions.length}</Text>
@@ -138,7 +140,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

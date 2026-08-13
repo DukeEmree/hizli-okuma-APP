@@ -8,12 +8,28 @@ interface RevenueCatContextState {
   isPremium: boolean;
   customerInfo: CustomerInfo | null;
   isConfigured: boolean;
+  /**
+   * Whether `isPremium` reflects an answer RevenueCat actually gave.
+   *
+   * `isConfigured` only means "we stopped waiting" - it is also set after the
+   * retry fails, and after a build with no API key skips configuration
+   * entirely. In both of those cases `isPremium` is false because we don't
+   * know, not because the user isn't subscribed.
+   *
+   * Anything that *revokes* access on `!isPremium` (the exercise-route gate)
+   * must check this first, or a paying user whose cold start hit a network
+   * error gets bounced to the paywall. Anything that merely *offers* an
+   * upgrade can read `isPremium` directly - showing an upsell to a subscriber
+   * for one render is a far cheaper mistake than locking one out.
+   */
+  isEntitlementKnown: boolean;
 }
 
 const RevenueCatContext = createContext<RevenueCatContextState>({
   isPremium: false,
   customerInfo: null,
   isConfigured: false,
+  isEntitlementKnown: false,
 });
 
 export const useRevenueCat = () => useContext(RevenueCatContext);
@@ -87,9 +103,13 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const isPremium = customerInfo?.entitlements.active[SUBSCRIPTION_CONSTANTS.ENTITLEMENT_ID] !== undefined;
+  // A CustomerInfo in hand is the only proof we have either way; the SDK
+  // serves a cached one offline, so this stays true across a dropped
+  // connection once the first fetch has succeeded.
+  const isEntitlementKnown = customerInfo !== null;
 
   return (
-    <RevenueCatContext.Provider value={{ isPremium, customerInfo, isConfigured }}>
+    <RevenueCatContext.Provider value={{ isPremium, customerInfo, isConfigured, isEntitlementKnown }}>
       {children}
     </RevenueCatContext.Provider>
   );

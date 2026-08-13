@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { memoryDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { wordList } from '../content';
 
@@ -12,6 +13,7 @@ export interface MemoryConfig extends Partial<ExerciseConfig> {
 
 export function useMemoryEngine(config: MemoryConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [targetWords, setTargetWords] = useState<string[]>([]);
   const [options, setOptions] = useState<string[]>([]);
@@ -74,11 +76,11 @@ export function useMemoryEngine(config: MemoryConfig, onCompleteCallback?: (resu
     
     // Hide targets and switch to recall phase
     const displayTime = Math.max(1000, 3000 - (engine.session.currentDifficulty * 200));
-    setTimeout(() => {
+    scheduleTimeout(() => {
       setPhase('recall');
     }, displayTime);
     
-  }, [engine.session.currentDifficulty]);
+  }, [engine.session.currentDifficulty, scheduleTimeout]);
 
   // Initial load
   useEffect(() => {
@@ -120,13 +122,13 @@ export function useMemoryEngine(config: MemoryConfig, onCompleteCallback?: (resu
       }
       
       // Next round
-      setTimeout(() => {
+      scheduleTimeout(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewRound();
       }, 1000);
     }
     
-  }, [engine, isCompleted, phase, selectedWords, targetWords, generateNewRound]);
+  }, [engine, isCompleted, phase, selectedWords, targetWords, generateNewRound, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

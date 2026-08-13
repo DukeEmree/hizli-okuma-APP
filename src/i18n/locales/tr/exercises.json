@@ -15,7 +15,8 @@
     "start": "Başla",
     "premium": "Premium",
     "completed": "Tamamlandı",
-    "limitReached": "Limit Doldu - Premium'a Geç"
+    "limitReached": "Limit Doldu - Premium'a Geç",
+    "loading": "Yükleniyor..."
   },
   "labels": {
     "emptyState": "Henüz kullanılabilir egzersiz yok.",
@@ -27,7 +28,8 @@
     "settings": "Ayarlar",
     "progressHistory": "Geçmiş Performans",
     "notEnoughHistory": "Henüz yeterli geçmiş yok. İlk denemeni tamamla!",
-    "historicalBest": "En İyi Seviye: {{level}}"
+    "historicalBest": "En İyi Seviye: {{level}}",
+    "noSettings": "Bu egzersiz için değiştirilebilir bir ayar bulunmuyor."
   },
   "settings": {
     "wpm": "Hız (WPM)",

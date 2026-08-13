@@ -87,7 +87,7 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
+        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
           Skor: <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
@@ -143,7 +143,7 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={session.state === 'running' ? 'Duraklat' : 'Başlat'} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

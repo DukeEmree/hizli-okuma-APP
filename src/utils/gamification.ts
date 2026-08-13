@@ -45,8 +45,12 @@ export function processGamification(input: GamificationInput): GamificationResul
     }
   };
 
-  if (input.sessionCount === 1) award("first_exercise");
-  if (input.sessionCount === 10) award("exercise_10");
+  // Thresholds are `>=`, not `===`: `award()` already refuses to hand out an
+  // achievement twice, and exact equality means a user who crosses the
+  // boundary while the 6-month retention window is pruning older sessions
+  // skips the number entirely and can never unlock it.
+  if (input.sessionCount >= 1) award("first_exercise");
+  if (input.sessionCount >= 10) award("exercise_10");
   if (input.currentStreak >= 7) award("streak_7");
   if (input.sessionWpm && input.sessionWpm >= 300) award("wpm_300");
   if (input.sessionComp !== undefined && input.sessionComp <= 1 && input.sessionComp >= 0.9) award("comp_90");

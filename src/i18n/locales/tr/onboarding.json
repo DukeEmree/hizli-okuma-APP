@@ -1,2 +1,23 @@
 {
+  "reasonStep": {
+    "title": "Neden hızlı okumak istiyorsunuz?",
+    "subtitle": "Size en uygun programı oluşturabilmemiz için temel hedefinizi seçin.",
+    "options": {
+      "study": "Ders çalışmak",
+      "books": "Daha fazla kitap okumak",
+      "work": "İş",
+      "general": "Genel gelişim"
+    }
+  },
+  "goalStep": {
+    "title": "Günlük hedefiniz nedir?",
+    "subtitle": "Düzenli pratik gelişimin anahtarıdır.",
+    "option": "Günde {{minutes}} dakika"
+  },
+  "assessment": {
+    "title": "Başlangıç Değerlendirmesi",
+    "instructions": "Aşağıdaki metni kendi doğal hızınızda, anlayarak okuyun. Bittiğinde butona tıklayın.",
+    "finishReading": "Okumayı Bitirdim",
+    "questionTitle": "Okuma Anlama Testi"
+  }
 }

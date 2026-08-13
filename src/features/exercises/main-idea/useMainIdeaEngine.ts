@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { mainIdeaDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { mainIdeaItems, MainIdeaItem } from '../content';
 import { pickByDifficulty } from '../contentSelection';
@@ -13,6 +14,7 @@ export interface MainIdeaConfig extends Partial<ExerciseConfig> {
 
 export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [currentItem, setCurrentItem] = useState<MainIdeaItem | null>(null);
   const [phase, setPhase] = useState<'read' | 'question'>('read');
@@ -108,7 +110,7 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
 
     // Stay on the same passage until all of its questions are answered,
     // then draw a new one.
-    setTimeout(() => {
+    scheduleTimeout(() => {
       if (hasMoreQuestions) {
         setQuestionIndex(prev => prev + 1);
       } else {
@@ -117,7 +119,7 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
     }, 500);
 
     return isCorrect;
-  }, [engine, isCompleted, phase, currentItem, questionIndex, generateNewRound]);
+  }, [engine, isCompleted, phase, currentItem, questionIndex, generateNewRound, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

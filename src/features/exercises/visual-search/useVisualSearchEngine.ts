@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { visualSearchDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { wordList } from '../content';
 
@@ -12,6 +13,7 @@ export interface VisualSearchConfig extends Partial<ExerciseConfig> {
 
 export function useVisualSearchEngine(config: VisualSearchConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [targetWord, setTargetWord] = useState<string>('');
   const [gridWords, setGridWords] = useState<string[]>([]);
@@ -95,12 +97,12 @@ export function useVisualSearchEngine(config: VisualSearchConfig, onCompleteCall
 
     if (word === targetWord) {
         setCorrectCount(prev => prev + 1);
-        setTimeout(() => {
+        scheduleTimeout(() => {
             // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewRound();
         }, 300);
     }
-  }, [engine, isCompleted, targetWord, lastShowTime, generateNewRound]);
+  }, [engine, isCompleted, targetWord, lastShowTime, generateNewRound, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

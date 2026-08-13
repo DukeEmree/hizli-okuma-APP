@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { YStack, XStack, H2, H4, Text, Button, Card, View, ScrollView, useTheme } from 'tamagui';
@@ -7,7 +7,8 @@ import { useRouter } from 'expo-router';
 import { Dumbbell, Brain, Eye, Zap, Lock, BookOpen } from 'lucide-react-native';
 
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
-import { useStatisticsStore } from '@/stores/useStatisticsStore';
+import { useLocalHistoryStore } from '@/stores/localHistoryStore';
+import { buildLocalStats } from '@/utils/localStatistics';
 
 import { exerciseRegistry } from '@/features/exercises/registry';
 // Egzersizler registry'den otomatik geliyor
@@ -30,8 +31,17 @@ export default function ExercisesScreen() {
   const { t } = useTranslation('exercises');
   const router = useRouter();
   const { isPremium } = useRevenueCat();
-  const allStats = useStatisticsStore(state => state.stats['all']);
   const theme = useTheme();
+
+  // Computed straight from local history, the same way the statistics tab
+  // does it. This used to read a `useStatisticsStore` cache that nothing ever
+  // populated, so the per-exercise "En İyi" badge below never rendered.
+  const localSessions = useLocalHistoryStore(state => state.sessions);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const allStats = useMemo(
+    () => buildLocalStats(localSessions, 'all', undefined, timeZone),
+    [localSessions, timeZone],
+  );
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
@@ -63,10 +73,8 @@ export default function ExercisesScreen() {
     router.push(`/exercise/${exercise.id}`);
   };
 
-  const getExerciseStat = (type: string) => {
-    if (!allStats) return null;
-    return allStats.exerciseStats.find(s => s.type === type) || null;
-  };
+  const getExerciseStat = (type: string) =>
+    allStats.exerciseStats.find(s => s.type === type) || null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>

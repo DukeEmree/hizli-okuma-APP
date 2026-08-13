@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { numberScanDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 
 export interface NumberScanConfig extends Partial<ExerciseConfig> {
@@ -11,6 +12,7 @@ export interface NumberScanConfig extends Partial<ExerciseConfig> {
 
 export function useNumberScanEngine(config: NumberScanConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [targetNumber, setTargetNumber] = useState<number>(0);
   const [gridNumbers, setGridNumbers] = useState<number[]>([]);
@@ -99,12 +101,12 @@ export function useNumberScanEngine(config: NumberScanConfig, onCompleteCallback
 
     if (number === targetNumber) {
         setCorrectCount(prev => prev + 1);
-        setTimeout(() => {
+        scheduleTimeout(() => {
             // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewRound();
         }, 300);
     }
-  }, [engine, isCompleted, targetNumber, lastShowTime, generateNewRound]);
+  }, [engine, isCompleted, targetNumber, lastShowTime, generateNewRound, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

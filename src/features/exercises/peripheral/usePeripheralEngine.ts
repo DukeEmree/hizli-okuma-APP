@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { peripheralDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { wordList } from '../content';
 
@@ -13,6 +14,7 @@ export interface PeripheralConfig extends Partial<ExerciseConfig> {
 
 export function usePeripheralEngine(config: PeripheralConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [currentTarget, setCurrentTarget] = useState<string>('');
   const [options, setOptions] = useState<string[]>([]);
@@ -76,11 +78,11 @@ export function usePeripheralEngine(config: PeripheralConfig, onCompleteCallback
     
     // Hide target after a short duration based on difficulty
     const hideDuration = Math.max(200, 1000 - (engine.session.currentDifficulty * 80));
-    setTimeout(() => {
+    scheduleTimeout(() => {
       setShowTarget(false);
     }, hideDuration);
     
-  }, [engine.session.currentDifficulty]);
+  }, [engine.session.currentDifficulty, scheduleTimeout]);
 
   // Initial load
   useEffect(() => {
@@ -117,12 +119,12 @@ export function usePeripheralEngine(config: PeripheralConfig, onCompleteCallback
     }
     
     // Next item after a short delay
-    setTimeout(() => {
+    scheduleTimeout(() => {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewTarget();
     }, 500);
     
-  }, [engine, isCompleted, currentTarget, lastShowTime, generateNewTarget]);
+  }, [engine, isCompleted, currentTarget, lastShowTime, generateNewTarget, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

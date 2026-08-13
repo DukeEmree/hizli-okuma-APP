@@ -6,7 +6,10 @@ import { useColorScheme } from "react-native";
 import { TamaguiProvider, Theme, YStack } from "tamagui";
 import { Toast, ToastProvider, ToastViewport, useToastState } from "@tamagui/toast";
 
+import * as Sentry from "@sentry/react-native";
+
 import { AchievementPopupGlobal } from "@/components/gamification/AchievementPopup";
+import { AppErrorBoundary } from "@/components/ui/AppErrorBoundary";
 import { analytics } from "@/lib/analytics";
 import { setupDevMenu } from "@/lib/devMenu";
 import { initSentry } from "@/lib/sentry";
@@ -91,7 +94,14 @@ initSentry();
 analytics.init();
 setupDevMenu();
 
-export default function RootLayout() {
+/**
+ * Expo Router renders this instead of the tree below when a descendant
+ * throws during render. Without it a render-time error leaves a blank app
+ * and the throw never reaches Sentry.
+ */
+export { AppErrorBoundary as ErrorBoundary };
+
+function RootLayout() {
   const systemColorScheme = useColorScheme();
   const settingsTheme = useSettingsStore((state) => state.theme);
 
@@ -143,9 +153,8 @@ export default function RootLayout() {
   );
 }
 
-// Sentry.wrap is optional for basic error tracking, but it provides better React component tree error boundaries.
-// Expo Router might conflict if we wrap RootLayout directly in some versions, but standard is to wrap it.
-// We'll wrap the layout.
-// Note: In some setups, you wrap the component directly: export default Sentry.wrap(RootLayout);
-// However, with Expo Router, you can just export the unwrapped RootLayout and Sentry will still catch unhandled exceptions.
-// We will leave it unwrapped to avoid Expo Router issues.
+// Unhandled exceptions reach Sentry either way, but wrapping the root layout
+// is what attaches the React component-tree context and touch breadcrumbs to
+// them - without it a production crash report is a bare stack with no trail
+// of what the user did to get there. This is the setup Expo documents.
+export default Sentry.wrap(RootLayout);

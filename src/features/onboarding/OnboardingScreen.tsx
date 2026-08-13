@@ -1,10 +1,15 @@
 import { analytics } from "@/lib/analytics";
 import { captureException } from "@/lib/sentry";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
+import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
+import { startingLevelFromWpm } from "@/utils/onboarding";
+import { RSVP_ID } from "@/features/exercises/rsvp";
+import { CHUNKING_ID } from "@/features/exercises/chunking";
 import { Button, Card, H2, H4, Text, XStack, YStack } from "tamagui";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Track } from "@/components/ui/track/Track";
@@ -29,12 +34,8 @@ function OptionRow({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-const REASONS = [
-  "Ders çalışmak",
-  "Daha fazla kitap okumak",
-  "İş",
-  "Genel gelişim",
-];
+/** i18n keys under `onboarding:reasonStep.options`. */
+const REASON_KEYS = ["study", "books", "work", "general"] as const;
 
 const GOALS = [5, 10, 15, 20, 30];
 
@@ -55,10 +56,12 @@ const ASSESSMENT_QUESTION = {
 
 export function OnboardingScreen() {
   const router = useRouter();
+  const { t } = useTranslation('onboarding');
   const setHasCompletedOnboarding = useSettingsStore(s => s.setHasCompletedOnboarding);
   const setDailyGoalMinutes = useSettingsStore(s => s.setDailyGoalMinutes);
   const updateBestWpm = useUserProgressStore(s => s.updateBestWpm);
   const updateBestComprehension = useUserProgressStore(s => s.updateBestComprehension);
+  const updateExerciseMetrics = useExerciseProgressStore(s => s.updateExerciseMetrics);
 
   const [step, setStep] = useState(1);
   const insets = useSafeAreaInsets();
@@ -111,6 +114,20 @@ export function OnboardingScreen() {
       updateBestWpm(initialWpm);
       updateBestComprehension(comprehension / 100);
 
+      // Seed the reading exercises at the level matching the measured speed.
+      // Otherwise the whole assessment is decorative: every user starts at
+      // level 1 (150 WPM) and a fast reader has to grind several deliberately
+      // slow sessions before the adaptive loop reaches where they already
+      // were. Pacer is not seeded directly - it reads RSVP's progression via
+      // CROSS_EXERCISE_METRICS_SOURCE, so seeding RSVP covers it.
+      const startingLevel = startingLevelFromWpm(initialWpm);
+      for (const exerciseId of [RSVP_ID, CHUNKING_ID]) {
+        updateExerciseMetrics(exerciseId, {
+          currentDifficulty: startingLevel,
+          historicalBestLevel: startingLevel,
+        });
+      }
+
       setHasCompletedOnboarding(true);
       analytics.track("onboarding_completed");
       router.replace("/(app)/(tabs)");
@@ -130,14 +147,18 @@ export function OnboardingScreen() {
 
       {step === 1 && (
         <YStack flex={1} gap="$4">
-          <H2>Neden hızlı okumak istiyorsunuz?</H2>
+          <H2>{t('reasonStep.title')}</H2>
           <Text color="$color11" marginBottom="$4">
-            Size en uygun programı oluşturabilmemiz için temel hedefinizi seçin.
+            {t('reasonStep.subtitle')}
           </Text>
 
           <YStack gap="$3">
-            {REASONS.map((r) => (
-              <OptionRow key={r} label={r} onPress={handleReasonSelect} />
+            {REASON_KEYS.map((key) => (
+              <OptionRow
+                key={key}
+                label={t(`reasonStep.options.${key}`)}
+                onPress={handleReasonSelect}
+              />
             ))}
           </YStack>
         </YStack>
@@ -145,14 +166,18 @@ export function OnboardingScreen() {
 
       {step === 2 && (
         <YStack flex={1} gap="$4">
-          <H2>Günlük hedefiniz nedir?</H2>
+          <H2>{t('goalStep.title')}</H2>
           <Text color="$color11" marginBottom="$4">
-            Düzenli pratik gelişimin anahtarıdır.
+            {t('goalStep.subtitle')}
           </Text>
 
           <YStack gap="$3">
             {GOALS.map((g) => (
-              <OptionRow key={g} label={`Günde ${g} dakika`} onPress={() => handleGoalSelect(g)} />
+              <OptionRow
+                key={g}
+                label={t('goalStep.option', { minutes: g })}
+                onPress={() => handleGoalSelect(g)}
+              />
             ))}
           </YStack>
         </YStack>
@@ -160,11 +185,8 @@ export function OnboardingScreen() {
 
       {step === 3 && !showQuestion && (
         <YStack flex={1} gap="$4">
-          <H4 color="$accent9">Başlangıç Değerlendirmesi</H4>
-          <Text color="$color11">
-            Aşağıdaki metni kendi doğal hızınızda, anlayarak okuyun. Bittiğinde
-            butona tıklayın.
-          </Text>
+          <H4 color="$accent9">{t('assessment.title')}</H4>
+          <Text color="$color11">{t('assessment.instructions')}</Text>
 
           <ScrollView>
             <Card padding="$4" backgroundColor="$backgroundHover">
@@ -175,14 +197,14 @@ export function OnboardingScreen() {
           </ScrollView>
 
           <Button size="$5" theme="accent" onPress={handleFinishReading}>
-            <Text color="$color">Okumayı Bitirdim</Text>
+            <Text color="$color">{t('assessment.finishReading')}</Text>
           </Button>
         </YStack>
       )}
 
       {step === 3 && showQuestion && (
         <YStack flex={1} gap="$4">
-          <H4>Okuma Anlama Testi</H4>
+          <H4>{t('assessment.questionTitle')}</H4>
           <Text fontSize="$6" marginBottom="$4">
             {ASSESSMENT_QUESTION.question}
           </Text>

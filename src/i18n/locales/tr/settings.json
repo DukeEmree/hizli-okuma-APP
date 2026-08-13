@@ -1,6 +1,6 @@
 {
   "title": "Ayarlar",
-  "subtitle": "Uygulama deneyimini ve hesabını yönet.",
+  "subtitle": "Uygulama deneyimini yönet.",
   "appearance": {
     "title": "Görünüm",
     "theme": "Tema",
@@ -14,6 +14,21 @@
       "tr": "Türkçe"
     }
   },
+  "notifications": {
+    "title": "Bildirimler",
+    "enableNotifications": "Bildirimlere İzin Ver",
+    "dailyReminder": "Günlük Hatırlatma",
+    "reminderTime": "Hatırlatma Saati",
+    "streakReminder": "Seri Hatırlatması",
+    "progressNotifications": "İlerleme Bildirimleri",
+    "permissionRequired": "Bildirimlere izin vermek için cihaz ayarlarından uygulamaya izin vermelisiniz."
+  },
+  "legal": {
+    "title": "Yasal",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Kullanım Koşulları",
+    "openError": "Bağlantı açılamadı. Lütfen daha sonra tekrar deneyin."
+  },
   "subscription": {
     "title": "Abonelik",
     "freePlan": "Ücretsiz Plan",
@@ -22,26 +37,19 @@
     "premium": "Premium",
     "premiumDesc": "Aktif aboneliğin bulunuyor.",
     "manage": "Aboneliği Yönet",
+    "errorTitle": "Hata",
     "errorCustomerCenter": "Abonelik yönetimi şu anda açılamıyor. Lütfen tekrar deneyin."
-  },
-  "account": {
-    "title": "Hesap",
-    "login": "Giriş Yap",
-    "loginOrRegister": "Giriş Yap veya Kayıt Ol",
-    "logout": "Çıkış Yap",
-    "guest": "Misafir"
   },
   "dangerZone": {
     "title": "Tehlikeli Bölge",
     "resetStats": "İstatistikleri Sıfırla",
     "resetStatsDesc": "Okuma geçmişini ve performans verilerini sil.",
-    "deleteAccount": "Hesabı Sil",
-    "deleteAccountDesc": "Hesabını ve ilişkili verilerini kalıcı olarak sil.",
     "resetStatsConfirm": "Tüm okuma geçmişin, performans verilerin ve istatistiklerin silinecek. Bu işlem geri alınamaz.",
-    "deleteAccountConfirm": "Hesabın ve hesabına bağlı veriler kalıcı olarak silinecek. Bu işlem geri alınamaz.",
     "cancel": "İptal",
     "confirmReset": "İstatistikleri Sıfırla",
-    "confirmDelete": "Hesabı Sil",
-    "successReset": "İstatistiklerin sıfırlandı."
+    "successTitle": "Başarılı",
+    "successReset": "İstatistiklerin sıfırlandı.",
+    "errorTitle": "Hata",
+    "errorReset": "İstatistikler sıfırlanamadı."
   }
 }

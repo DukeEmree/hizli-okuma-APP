@@ -1,29 +1,24 @@
 import React from 'react';
 
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, YStack, XStack, Card, H2, H4, Button, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { useRevenueCat } from "@/providers/RevenueCatProvider";
 import { useUserProgressStore } from '@/stores/userProgressStore';
-import { useSettingsStore } from '@/stores/settingsStore';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { DailyPlanCard } from '@/features/dailyPlan/DailyPlanCard';
 import { WeeklySummaryCard } from '@/features/weeklySummary/WeeklySummaryCard';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation('home');
   const { isPremium } = useRevenueCat();
 
   const bestWpm = useUserProgressStore(state => state.bestWpm);
   const bestComprehension = useUserProgressStore(state => state.bestComprehension);
-  const dailyGoalMinutes = useSettingsStore(state => state.dailyGoalMinutes);
   const localSessions = useLocalHistoryStore(state => state.sessions);
-
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todaysSessions = localSessions.filter(s => s.completedAt >= todayStart.getTime());
-  const todayTrainingMs = todaysSessions.reduce((sum, s) => sum + s.durationMs, 0);
 
   let totalWpm = 0, wpmCount = 0;
   let totalComp = 0, compCount = 0;
@@ -41,11 +36,6 @@ export default function HomeScreen() {
   const totalTrainingMs = localSessions.reduce((sum, s) => sum + s.durationMs, 0);
 
   const data = {
-    user: {
-      displayName: 'Misafir',
-      trainingGoalMins: dailyGoalMinutes,
-    },
-    todayTrainingMs,
     stats: {
       avgWpm: wpmCount > 0 ? Math.round(totalWpm / wpmCount) : (bestWpm || null),
       avgComp: compCount > 0
@@ -59,7 +49,7 @@ export default function HomeScreen() {
     }))
   };
 
-  const { user, stats, recentSessions } = data;
+  const { stats, recentSessions } = data;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
@@ -68,8 +58,8 @@ export default function HomeScreen() {
 
           <XStack justifyContent="space-between" alignItems="center">
             <YStack flex={1}>
-              <H2>Merhaba {user.displayName ? user.displayName.split(' ')[0] : ''} 👋</H2>
-              <Text color="$color11">Hoş geldin, hazır mısın?</Text>
+              <H2>{t('greeting')}</H2>
+              <Text color="$color11">{t('greetingSubtitle')}</Text>
             </YStack>
             <StreakBadge />
           </XStack>
@@ -80,16 +70,16 @@ export default function HomeScreen() {
 
           <XStack gap="$3" justifyContent="space-between">
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
-              <Text color="$color11" fontSize="$2" marginBottom="$1">Ort. Hız</Text>
-              <Text fontSize="$7" fontWeight="bold">{stats.avgWpm || '-'} <Text fontSize="$2">WPM</Text></Text>
+              <Text color="$color11" fontSize="$2" marginBottom="$1">{t('stats.avgWpm')}</Text>
+              <Text fontSize="$7" fontWeight="bold">{stats.avgWpm || '-'} <Text fontSize="$2">{t('stats.wpmUnit')}</Text></Text>
             </Card>
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
-              <Text color="$color11" fontSize="$2" marginBottom="$1">Kavrama</Text>
+              <Text color="$color11" fontSize="$2" marginBottom="$1">{t('stats.comprehension')}</Text>
               <Text fontSize="$7" fontWeight="bold">{stats.avgComp ? `${stats.avgComp}%` : '-'}</Text>
             </Card>
             <Card flex={1} padding="$3" borderWidth={1} borderColor="$borderColor" alignItems="center">
-              <Text color="$color11" fontSize="$2" marginBottom="$1">Çalışma</Text>
-              <Text fontSize="$7" fontWeight="bold">{Math.floor((stats.totalDurationMs || 0) / 60000)}<Text fontSize="$2"> dk</Text></Text>
+              <Text color="$color11" fontSize="$2" marginBottom="$1">{t('stats.trainingTime')}</Text>
+              <Text fontSize="$7" fontWeight="bold">{Math.floor((stats.totalDurationMs || 0) / 60000)}<Text fontSize="$2"> {t('stats.minutesUnit')}</Text></Text>
             </Card>
           </XStack>
 
@@ -97,18 +87,18 @@ export default function HomeScreen() {
             <Card padding="$4" borderWidth={1} backgroundColor="$green3" borderColor="$green7" onPress={() => router.push('/paywall')}>
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack flex={1}>
-                  <H4 color="$green11">Premium'a Geç</H4>
-                  <Text color="$green11" fontSize="$2">Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.</Text>
+                  <H4 color="$green11">{t('premiumCard.title')}</H4>
+                  <Text color="$green11" fontSize="$2">{t('premiumCard.subtitle')}</Text>
                 </YStack>
-                <Button size="$3" theme="green" onPress={() => router.push('/paywall')}>İncele</Button>
+                <Button size="$3" theme="green" onPress={() => router.push('/paywall')}>{t('premiumCard.cta')}</Button>
               </XStack>
             </Card>
           )}
 
           <YStack gap="$3" marginTop="$2">
-            <H4>Son Aktiviteler</H4>
+            <H4>{t('recentActivity.title')}</H4>
             {recentSessions.length === 0 ? (
-              <Text color="$color11">Henüz bir egzersiz yapmadınız.</Text>
+              <Text color="$color11">{t('recentActivity.empty')}</Text>
             ) : (
               recentSessions.map((session) => {
                 const dateObj = new Date(session.completedAt);
@@ -120,9 +110,9 @@ export default function HomeScreen() {
                         <Text color="$color11" fontSize="$2">{dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                       </YStack>
                       <YStack alignItems="flex-end">
-                        <Text fontWeight="bold" color="$green10">Skor: {session.score}</Text>
+                        <Text fontWeight="bold" color="$green10">{t('recentActivity.score', { score: session.score })}</Text>
                         {session.metrics?.wpm && (
-                          <Text fontSize="$2" color="$color11">{session.metrics.wpm} WPM</Text>
+                          <Text fontSize="$2" color="$color11">{t('recentActivity.wpm', { wpm: session.metrics.wpm })}</Text>
                         )}
                       </YStack>
                     </XStack>

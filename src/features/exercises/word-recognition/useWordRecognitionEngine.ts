@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { wordRecognitionDefinition } from '.';
 import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { wordList } from '../content';
 
@@ -12,6 +13,7 @@ export interface WordRecognitionConfig extends Partial<ExerciseConfig> {
 
 export function useWordRecognitionEngine(config: WordRecognitionConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [currentTarget, setCurrentTarget] = useState<string>('');
   const [options, setOptions] = useState<string[]>([]);
@@ -70,11 +72,11 @@ export function useWordRecognitionEngine(config: WordRecognitionConfig, onComple
     
     // Hide target after a short duration based on difficulty
     const hideDuration = Math.max(50, 400 - (engine.session.currentDifficulty * 35));
-    setTimeout(() => {
+    scheduleTimeout(() => {
       setShowTarget(false);
     }, hideDuration);
     
-  }, [engine.session.currentDifficulty]);
+  }, [engine.session.currentDifficulty, scheduleTimeout]);
 
   // Initial load
   useEffect(() => {
@@ -111,12 +113,12 @@ export function useWordRecognitionEngine(config: WordRecognitionConfig, onComple
     }
     
     // Next item after a short delay
-    setTimeout(() => {
+    scheduleTimeout(() => {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewTarget();
     }, 400);
     
-  }, [engine, isCompleted, currentTarget, lastShowTime, generateNewTarget]);
+  }, [engine, isCompleted, currentTarget, lastShowTime, generateNewTarget, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

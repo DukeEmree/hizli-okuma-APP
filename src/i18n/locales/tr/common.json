@@ -4,5 +4,8 @@
   "empty": "Gösterilecek veri bulunamadı.",
   "retry": "Tekrar Dene",
   "back": "Geri",
-  "done": "Bitir"
+  "done": "Bitir",
+  "exit": "Çıkış",
+  "pause": "Duraklat",
+  "start": "Başlat"
 }

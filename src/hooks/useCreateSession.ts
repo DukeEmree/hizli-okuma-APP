@@ -5,11 +5,13 @@ import { useGamificationStore } from "@/stores/gamificationStore";
 import { calculateNextProgression } from "@/utils/adaptiveDifficulty";
 import { CROSS_EXERCISE_METRICS_SOURCE } from "@/utils/difficultyMapper";
 import { sounds } from "@/lib/sounds";
-import { calculateStreakUpdate, getLocalDateString } from "@/utils/streak";
+import { calculateStreakUpdate } from "@/utils/streak";
 import { processGamification } from "@/utils/gamification";
-import { DAILY_PLAN_SIZE } from "@/utils/dailyPlan";
+import { useDailyPlanStore } from "@/stores/dailyPlanStore";
+import { isDailyGoalCompletedBy } from "@/utils/dailyGoal";
 import { ACHIEVEMENTS } from "@/constants/gamification";
 import { ProgressionState, ExerciseResult } from "@/types/exercise";
+import { captureException } from "@/lib/sentry";
 
 export interface CreateSessionArgs {
   clientSessionId: string;
@@ -33,7 +35,7 @@ export function useCreateSession() {
   // flattened session shape. Adaptive progression needs the former
   // (result.score.accuracy etc.), so it must be passed explicitly rather
   // than inferred from `args` - args.score is a plain number.
-  return async (args: CreateSessionArgs, result?: ExerciseResult) => {
+  const createSession = async (args: CreateSessionArgs, result?: ExerciseResult) => {
     // Idempotency guard: addLocalSession silently no-ops on a duplicate
     // clientSessionId, but streak/gamification below have no way to know
     // that happened, so a double-tap or retried call must not double-run them.
@@ -104,15 +106,17 @@ export function useCreateSession() {
     );
     streakState.updateCache(newStreak);
 
-    // Gamification - today's session count drives the daily-goal XP bonus;
+    // Gamification - finishing today's daily plan drives the goal XP bonus;
     // total session count (capped by the 6-month local retention window,
     // same as the rest of the dashboard) drives the count-based achievements.
     const { sessions } = useLocalHistoryStore.getState();
-    const todayStr = getLocalDateString(args.completedAt, timeZone);
-    const todaysSessionCount = sessions.filter(
-      (s) => getLocalDateString(s.completedAt, timeZone) === todayStr,
-    ).length;
-    const isDailyGoalCompleted = todaysSessionCount === DAILY_PLAN_SIZE;
+    const isDailyGoalCompleted = isDailyGoalCompletedBy(
+      sessions,
+      useDailyPlanStore.getState().exerciseTypes,
+      args.clientSessionId,
+      args.completedAt,
+      timeZone,
+    );
 
     const gamificationState = useGamificationStore.getState();
     const gamificationResult = processGamification({
@@ -145,5 +149,24 @@ export function useCreateSession() {
           ? { unlockedAchievements: gamificationResult.newlyUnlockedAchievementIds }
           : null,
     };
+  };
+
+  // Every exercise engine calls this and then does `.catch(console.error)`,
+  // which in a release build means a failed write - the user's completed
+  // session, streak and XP - vanishes with no signal anywhere. Reporting
+  // here rather than at each of the fifteen call sites means no engine can
+  // be added later that forgets to. The error is still re-thrown so the
+  // existing call-site handling is unchanged.
+  return async (args: CreateSessionArgs, result?: ExerciseResult) => {
+    try {
+      return await createSession(args, result);
+    } catch (error) {
+      captureException(error, {
+        context: "useCreateSession",
+        exerciseId: args.exerciseId,
+        exerciseType: args.exerciseType,
+      });
+      throw error;
+    }
   };
 }

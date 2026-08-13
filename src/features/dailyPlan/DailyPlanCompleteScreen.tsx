@@ -9,6 +9,7 @@ import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { usePaywallPromptStore } from '@/stores/paywallPromptStore';
 import { shouldShowInterstitialPaywall } from '@/utils/paywall';
 import { XP_SOURCES } from '@/constants/gamification';
+import { analytics } from '@/lib/analytics';
 
 const DAILY_PLAN_COMPLETE_TRIGGER = 'daily_plan_complete';
 
@@ -20,6 +21,13 @@ export function DailyPlanCompleteScreen() {
   const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
   const localSessions = useLocalHistoryStore((s) => s.sessions);
   const promptedRef = useRef(false);
+  const trackedRef = useRef(false);
+
+  useEffect(() => {
+    if (trackedRef.current) return;
+    trackedRef.current = true;
+    analytics.track('daily_plan_completed', { stepCount: exerciseTypes.length });
+  }, [exerciseTypes.length]);
 
   useEffect(() => {
     if (promptedRef.current || isPremium) return;

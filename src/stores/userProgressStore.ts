@@ -2,62 +2,46 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { userScopedStorageAdapter } from "./storage";
 
+/**
+ * The onboarding assessment's results.
+ *
+ * This used to be a general aggregate-counters store, but every counter it
+ * carried (training seconds, completed exercises, cached streaks, last sync
+ * time) is now derived from `localHistoryStore` / `streakCacheStore` and had
+ * no writer left. What remains is the one thing nothing else records: the
+ * WPM and comprehension measured before the user has any session history, so
+ * the home screen has something to show on day one.
+ */
 export interface UserProgressState {
-  totalTrainingSeconds: number;
-  completedExercises: number;
   bestWpm: number;
   bestComprehension: number;
-  currentStreakCache: number;
-  longestStreakCache: number;
-  lastSyncAt: string | null;
 
-  addTrainingSeconds: (seconds: number) => void;
-  incrementCompletedExercises: () => void;
   updateBestWpm: (wpm: number) => void;
   updateBestComprehension: (comprehension: number) => void;
-  setStreaks: (current: number, longest: number) => void;
-  setLastSyncAt: (timestamp: string) => void;
   resetProgress: () => void;
 }
 
 const initialState = {
-  totalTrainingSeconds: 0,
-  completedExercises: 0,
   bestWpm: 0,
   bestComprehension: 0,
-  currentStreakCache: 0,
-  longestStreakCache: 0,
-  lastSyncAt: null,
 };
 
 export const useUserProgressStore = create<UserProgressState>()(
   persist(
     (set) => ({
       ...initialState,
-      addTrainingSeconds: (seconds) =>
-        set((state) => ({
-          totalTrainingSeconds: state.totalTrainingSeconds + seconds,
-        })),
-      incrementCompletedExercises: () =>
-        set((state) => ({ completedExercises: state.completedExercises + 1 })),
       updateBestWpm: (wpm) =>
         set((state) => ({ bestWpm: Math.max(state.bestWpm, wpm) })),
       updateBestComprehension: (comprehension) =>
         set((state) => ({
           bestComprehension: Math.max(state.bestComprehension, comprehension),
         })),
-      setStreaks: (current, longest) =>
-        set({ currentStreakCache: current, longestStreakCache: longest }),
-      setLastSyncAt: (timestamp) => set({ lastSyncAt: timestamp }),
       resetProgress: () => set(initialState),
     }),
     {
       name: "user-progress-store",
       storage: createJSONStorage(() => userScopedStorageAdapter),
       version: 1,
-      migrate: (persistedState: any, version: number) => {
-        return persistedState as UserProgressState;
-      },
     },
   ),
 );

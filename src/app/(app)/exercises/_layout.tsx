@@ -10,7 +10,7 @@ export default function ExercisesLayout() {
   const router = useRouter();
   const segments = useSegments();
   const currentType = segments[segments.length - 1];
-  const { isPremium, isConfigured } = useRevenueCat();
+  const { isPremium, isConfigured, isEntitlementKnown } = useRevenueCat();
   const activeFlowType = useDailyPlanStore((s) => s.activeFlowType);
 
   // Free users may only enter an exercise engine route as the step they
@@ -20,7 +20,13 @@ export default function ExercisesLayout() {
   // protects users who go through that screen - a direct deep link into
   // /(app)/exercises/<type> skips it entirely. Gating here too closes that
   // bypass for every route under this group in one place.
-  const isAllowed = isPremium || activeFlowType === currentType;
+  //
+  // `isEntitlementKnown` is required before *revoking* access: without it, a
+  // subscriber whose cold-start entitlement fetch failed (both attempts) has
+  // isPremium === false and would be thrown out of an exercise they paid
+  // for. Letting an unverified user through is the cheaper error - premium
+  // is client-side either way, since there is no backend to ask.
+  const isAllowed = isPremium || !isEntitlementKnown || activeFlowType === currentType;
 
   useEffect(() => {
     if (isConfigured && !isAllowed) {

@@ -3,6 +3,7 @@ import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine
 import { sentenceMemoryDefinition } from '.';
 import { DifficultyLevel, ExerciseConfig, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
+import { useManagedTimeout } from "@/hooks/useManagedTimeout";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { sentenceMemoryItems, SentenceMemoryItem } from '../content';
 import { pickByDifficulty } from '../contentSelection';
@@ -18,6 +19,7 @@ const streakRequiredFor = (level: DifficultyLevel) => 2 + Math.floor((level - 1)
 
 export function useSentenceMemoryEngine(config: SentenceMemoryConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const createSession = useCreateSession();
+  const scheduleTimeout = useManagedTimeout();
   
   const [currentItem, setCurrentItem] = useState<SentenceMemoryItem | null>(null);
   const [phase, setPhase] = useState<'read' | 'question'>('read');
@@ -69,12 +71,12 @@ export function useSentenceMemoryEngine(config: SentenceMemoryConfig, onComplete
     const msPerWord = Math.max(150, 450 - (liveDifficulty * 30));
     const displayTime = wordCount * msPerWord;
 
-    setTimeout(() => {
+    scheduleTimeout(() => {
       setPhase('question');
       setLastShowTime(Date.now());
     }, displayTime);
 
-  }, [liveDifficulty]);
+  }, [liveDifficulty, scheduleTimeout]);
 
   // Initial load
   useEffect(() => {
@@ -128,12 +130,12 @@ export function useSentenceMemoryEngine(config: SentenceMemoryConfig, onComplete
     }
 
     // Next item after a short delay
-    setTimeout(() => {
+    scheduleTimeout(() => {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       generateNewRound();
     }, 500);
     
-  }, [engine, isCompleted, phase, currentItem, lastShowTime, generateNewRound, liveDifficulty]);
+  }, [engine, isCompleted, phase, currentItem, lastShowTime, generateNewRound, liveDifficulty, scheduleTimeout]);
 
   const reset = useCallback(() => {
     engine.reset();

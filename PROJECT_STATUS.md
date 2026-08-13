@@ -77,12 +77,11 @@ None. There is no Convex deployment, no `convex/` directory, and no network-back
 | `settingsStore` | persisted | theme, language, reminders, metronome, daily goal, onboarding flag |
 | `localHistoryStore` | persisted | last 6 months of sessions on the device, for every user — the source for the dashboard, daily limit and exercise charts |
 | `exerciseProgressStore` | persisted | adaptive difficulty and best-* per exercise |
-| `userProgressStore` | persisted | legacy aggregate counters. Only `bestWpm`/`bestComprehension` are written (once, by the onboarding reading test) and read (as the home screen's fallback when there is no session history yet). Every other field has no writer. |
+| `userProgressStore` | persisted | the onboarding assessment's `bestWpm`/`bestComprehension`, read as the home screen's fallback before any session history exists. The unused aggregate counters it used to carry were removed. |
 | `streakCacheStore` | persisted | streak + banked freeze count |
 | `gamificationStore` | persisted (`xp`/`level`/`unlockedAchievementIds` only, via `partialize`) | XP, level, achievements, plus the in-memory achievement popup queue |
 | `useExerciseSettingsStore` | persisted | per-exercise config overrides |
 | `dailyPlanStore` | persisted | today's daily-plan selection and completion state |
-| `useStatisticsStore` | in-memory only | intended as a per-time-range statistics cache, but **nothing calls `setStats`** — `stats` is permanently all-null. Its only live consumers are `invalidate()` in the settings reset flow and the exercises-tab "En İyi" badge, which therefore never renders. |
 | `useComprehensionStore` | in-memory only | in-flight comprehension quiz state |
 
 All stores use selector subscriptions. There is only ever one local user, so there is no per-user key prefixing anymore: `userScopedStorageAdapter` (`src/stores/storage.ts`) is kept only as a call-site-compatible alias of the plain device-global MMKV adapter.
@@ -107,7 +106,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - **Subscription** — RevenueCat hosted paywall and Customer Center. The free tier is **daily-plan-only**: a free user may run an exercise only as the current step of today's 4-step daily plan (`dailyPlanStore.activeFlowType`), enforced in both `app/(app)/exercises/_layout.tsx` and `app/(app)/exercise/[exerciseId].tsx`. Picking any exercise standalone from the Egzersizler tab is premium. There is no per-day count cap.
 - **Notifications** — local daily/streak/inactivity reminders (`expo-notifications`); there is no server-sent push, since there is no server.
 - **Weekly summary** — home card (below the "Daily Goal" card) plus a full `/(app)/weekly-summary` screen recapping the past week's minutes, WPM change and streak, from the shared `buildWeeklySummary` calculator, driven off local history for everyone. Delivered via a local recurring `WEEKLY` notification.
-- **Onboarding** — a reading test that seeds the daily-goal minutes plus `bestWpm`/`bestComprehension` in `userProgressStore`. It does **not** seed per-exercise starting difficulty; every exercise still begins at level 1.
+- **Onboarding** — a reading test that seeds the daily-goal minutes, `bestWpm`/`bestComprehension` in `userProgressStore`, and the starting difficulty of the reading exercises (RSVP and Chunking, via `startingLevelFromWpm`; Pacer follows RSVP's progression).
 
 ## Completed
 
@@ -136,13 +135,9 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 | `.env.production` still holds a RevenueCat **Test Store** key (`test_…`) | HIGH | Any locally-produced release build would ship simulated purchases and earn nothing. EAS cloud builds are unaffected because they read the EAS-hosted `production` environment, not this gitignored file — but the value on EAS has not been verified from this tree |
 | EAS environments still carry `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_CONVEX_URL` | MEDIUM | Confirmed in `eas-build.log`. Both providers were removed; the variables are dead and should be deleted from every EAS environment |
 | No Privacy Policy / Terms links anywhere in Settings | MEDIUM | Play Store listing requirement; the Settings screen has Appearance, Notifications, Subscription and Danger Zone sections only |
-| A paying user whose `getCustomerInfo()` fails twice on cold start is treated as free | MEDIUM | `RevenueCatProvider` sets `isConfigured` after the retry regardless of outcome, so `isPremium` stays false and `exercises/_layout.tsx` bounces the user to the paywall. The RevenueCat SDK normally serves a cached `CustomerInfo` offline, so this only bites when the SDK itself errors |
-| No React error boundary; `Sentry.wrap()` is deliberately not applied | MEDIUM | A render-time throw in any screen has no recovery UI, and Sentry loses the component-tree context and touch breadcrumbs it would otherwise attach |
-| ~284 KB of exercise content is evaluated at startup | MEDIUM | `features/exercises/content.ts` (193 KB) and `constants/content.ts` (91 KB) are reached through route modules, which Expo Router requires eagerly when building the route tree. Splitting them per-exercise behind a lazy import is the fix |
-| Dead code: most `userProgressStore` fields, `useStatisticsStore.setStats`, the exercises-tab "En İyi" badge | LOW | Removal means deleting fields/files — awaiting sign-off |
-| Round-advance `setTimeout`s not cleared on unmount | LOW | 500 ms window in nine `use*Engine` hooks; React 19 no longer warns, but it does not match the cleanup rule in AGENTS.md |
-| Home, statistics and exercise-detail screens use hardcoded Turkish strings | LOW | Invisible while Turkish is the only locale; blocking for a second language. `settingsStore.LanguageType` already declares `en`/`de`, but only `tr` resources exist and only `tr` is offered in the language sheet |
-| `first_exercise` / `exercise_10` unlock on `sessionCount === 1 / === 10` exactly | LOW | A user who crosses the threshold while the 6-month retention window is pruning older sessions can skip the count and never unlock it |
+| Statistics dashboard and a few completion screens still use hardcoded Turkish strings | LOW | Home, onboarding, settings, exercise detail and the exercise-screen accessibility labels were moved to i18n in this pass; `StatisticsDashboard.tsx` and some per-exercise result copy were not. Invisible while Turkish is the only locale. `settingsStore.LanguageType` declares `en`/`de`, but only `tr` resources exist and only `tr` is offered in the language sheet |
+| `StatisticsDashboard` props are typed `any` | LOW | `currentStats: any` plus six `(d: any)` map callbacks; `PerformanceStats` from `utils/localStatistics.ts` is the type it should use |
+| Leaving an exercise with the X button does not clear `dailyPlanStore.activeFlowType` | LOW | A free user can re-enter and repeat that one exercise until the app restarts. Clearing it on exit would break the legitimate "back out, then restart the step" flow, so it needs a real decision rather than a quick guard |
 | No server-side anti-cheat | LOW | A modified client can inflate its own local numbers; no cross-user data exists (no leaderboard, no cloud sync) so the blast radius is limited to the user's own device |
 
 ## Audit Findings
@@ -162,6 +157,25 @@ Fixed in the 2026-08-13 pre-production audit pass:
 | Notifications | The deep-link target was pushed straight into the router as `screen as any` behind a `@ts-ignore` | Payload is matched against an explicit `DEEP_LINK_ROUTES` allowlist; no cast, no ignore |
 | Exercise detail | The four config sliders used `defaultValue`, which is read once on mount. Adaptive difficulty is applied in an effect *after* mount, so the thumb kept showing the previous run's value while the number next to it showed the new one | Sliders are controlled via `value` |
 | Dead code | `SUBSCRIPTION_CONSTANTS.FREE_TIER` / `PREMIUM_TIER` listed a tier split that no code reads | Deleted |
+| Premium gate | `isConfigured` only means "we stopped waiting" - it is also set after the entitlement retry *fails*. `exercises/_layout.tsx` revoked access on `!isPremium` regardless, so a subscriber whose cold start errored twice was thrown out of an exercise they paid for | Added `isEntitlementKnown` (a real `CustomerInfo` was received) to the RevenueCat context; the two gates that revoke access now require it, while upsell surfaces still read `isPremium` directly |
+| Crash handling | No React error boundary, and `Sentry.wrap()` was deliberately not applied - a render-time throw left a blank app and reached Sentry without component-tree context or touch breadcrumbs | Added `AppErrorBoundary` (RN primitives only, so it can't fail for the same reason the tree did) as the root layout's `ErrorBoundary` export, and wrapped the root layout with `Sentry.wrap` |
+| Data loss | Every engine ended `createSession(...).catch(console.error)`, so a failed write - the session, streak and XP - vanished silently in release builds | `useCreateSession` reports to Sentry itself, so no future engine can forget to |
+| Resource cleanup | Round-advance `setTimeout`s in nine `use*Engine` hooks kept running after unmount | New `useManagedTimeout` hook cancels anything still pending on unmount; all nine call sites use it |
+| Daily goal | `isDailyGoalCompleted` was `todaysSessionCount === 4`, so four *arbitrary* exercises earned the plan bonus and three plan steps plus a repeat earned it too | `utils/dailyGoal.ts` counts distinct completed plan step types and fires only on the transition, with tests for each wrong case |
+| Achievements | `first_exercise` / `exercise_10` used `sessionCount === 1 / === 10`, so crossing the threshold while retention pruning was active skipped the number permanently | Thresholds are `>=`; `award()` already prevented double-granting |
+| Onboarding | The assessment measured WPM and then threw it away for difficulty purposes - every user started at level 1 (150 WPM) | `startingLevelFromWpm` inverts the reading exercises' level→WPM mapping and seeds RSVP and Chunking |
+| Dead code | `useStatisticsStore` was never populated by anything, so the exercises-tab "En İyi" badge could not render | Store deleted; the tab computes `buildLocalStats(..., 'all')` from local history like the statistics tab does, and the badge works |
+| Dead code | `userProgressStore` carried five counters (training seconds, completed exercises, cached streaks, last sync) with no writers | Trimmed to the two onboarding fields that are actually used |
+| Analytics | The daily plan - the app's main retention loop - emitted no events at all | Added `daily_plan_started` (first step of the day only), `daily_plan_completed`, and `subscription_restored` |
+| i18n | Home, onboarding, settings alerts, exercise detail and every exercise screen's accessibility labels were hardcoded Turkish | Moved into `home`, `onboarding`, `settings`, `exercises` and `common` namespaces |
+| Dead UI | The home screen rendered `'Misafir'.split(' ')[0]` as a display name, and computed `todayTrainingMs`/`dailyGoalMinutes` that nothing rendered | Removed; the greeting is a plain translated string |
+
+Checked and **not** changed, because the premise did not survive verification:
+
+| Suspected problem | What the code actually does |
+|---|---|
+| "~284 KB of exercise content is evaluated at startup" | Expo Router calls `loadRoute()` lazily. The eager `validateRouteTreeExports` pass that would have pulled every route module in is guarded by `process.env.NODE_ENV !== 'development'`, so in a release build a route's module - and the content it imports - is only evaluated when the user first navigates to it. No startup cost, no refactor needed |
+| "Only RSVP has accessibility labels on its icon-only buttons" | All fifteen exercise screens already had `accessibilityLabel` and `accessibilityRole` on both the exit and play/pause buttons. They were hardcoded Turkish, which is what got fixed |
 
 ## Production Readiness
 
@@ -178,11 +192,8 @@ Fixed in the 2026-08-13 pre-production audit pass:
 ## Remaining Work
 
 - Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
-- Decide on `Sentry.wrap(RootLayout)` + a route-level error boundary (see Known Issues)
-- Split `features/exercises/content.ts` and `constants/content.ts` behind per-exercise lazy imports to cut startup work
-- Clear the round-advance `setTimeout`s on unmount in the nine `use*Engine` hooks
-- Move the remaining hardcoded Turkish strings (home, statistics, exercise detail, settings `Alert`s) into i18n
-- Accessibility pass: labels on icon-only buttons, touch-target sizes, large-font layout
+- Move the last hardcoded Turkish strings (`StatisticsDashboard`, per-exercise result copy) into i18n, and type `StatisticsDashboard`'s props with `PerformanceStats` instead of `any`
+- Accessibility pass: touch-target sizes and large-font layout (icon-only buttons already carry labels)
 - Manual device pass: background mid-exercise, double-tap completion, app kill mid-session, notification cold-start deep link, offline premium user
 
 ## Recommended Next Steps
