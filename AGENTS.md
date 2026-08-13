@@ -410,6 +410,8 @@ Keep project history and detailed status out of AGENTS.md.
 Use:
 
 - PROJECT_STATUS.md → current architecture and implementation status
+- RELEASE_TODO.md → the remaining release steps that cannot be done from the
+  code (dashboard values, secrets, store forms)
 
 walkthrough.md and task.md are created on demand when a task needs them; do not
 assume they exist.

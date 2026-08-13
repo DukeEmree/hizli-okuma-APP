@@ -180,59 +180,41 @@ Checked and **not** changed, because the premise did not survive verification:
 
 ## Production Readiness
 
-**Code: ready.** `bun run typecheck`, `bun run lint` (0 warnings), `bun test` (145 tests / 23 files) and `bun run i18n:check` all succeed against this tree. The 2026-08-13 audit pass closed the observability, notification-delivery and RevenueCat-misconfiguration defects listed under `## Audit Findings`; what remains open is either release configuration or non-blocking polish.
+**Code: ready.** `bun run typecheck`, `bun run lint` (0 warnings), `bun test` (158 tests / 25 files) and `bun run i18n:check` all succeed against this tree. The 2026-08-13 audit pass closed the observability, crash-reporting, notification-delivery, premium-gate and RevenueCat-misconfiguration defects listed under `## Audit Findings`; what remains open is either release configuration or non-blocking polish.
 
-**Release configuration: not ready.** Remaining blockers, in order:
+**Release configuration: not ready.** Three of the blockers are values only the
+account holder can supply — the RevenueCat production key (the `production`
+environment still carries a Test Store `test_…` key), the Sentry auth token
+(missing from `production`, so source maps cannot upload) and the Amplitude
+key split (production currently reports into the development project). Those,
+plus the keystore check, the Play Console forms and the device smoke test, are
+written out step by step in **`RELEASE_TODO.md`**.
 
-1. **RevenueCat production key.** `.env.production` currently holds a Test Store key (`test_…`). Confirm the EAS-hosted `production` environment carries the real `goog_…` key (and `appl_…` if iOS ships), plus products and entitlement linkage for `hizli-okuma Pro`.
-2. **EAS environment hygiene.** Delete the stale `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_CONVEX_URL` variables from every EAS environment, and confirm `EXPO_PUBLIC_SENTRY_DSN` / `EXPO_PUBLIC_AMPLITUDE_API_KEY` exist in `production`. EAS builds do **not** read the gitignored `.env.production` — `eas-build.log` shows `NODE_ENV` unset and "Proceeding without mode-specific .env" — so the dashboard values are the only ones that ship.
-3. **Android release keystore** verified via `eas credentials`.
-4. **Play Console Data Safety form** completed. The Privacy Policy now describes exactly what to declare: Amplitude usage events, Sentry crash reports, RevenueCat purchase status; no personal identifiers, no location, no ads.
+One thing worth knowing before touching any of it: EAS builds do **not** read
+the gitignored `.env.production`. `eas-build.log` shows `NODE_ENV` unset and
+"Proceeding without mode-specific .env", so the EAS-hosted environment values
+are the only ones that ship. `.env.production` is a local-build convenience
+only, and its RevenueCat key is a Test Store key.
 
 ## Remaining Work
 
 - Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
 - Move the last hardcoded Turkish strings (`StatisticsDashboard`, per-exercise result copy) into i18n, and type `StatisticsDashboard`'s props with `PerformanceStats` instead of `any`
 - Accessibility pass: touch-target sizes and large-font layout (icon-only buttons already carry labels)
-- Manual device pass: background mid-exercise, double-tap completion, app kill mid-session, notification cold-start deep link, offline premium user
+- Clear `dailyPlanStore.activeFlowType` on exercise exit, once the "back out then restart the step" flow has a decided behaviour
 
-## Handover — commands this session could not run
+## Handover
 
-Two EAS changes were blocked and one needs a secret only you hold. Everything
-else on the EAS side is done: the stale `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
-and `EXPO_PUBLIC_CONVEX_URL` variables were deleted from all three
-environments, and `SENTRY_ORG` / `SENTRY_PROJECT` were attached to
-`production`.
+Everything left that cannot be done from the code — the RevenueCat production
+key, the Sentry auth token, the Amplitude key split, the keystore check, the
+Play Console forms, the legal site's first `wrangler deploy` and the device
+smoke test — is in **`RELEASE_TODO.md`**, in order, with the exact commands
+and where each value comes from.
 
-Split the Amplitude key so production stops reporting into the development
-project (blocked here by a permission classifier, not by EAS):
-
-```sh
-# 1. detach the shared dev key from production
-eas env:update --variable-name EXPO_PUBLIC_AMPLITUDE_API_KEY \
-  --variable-environment production \
-  --environment development --environment preview --non-interactive
-
-# 2. create a production-only variable with the production project's key
-eas env:create --name EXPO_PUBLIC_AMPLITUDE_API_KEY \
-  --value 5b42863dd7a145753b9f1c02cf49ca51 \
-  --environment production --visibility plaintext --type string --non-interactive
-```
-
-Add the Sentry auth token to `production` (the value is a secret and cannot be
-read back from `preview`, so it has to be re-entered or regenerated):
-
-```sh
-eas env:create --name SENTRY_AUTH_TOKEN --value <token> \
-  --environment production --visibility secret --type string --non-interactive
-```
-
-Replace the RevenueCat Test Store key with the real one:
-
-```sh
-eas env:update --variable-name EXPO_PUBLIC_RC_ANDROID_KEY \
-  --variable-environment production --value goog_<real_key> --non-interactive
-```
+Already done on EAS in the 2026-08-13 pass: the stale
+`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_CONVEX_URL` variables
+were deleted from all three environments, and `SENTRY_ORG` / `SENTRY_PROJECT`
+were attached to `production`.
 
 ## Recommended Next Steps
 
