@@ -217,7 +217,7 @@ export default function ExerciseInfoScreen() {
                       <Text color="$green10" fontWeight="bold">{config.wpm}</Text>
                     </XStack>
                     <Slider
-                      defaultValue={[config.wpm]}
+                      value={[config.wpm]}
                       max={1000}
                       min={100}
                       step={50}
@@ -239,7 +239,7 @@ export default function ExerciseInfoScreen() {
                       <Text color="$green10" fontWeight="bold">{config.chunkSize}</Text>
                     </XStack>
                     <Slider
-                      defaultValue={[config.chunkSize]}
+                      value={[config.chunkSize]}
                       max={5}
                       min={1}
                       step={1}
@@ -261,7 +261,7 @@ export default function ExerciseInfoScreen() {
                       <Text color="$green10" fontWeight="bold">{config.gridSize}x{config.gridSize}</Text>
                     </XStack>
                     <Slider
-                      defaultValue={[config.gridSize]}
+                      value={[config.gridSize]}
                       max={7}
                       min={3}
                       step={1}
@@ -283,7 +283,7 @@ export default function ExerciseInfoScreen() {
                       <Text color="$green10" fontWeight="bold">{config.timeLimitMs / 1000} sn</Text>
                     </XStack>
                     <Slider
-                      defaultValue={[config.timeLimitMs / 1000]}
+                      value={[config.timeLimitMs / 1000]}
                       max={300}
                       min={30}
                       step={30}

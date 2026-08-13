@@ -32,7 +32,13 @@ export function useExerciseEngine(
     onStateChange: (newSession) => {
       setSession(newSession);
       if (newSession.state === 'running' && statusRef.current !== 'running') {
-        analytics.track('exercise_started', { exerciseType: definition.type, difficulty: config.difficulty });
+        // `initialDifficulty` is the field ExerciseConfig actually carries;
+        // `config.difficulty` never existed, so this property was always
+        // undefined and the event carried no difficulty dimension at all.
+        analytics.track('exercise_started', {
+          exerciseType: definition.type,
+          difficulty: config.initialDifficulty,
+        });
       }
       statusRef.current = newSession.state;
     },

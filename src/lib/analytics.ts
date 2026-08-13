@@ -1,20 +1,42 @@
 import { init, track } from '@amplitude/analytics-react-native';
 
-type EventName = 
+/**
+ * Every event the app actually emits. Kept in sync with the call sites
+ * deliberately: an event name that exists here but is never tracked shows up
+ * as an empty chart in Amplitude and is worse than no entry at all.
+ *
+ * There is no authentication and no backend, so there is no user identity to
+ * set (Amplitude's own device id is the only identifier) and no sync events.
+ */
+type EventName =
   | 'app_opened'
   | 'onboarding_started'
   | 'onboarding_completed'
   | 'exercise_started'
   | 'exercise_completed'
   | 'exercise_abandoned'
-  | 'streak_achieved'
-  | 'paywall_viewed'
-  | 'subscription_started'
-  | 'subscription_cancelled'
   | 'achievement_unlocked'
-  | 'sync_started'
-  | 'sync_completed'
-  | 'sync_failed';
+  | 'paywall_viewed'
+  | 'subscription_started';
+
+/**
+ * Property names that must never leave the device. Matched exactly rather
+ * than by substring: a substring match on "name" would also silently drop
+ * legitimate properties like `exerciseName`, which is the kind of hole that
+ * only shows up as missing data weeks later.
+ */
+const BLOCKED_PROPERTY_KEYS = new Set([
+  'email',
+  'password',
+  'secret',
+  'token',
+  'apikey',
+  'api_key',
+  'username',
+  'fullname',
+  'full_name',
+  'phone',
+]);
 
 export const analytics = {
   init: () => {
@@ -32,16 +54,17 @@ export const analytics = {
     init(apiKey);
   },
 
-  track: (eventName: EventName, properties?: Record<string, string | number | boolean>) => {
-    // Basic PII sanitization - don't allow email, password, etc.
-    const sanitizedProps = { ...properties };
-    const piiKeys = ['email', 'password', 'secret', 'token', 'name'];
-    
-    Object.keys(sanitizedProps).forEach(key => {
-      if (piiKeys.some(pii => key.toLowerCase().includes(pii))) {
-        delete sanitizedProps[key];
-      }
-    });
+  track: (eventName: EventName, properties?: Record<string, string | number | boolean | undefined>) => {
+    const sanitizedProps: Record<string, string | number | boolean> = {};
+
+    for (const [key, value] of Object.entries(properties ?? {})) {
+      // Undefined values are dropped rather than sent: Amplitude records them
+      // as a present-but-empty property, which is indistinguishable from a
+      // real value in charts.
+      if (value === undefined) continue;
+      if (BLOCKED_PROPERTY_KEYS.has(key.toLowerCase())) continue;
+      sanitizedProps[key] = value;
+    }
 
     if (__DEV__) {
       console.log(`[Analytics Track] ${eventName}`, sanitizedProps);
@@ -50,15 +73,4 @@ export const analytics = {
 
     track(eventName, sanitizedProps);
   },
-
-  identify: (userId: string | null) => {
-    // We must dynamically import setUserId to avoid breaking the module if it's not initialized
-    import('@amplitude/analytics-react-native').then(({ setUserId }) => {
-      if (__DEV__) {
-        console.log(`[Analytics Identify] userId: ${userId}`);
-        return;
-      }
-      setUserId(userId ?? undefined);
-    }).catch(console.error);
-  }
 };

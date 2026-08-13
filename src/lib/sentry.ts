@@ -15,6 +15,15 @@ export function initSentry() {
 
   Sentry.init({
     dsn,
+    // Set from the EAS build profile (eas.json sets EXPO_PUBLIC_APP_VARIANT
+    // per profile), so development/preview/production builds don't all land
+    // in one undifferentiated bucket in the Sentry UI. `release` and `dist`
+    // are filled in automatically by the @sentry/react-native/expo plugin
+    // from the native build, so they are deliberately not set here.
+    environment: process.env.EXPO_PUBLIC_APP_VARIANT ?? "production",
+    // The app has no accounts and collects no personal data; make sure the
+    // SDK doesn't attach IP addresses or request bodies on its own.
+    sendDefaultPii: false,
     // Errors/crashes are always captured; only performance traces are
     // sampled. 100% tracing in production burns the Sentry quota on a
     // consumer app and adds per-transaction overhead on the JS thread,
@@ -29,7 +38,7 @@ export function initSentry() {
 // Utility wrapper to catch and log errors
 export function captureException(
   error: unknown,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
 ) {
   if (__DEV__) {
     console.error("Captured Exception (DEV):", error, context);
@@ -45,15 +54,24 @@ export function captureException(
   }
 }
 
-export function setSentryUser(userId: string | null) {
+/**
+ * Reports a non-fatal condition that isn't an thrown error - e.g. a missing
+ * build-time configuration value that silently degrades a feature.
+ */
+export function captureMessage(
+  message: string,
+  context?: Record<string, unknown>,
+) {
   if (__DEV__) {
-    console.log(`[Sentry SetUser] userId: ${userId}`);
+    console.warn("Captured Message (DEV):", message, context);
     return;
   }
-  
-  if (userId) {
-    Sentry.setUser({ id: userId });
-  } else {
-    Sentry.setUser(null);
-  }
+  Sentry.withScope((scope) => {
+    if (context) {
+      Object.entries(context).forEach(([key, value]) => {
+        scope.setExtra(key, value);
+      });
+    }
+    Sentry.captureMessage(message, "warning");
+  });
 }

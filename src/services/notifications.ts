@@ -20,17 +20,35 @@ export const CHANNELS = {
   PROGRESS: 'progress',
 };
 
+/**
+ * Channel creation is idempotent, but it must have happened before anything
+ * is scheduled against a `channelId` - otherwise Android silently routes the
+ * notification to the default channel. The promise is memoised so every
+ * caller below can await it without paying a native round trip each time.
+ */
+let channelSetupPromise: Promise<void> | null = null;
+
 export async function setupNotificationChannels() {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNELS.REMINDERS, {
-      name: 'Hatırlatmalar',
-      importance: Notifications.AndroidImportance.HIGH,
-    });
-    await Notifications.setNotificationChannelAsync(CHANNELS.PROGRESS, {
-      name: 'İlerleme ve Başarılar',
-      importance: Notifications.AndroidImportance.DEFAULT,
+  if (Platform.OS !== 'android') return;
+
+  if (!channelSetupPromise) {
+    channelSetupPromise = (async () => {
+      await Notifications.setNotificationChannelAsync(CHANNELS.REMINDERS, {
+        name: 'Hatırlatmalar',
+        importance: Notifications.AndroidImportance.HIGH,
+      });
+      await Notifications.setNotificationChannelAsync(CHANNELS.PROGRESS, {
+        name: 'İlerleme ve Başarılar',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    })().catch((error) => {
+      // Let the next caller retry rather than caching a rejected promise.
+      channelSetupPromise = null;
+      throw error;
     });
   }
+
+  return channelSetupPromise;
 }
 
 export async function requestNotificationPermissions() {
@@ -85,6 +103,8 @@ const INACTIVITY_3_IDENTIFIER = 'inactivity-3';
 const INACTIVITY_7_IDENTIFIER = 'inactivity-7';
 
 export async function rescheduleAllReminders() {
+  await setupNotificationChannels();
+
   // Sadece bu fonksiyonun yönettiği bildirimleri iptal et (ör. weekly-summary'i etkilemesin)
   await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_IDENTIFIER).catch(() => {});
   await Notifications.cancelScheduledNotificationAsync(INACTIVITY_3_IDENTIFIER).catch(() => {});
@@ -133,6 +153,7 @@ export async function rescheduleAllReminders() {
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: day1Date,
+          channelId: CHANNELS.REMINDERS,
         },
       });
     }
@@ -152,6 +173,7 @@ export async function rescheduleAllReminders() {
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: day3Date,
+          channelId: CHANNELS.REMINDERS,
         },
       });
     }
@@ -168,6 +190,7 @@ export async function rescheduleAllReminders() {
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: day7Date,
+          channelId: CHANNELS.REMINDERS,
         },
       });
     }
@@ -175,6 +198,8 @@ export async function rescheduleAllReminders() {
 }
 
 export async function sendMilestoneNotification(days: number) {
+  await setupNotificationChannels();
+
   const settings = useSettingsStore.getState();
   
   if (!settings.notificationsEnabled || !settings.progressNotificationsEnabled) {
@@ -194,7 +219,10 @@ export async function sendMilestoneNotification(days: number) {
       body,
       data: { screen: '/(app)/(tabs)/statistics' },
     },
-    trigger: null, // Hemen göster (Eğer app background\'da ise veya foreground kurallarına göre)
+    // Immediate, but still routed to the progress channel so Android honours
+    // the channel's importance/settings instead of dropping it in the default
+    // channel the user can't distinguish from reminders.
+    trigger: { channelId: CHANNELS.PROGRESS },
   });
 
   settings.addNotifiedMilestone(days);
@@ -212,6 +240,8 @@ const WEEKLY_SUMMARY_SCREEN = '/(app)/weekly-summary';
  * from live local data when opened.
  */
 export async function scheduleWeeklySummaryNotification() {
+  await setupNotificationChannels();
+
   const settings = useSettingsStore.getState();
 
   if (!settings.notificationsEnabled || !settings.progressNotificationsEnabled) {
@@ -231,6 +261,7 @@ export async function scheduleWeeklySummaryNotification() {
       weekday: 1, // expo-notifications: 1 = Sunday
       hour: 20,
       minute: 0,
+      channelId: CHANNELS.PROGRESS,
     },
   });
 }

@@ -45,7 +45,6 @@
           "imageWidth": 76
         }
       ],
-      "@sentry/react-native",
       "expo-audio",
       [
         "expo-notifications",
