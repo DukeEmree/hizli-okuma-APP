@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useExerciseEngine } from "@/features/exercises/engine/useExerciseEngine";
 import { schulteDefinition } from '.';
-import { ExerciseConfig, ExerciseResult } from "@/types/exercise";
+import { ExerciseConfig, ExerciseMetrics, ExerciseResult } from "@/types/exercise";
 import { useCreateSession } from "@/hooks/useCreateSession";
 import { CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 
@@ -67,25 +67,38 @@ export function useSchulteEngine(config: SchulteConfig, onCompleteCallback?: (re
     }
   }, [createSession, expectedNumber, errors, reactionTimes, onCompleteCallback]);
 
-  const engine = useExerciseEngine(schulteDefinition, config, handleComplete);
+  // engine.updateMetrics/complete are read through this ref instead of
+  // closed over directly, since handleTick is wired in as the *raw* onTick
+  // callback passed to useExerciseEngine below - it can't reference the
+  // engine object returned by that same hook call.
+  const engineActionsRef = useRef<{
+    updateMetrics: (metrics: Partial<ExerciseMetrics>) => void;
+    complete: () => void;
+  } | null>(null);
 
-  // Time limit check
+  // Time limit check, driven by the engine's raw (unthrottled, ~100ms)
+  // tick instead of the React-render-throttled `elapsedMs` (which only
+  // updates once/second) - the throttle otherwise leaves up to a second
+  // where a just-pressed final correct number races against a stale
+  // "time's up" render, occasionally losing.
+  const handleTick = useCallback((ms: number) => {
+    if (isCompleted || isTimeUp || ms < config.timeLimitMs) return;
+    setIsTimeUp(true);
+    setIsCompleted(true);
+    engineActionsRef.current?.updateMetrics({
+      completionRate: (expectedNumber - 1) / totalNumbers,
+      correctCount: expectedNumber - 1,
+      errorCount: errors,
+      reactionTimeMs: reactionTimes,
+    });
+    engineActionsRef.current?.complete();
+  }, [isCompleted, isTimeUp, config.timeLimitMs, expectedNumber, totalNumbers, errors, reactionTimes]);
+
+  const engine = useExerciseEngine(schulteDefinition, config, handleComplete, handleTick);
+
   useEffect(() => {
-    if (!isCompleted && !isTimeUp && engine.elapsedMs >= config.timeLimitMs) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsTimeUp(true);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsCompleted(true);
-      engine.updateMetrics({
-        completionRate: (expectedNumber - 1) / totalNumbers,
-        correctCount: expectedNumber - 1,
-        errorCount: errors,
-        reactionTimeMs: reactionTimes,
-      });
-      engine.complete();
-    }
-  }, [engine.elapsedMs, config.timeLimitMs, isCompleted, isTimeUp, expectedNumber, totalNumbers, engine, errors, reactionTimes]);
+    engineActionsRef.current = { updateMetrics: engine.updateMetrics, complete: engine.complete };
+  });
 
   const handleNumberPress = useCallback((num: number) => {
     if (engine.session.state !== 'running' || isCompleted) return;
@@ -111,8 +124,11 @@ export function useSchulteEngine(config: SchulteConfig, onCompleteCallback?: (re
       }
     } else {
       setErrors(prev => prev + 1);
+      // Wrong tap reshuffles the board as a penalty, without losing
+      // progress (expectedNumber/errors carry over).
+      setGrid(generateSchulteGrid(config.gridSize, config.rng));
     }
-  }, [engine, expectedNumber, totalNumbers, isCompleted, lastCorrectTime, errors, reactionTimes]);
+  }, [engine, expectedNumber, totalNumbers, isCompleted, lastCorrectTime, errors, reactionTimes, config.gridSize, config.rng]);
 
   const reset = useCallback(() => {
     engine.reset();

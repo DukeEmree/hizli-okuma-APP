@@ -55,15 +55,22 @@ export function useRSVPEngine(config: RSVPConfig, onCompleteCallback?: (result: 
 
   const handleTick = useCallback((ms: number) => {
     if (words.length === 0 || isCompleted) return;
-    
-    const calculatedIndex = Math.floor(ms / msPerWord);
-    
-    if (calculatedIndex >= words.length) {
-      if (!isCompleted) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+
+    // The last word gets one extra slot held on screen before completing -
+    // otherwise it flashes for the same instant as every other word and
+    // then is immediately replaced by the results screen, with no beat to
+    // actually read it.
+    const lastIndex = words.length - 1;
+    const completionThresholdMs = words.length * msPerWord + msPerWord;
+
+    if (ms >= completionThresholdMs) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCompleted(true);
-      }
-    } else if (calculatedIndex !== wordIndex) {
+      return;
+    }
+
+    const calculatedIndex = Math.min(lastIndex, Math.floor(ms / msPerWord));
+    if (calculatedIndex !== wordIndex) {
       setWordIndex(calculatedIndex);
     }
   }, [words.length, isCompleted, msPerWord, wordIndex]);

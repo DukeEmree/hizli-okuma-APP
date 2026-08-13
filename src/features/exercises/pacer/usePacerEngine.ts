@@ -57,14 +57,22 @@ export function usePacerEngine(config: PacerConfig, onCompleteCallback?: (result
     if (words.length === 0 || isCompleted) return;
 
     // Line modu yerine şimdilik basit 'word' akışına göre ilerliyoruz.
-    const calculatedIndex = Math.floor(ms / msPerWord);
+    // The last word holds for one extra slot before completing, same as
+    // RSVP - otherwise it's highlighted for an instant and immediately
+    // replaced by the results screen.
+    const lastIndex = words.length - 1;
+    const completionThresholdMs = words.length * msPerWord + msPerWord;
 
-    if (calculatedIndex >= words.length) {
+    if (ms >= completionThresholdMs) {
       if (!isCompleted) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsCompleted(true);
       }
-    } else if (calculatedIndex !== highlightIndex) {
+      return;
+    }
+
+    const calculatedIndex = Math.min(lastIndex, Math.floor(ms / msPerWord));
+    if (calculatedIndex !== highlightIndex) {
       setHighlightIndex(calculatedIndex);
     }
   }, [words.length, isCompleted, msPerWord, highlightIndex]);

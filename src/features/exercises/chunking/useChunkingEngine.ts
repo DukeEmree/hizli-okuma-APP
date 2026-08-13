@@ -12,23 +12,32 @@ export interface ChunkingConfig extends Partial<ExerciseConfig> {
   skipDefaultStorage?: boolean;
 }
 
+// Groups words into `chunkSize`-word chunks, but never lets a chunk span a
+// clause/sentence boundary - a fixed-size sliding window otherwise glues
+// the end of one clause to the start of an unrelated next one (e.g. "...
+// artırır." + "Gözleriniz her ..."), which reads as two unrelated words
+// jammed together even though the source text itself is coherent.
+function splitIntoPhraseChunks(text: string, chunkSize: number): string[] {
+  const size = Math.max(1, chunkSize);
+  const phrases = text.trim().match(/[^,;:.!?…]+[,;:.!?…]*\s*/g) || [text.trim()];
+  const chunks: string[] = [];
+  for (const phrase of phrases) {
+    const words = phrase.trim().split(/\s+/).filter(w => w.length > 0);
+    for (let i = 0; i < words.length; i += size) {
+      chunks.push(words.slice(i, i + size).join(' '));
+    }
+  }
+  return chunks;
+}
+
 export function useChunkingEngine(config: ChunkingConfig, onCompleteCallback?: (result: ExerciseResult) => void) {
   const storeSession = useCreateSession();
-  
-  // Metni kelimelere böl
-  const words = useMemo(() => {
-    return config.text.trim().split(/\s+/).filter(w => w.length > 0);
-  }, [config.text]);
 
-  // Kelimeleri chunkSize boyutunda birleştirerek grupları (chunk) oluştur
+  // Kelimeleri chunkSize boyutunda, cümle/madde sınırlarını aşmayacak
+  // şekilde birleştirerek grupları (chunk) oluştur
   const chunks = useMemo(() => {
-    const arr = [];
-    const size = Math.max(1, config.chunkSize);
-    for (let i = 0; i < words.length; i += size) {
-      arr.push(words.slice(i, i + size).join(' '));
-    }
-    return arr;
-  }, [words, config.chunkSize]);
+    return splitIntoPhraseChunks(config.text, config.chunkSize);
+  }, [config.text, config.chunkSize]);
 
   // WPM hesabına göre her bir chunk'ın ekranda kalma süresi
   // msPerWord = 60000 / wpm

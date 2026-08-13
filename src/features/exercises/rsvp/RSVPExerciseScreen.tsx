@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { YStack, XStack, Text, Button, Progress, Theme } from 'tamagui';
 import { useRSVPEngine } from './useRSVPEngine';
@@ -29,6 +29,7 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
   const {
     session,
     currentWord,
+    wordIndex,
     progress,
     isCompleted,
     start,
@@ -40,15 +41,19 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
     }
   });
 
-  // Sync metronome with exercise session state
+  // Tick exactly when a word appears, instead of running a separate
+  // bpm-driven interval alongside the word-advance timer - two independent
+  // timers can never stay perfectly in sync (and occasionally double-fire).
+  // `lastTickedWordRef` starts at null so the very first word (index 0)
+  // still ticks once `running` begins, without re-ticking on pause/resume.
+  const lastTickedWordRef = useRef<number | null>(null);
   useEffect(() => {
-    if (session.state === 'running') {
-      metronome.start();
-    } else {
-      metronome.pause();
-    }
+    if (session.state !== 'running' || !metronome.isEnabled) return;
+    if (lastTickedWordRef.current === wordIndex) return;
+    lastTickedWordRef.current = wordIndex;
+    metronome.playTick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.state]);
+  }, [wordIndex, session.state, metronome.isEnabled]);
 
   // Stop metronome on unmount
   useEffect(() => {

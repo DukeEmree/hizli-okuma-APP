@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { YStack, XStack, H2, H4, Text, Button, Card, View, ScrollView, useTheme } from 'tamagui';
@@ -22,6 +22,10 @@ const CATEGORY_ICONS: Record<string, any> = {
   memory: Zap,
 };
 
+// Module-level so the offset survives this screen unmounting while an
+// exercise is pushed on top of it, and is restored when the user comes back.
+let savedExercisesScrollY = 0;
+
 export default function ExercisesScreen() {
   const { t } = useTranslation('exercises');
   const router = useRouter();
@@ -30,6 +34,15 @@ export default function ExercisesScreen() {
   const theme = useTheme();
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+
+  useEffect(() => {
+    if (savedExercisesScrollY <= 0) return;
+    const id = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y: savedExercisesScrollY, animated: false });
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const allExercises = exerciseRegistry.getAll();
   
@@ -54,7 +67,13 @@ export default function ExercisesScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-      <ScrollView flex={1} backgroundColor="$background">
+      <ScrollView
+        ref={scrollRef}
+        flex={1}
+        backgroundColor="$background"
+        scrollEventThrottle={16}
+        onScroll={(e: any) => { savedExercisesScrollY = e.nativeEvent.contentOffset.y; }}
+      >
         <YStack padding="$4" gap="$4">
           
           <YStack gap="$2">

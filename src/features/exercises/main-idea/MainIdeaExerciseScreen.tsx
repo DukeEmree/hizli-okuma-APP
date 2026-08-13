@@ -21,6 +21,9 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
   const {
     session,
     currentItem,
+    currentQuestion,
+    questionIndex,
+    questionCount,
     phase,
     correctCount,
     totalAttempts,
@@ -104,14 +107,19 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
                   Okudum
                 </Button>
               </YStack>
-            ) : phase === 'question' && session.state === 'running' && currentItem ? (
+            ) : phase === 'question' && session.state === 'running' && currentQuestion ? (
               <YStack w="100%" gap="$6" ai="center" px="$4">
-                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" mb="$4">{currentItem.question}</Text>
+                <Text color="$color11" fontSize="$3">Soru {questionIndex + 1} / {questionCount}</Text>
+                <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" mb="$4">{currentQuestion.question}</Text>
                 <YStack w="100%" gap="$3">
-                  {currentItem.options.map((opt, i) => (
-                    <Button 
-                      key={i} 
-                      onPress={() => handleSelection(i)} 
+                  {currentQuestion.options.map((opt, i) => (
+                    <Button
+                      key={i}
+                      onPress={() => {
+                        if (i === currentQuestion.correctIndex) haptics.light();
+                        else haptics.error();
+                        handleSelection(i);
+                      }}
                       size="$5"
                     >
                       <Text fontSize="$4" color="$color" fontFamily="$body" style={{ whiteSpace: 'normal', textAlign: 'center' }}>

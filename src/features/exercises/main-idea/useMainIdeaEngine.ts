@@ -16,7 +16,10 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
   
   const [currentItem, setCurrentItem] = useState<MainIdeaItem | null>(null);
   const [phase, setPhase] = useState<'read' | 'question'>('read');
-  
+  // Each passage carries several questions that are asked back-to-back
+  // before a new passage is drawn.
+  const [questionIndex, setQuestionIndex] = useState(0);
+
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -56,6 +59,7 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
     const item = pickByDifficulty(mainIdeaItems, engine.session.currentDifficulty, recentIdsRef.current);
     recentIdsRef.current = [...recentIdsRef.current.slice(-2), item.id];
     setCurrentItem(item);
+    setQuestionIndex(0);
     setPhase('read');
   }, [engine.session.currentDifficulty]);
 
@@ -90,19 +94,30 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
   const handleSelection = useCallback((selectedIndex: number) => {
     if (engine.session.state !== 'running' || isCompleted || phase !== 'question' || !currentItem) return;
 
+    const question = currentItem.questions[questionIndex];
+    if (!question) return;
+
     setTotalAttempts(prev => prev + 1);
 
-    if (selectedIndex === currentItem.correctIndex) {
+    const isCorrect = selectedIndex === question.correctIndex;
+    if (isCorrect) {
       setCorrectCount(prev => prev + 1);
     }
-    
-    // Next item after a short delay
+
+    const hasMoreQuestions = questionIndex + 1 < currentItem.questions.length;
+
+    // Stay on the same passage until all of its questions are answered,
+    // then draw a new one.
     setTimeout(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      generateNewRound();
+      if (hasMoreQuestions) {
+        setQuestionIndex(prev => prev + 1);
+      } else {
+        generateNewRound();
+      }
     }, 500);
-    
-  }, [engine, isCompleted, phase, currentItem, generateNewRound]);
+
+    return isCorrect;
+  }, [engine, isCompleted, phase, currentItem, questionIndex, generateNewRound]);
 
   const reset = useCallback(() => {
     engine.reset();
@@ -110,6 +125,7 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
     setTotalAttempts(0);
     setIsCompleted(false);
     setCurrentItem(null);
+    setQuestionIndex(0);
     setPhase('read');
   }, [engine]);
 
@@ -117,6 +133,9 @@ export function useMainIdeaEngine(config: MainIdeaConfig, onCompleteCallback?: (
     ...engine,
     reset,
     currentItem,
+    currentQuestion: currentItem ? currentItem.questions[questionIndex] ?? null : null,
+    questionIndex,
+    questionCount: currentItem ? currentItem.questions.length : 0,
     phase,
     correctCount,
     totalAttempts,

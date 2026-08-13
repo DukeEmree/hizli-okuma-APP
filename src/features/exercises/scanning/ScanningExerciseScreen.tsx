@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useScanningEngine } from './useScanningEngine';
 import { useTranslation } from 'react-i18next';
@@ -27,11 +28,14 @@ export function ScanningExerciseScreen({
   const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
+  const { width: screenWidth } = useWindowDimensions();
 
   const {
     session,
     grid,
     foundCount,
+    roundsCompleted,
+    roundTargetCount,
     isCompleted,
     isTimeUp,
     errors,
@@ -39,7 +43,7 @@ export function ScanningExerciseScreen({
     pause,
     resume,
     handleCellPress
-  } = useScanningEngine({ 
+  } = useScanningEngine({
     gridSize, 
     timeLimitMs, 
     targetCount, 
@@ -84,12 +88,10 @@ export function ScanningExerciseScreen({
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color={isSuccess ? '$green10' : '$red10'}>
-          {isSuccess 
-            ? t('exercises.scanning.completed', 'Tüm hedefleri başarıyla buldunuz!') 
-            : t('common.timeUp', 'Süre doldu!')}
+          {t('common.timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Hedef: {foundCount} / {targetCount} | Hata: {errors}
+          Toplam bulunan: {foundCount} | Tur: {roundsCompleted + 1} | Hata: {errors}
         </Text>
         <ExerciseCompletionActions exerciseType="scanning" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -102,12 +104,21 @@ export function ScanningExerciseScreen({
     rows.push(grid.slice(i * gridSize, (i + 1) * gridSize));
   }
 
+  // Responsive calculations - mirrors Schulte's sizing so cells never
+  // clip/overflow on narrow screens at high grid sizes.
+  const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
+  const GAP_SIZE = 8; // gap="$2"
+  const availableWidth = screenWidth - HORIZONTAL_PADDING - ((gridSize - 1) * GAP_SIZE);
+  const cellSize = Math.min(64, Math.floor(availableWidth / gridSize));
+  const cellFontSize = cellSize > 45 ? '$6' : '$5';
+  const roundFoundCount = grid.filter((cell) => cell.isFound).length;
+
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel="Çıkış" accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Hedef: <Text fontWeight="bold" color="$color">"{targetSymbol}"</Text> ({foundCount}/{targetCount})
+          Hedef: <Text fontWeight="bold" color="$color">"{targetSymbol}"</Text> ({roundFoundCount}/{roundTargetCount}) · Toplam: {foundCount}
         </Text>
       </XStack>
 
@@ -124,13 +135,14 @@ export function ScanningExerciseScreen({
                   return (
                     <Button
                       key={`cell-${cell.id}`}
-                      width={50}
-                      height={50}
+                      width={cellSize}
+                      height={cellSize}
+                      padding={0}
                       bg={cell.isFound ? '$green5' : '$backgroundHover'}
                       onPress={() => handleCellPress(cell.id)}
                       disabled={cell.isFound || session.state !== 'running'}
                     >
-                      <Text fontSize="$6" fontWeight="bold" color={cell.isFound ? '$green11' : '$color'}>
+                      <Text fontSize={cellFontSize} fontWeight="bold" color={cell.isFound ? '$green11' : '$color'}>
                         {cell.symbol}
                       </Text>
                     </Button>

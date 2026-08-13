@@ -21,6 +21,9 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
   const {
     session,
     currentItem,
+    currentQuestion,
+    questionIndex,
+    questionCount,
     correctCount,
     totalAttempts,
     isCompleted,
@@ -93,21 +96,26 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
           </Text>
         ) : (
           <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-            {session.state === 'running' && currentItem ? (
+            {session.state === 'running' && currentItem && currentQuestion ? (
               <YStack gap="$6" ai="center" px="$4">
+                <Text color="$color11" fontSize="$3">Soru {questionIndex + 1} / {questionCount}</Text>
                 <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body" mb="$2">
-                  Soru: {currentItem.question}
+                  {currentQuestion.question}
                 </Text>
 
                 <Text fontSize="$5" lineHeight="$7" textAlign="justify" color="$color" fontFamily="$body">
                   {currentItem.paragraph}
                 </Text>
-                
+
                 <YStack w="100%" gap="$3" mt="$4">
-                  {currentItem.options.map((opt, i) => (
-                    <Button 
-                      key={i} 
-                      onPress={() => handleSelection(i)} 
+                  {currentQuestion.options.map((opt, i) => (
+                    <Button
+                      key={i}
+                      onPress={() => {
+                        if (i === currentQuestion.correctIndex) haptics.light();
+                        else haptics.error();
+                        handleSelection(i);
+                      }}
                       size="$4"
                     >
                       <Text fontSize="$4" color="$color" fontFamily="$body" style={{ whiteSpace: 'normal', textAlign: 'center' }}>

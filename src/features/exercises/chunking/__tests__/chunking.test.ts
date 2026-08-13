@@ -30,4 +30,23 @@ describe('ChunkingEngine', () => {
 
     expect(result.current.chunks).toEqual(['Bir iki üç', 'dört beş altı']);
   });
+
+  test('chunks never span a sentence/clause boundary', () => {
+    const { result } = renderHook(() => useChunkingEngine({
+      wpm: 300,
+      chunkSize: 2,
+      // "artırır." ends a sentence right before "Gözleriniz" starts the
+      // next one - a naive fixed-size window would glue them into one
+      // chunk ("artırır. Gözleriniz"), which reads as two unrelated words.
+      text: 'Kelime gruplama tekniği okuma hızınızı önemli ölçüde artırır. Gözleriniz her kelime için ayrı ayrı duraklamak yerine, birkaç kelimeyi tek bir bakışta kavrar.'
+    }));
+
+    for (const chunk of result.current.chunks) {
+      // A chunk may end with sentence/clause punctuation, but must never
+      // contain one in the middle (i.e. straddle a boundary).
+      expect(chunk.slice(0, -1)).not.toMatch(/[,;:.!?…]/);
+    }
+    expect(result.current.chunks).toContain('ölçüde artırır.');
+    expect(result.current.chunks).toContain('Gözleriniz her');
+  });
 });

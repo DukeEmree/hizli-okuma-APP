@@ -103,7 +103,7 @@ export function VisualSearchExerciseScreen({ timeLimitMs, onComplete }: VisualSe
             {session.state === 'running' && targetWord !== '' ? (
               <YStack gap="$4" ai="center" w="100%">
                 <Text fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body">
-                  Şu kelimeyi bul: {targetWord}
+                  {targetWord}
                 </Text>
                 
                 <View style={{

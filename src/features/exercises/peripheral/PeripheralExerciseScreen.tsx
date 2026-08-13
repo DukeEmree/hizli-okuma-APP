@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { YStack, XStack, Text, Button, Circle } from 'tamagui';
 import { usePeripheralEngine } from './usePeripheralEngine';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
   const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const {
     session,
@@ -81,12 +82,18 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
     );
   }
 
+  // Leave enough margin for the word's own width/height so it can't render
+  // fully or partially off-screen at high difficulty (large `distance`).
+  const WORD_SAFETY_MARGIN = 90;
+  const maxHorizontalDistance = Math.max(40, screenWidth / 2 - WORD_SAFETY_MARGIN);
+  const maxVerticalDistance = Math.max(40, screenHeight / 2 - WORD_SAFETY_MARGIN);
+
   const getPositionStyles = () => {
     switch (position) {
-      case 'left': return { right: distance };
-      case 'right': return { left: distance };
-      case 'top': return { bottom: distance };
-      case 'bottom': return { top: distance };
+      case 'left': return { right: Math.min(distance, maxHorizontalDistance) };
+      case 'right': return { left: Math.min(distance, maxHorizontalDistance) };
+      case 'top': return { bottom: Math.min(distance, maxVerticalDistance) };
+      case 'bottom': return { top: Math.min(distance, maxVerticalDistance) };
       default: return {};
     }
   };

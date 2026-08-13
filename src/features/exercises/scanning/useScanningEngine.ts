@@ -54,7 +54,8 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
   
   const targetSymbol = config.targetSymbol || 'B';
   const distractorSymbol = config.distractorSymbol || 'A';
-  const targetCount = config.targetCount || 3;
+  const baseTargetCount = config.targetCount || 3;
+  const cellsTotal = config.gridSize * config.gridSize;
 
   const [grid, setGrid] = useState<ScanningCell[]>([]);
   const [foundCount, setFoundCount] = useState(0);
@@ -63,6 +64,12 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [lastCorrectTime, setLastCorrectTime] = useState(0);
   const [reactionTimes, setReactionTimes] = useState<number[]>([]);
+  // Exercise keeps generating new rounds back-to-back until timeLimitMs
+  // runs out (a single round used to end the whole exercise). Each round's
+  // target count ramps up a little as a cheap within-session difficulty
+  // curve, capped so a round always leaves at least one non-target cell.
+  const [roundsCompleted, setRoundsCompleted] = useState(0);
+  const roundTargetCount = Math.min(cellsTotal - 1, baseTargetCount + roundsCompleted);
 
   // Guard against duplicate execution for rapid touches or StrictMode
   const foundCellIds = useRef<Set<number>>(new Set());
@@ -82,8 +89,9 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setGrid(generateScanningGrid(config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng));
-  }, [config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng]);
+    setGrid(generateScanningGrid(config.gridSize, roundTargetCount, targetSymbol, distractorSymbol, config.rng));
+    foundCellIds.current.clear();
+  }, [config.gridSize, roundTargetCount, targetSymbol, distractorSymbol, config.rng]);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
     createSession({
@@ -119,14 +127,14 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
       setIsTimeUp(true);
       setIsCompleted(true);
       engine.updateMetrics({
-        completionRate: stateRefs.current.foundCount / targetCount,
+        completionRate: Math.min(1, stateRefs.current.foundCount / baseTargetCount),
         correctCount: stateRefs.current.foundCount,
         errorCount: stateRefs.current.errors,
         reactionTimeMs: stateRefs.current.reactionTimes,
       });
       engine.complete();
     }
-  }, [engine, engine.elapsedMs, config.timeLimitMs, targetCount]);
+  }, [engine, engine.elapsedMs, config.timeLimitMs, baseTargetCount]);
 
   const handleCellPress = useCallback((index: number) => {
     if (engine.session.state !== 'running' || isCompletedRef.current) return;
@@ -137,7 +145,7 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
     if (cell.isTarget) {
       if (foundCellIds.current.has(index)) return; // Prevent duplicate updates for same cell
       foundCellIds.current.add(index);
-      const newFoundCount = foundCellIds.current.size;
+      const roundFoundCount = foundCellIds.current.size;
 
       // Update grid purely
       setGrid(prev => {
@@ -149,31 +157,25 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
       // Calculate and update metrics purely
       const currentReactionTime = engine.elapsedMs - lastCorrectTime;
       const newReactionTimes = [...reactionTimes, currentReactionTime];
-      
+
       setReactionTimes(newReactionTimes);
       setLastCorrectTime(engine.elapsedMs);
-      setFoundCount(newFoundCount);
+      setFoundCount(prev => prev + 1);
 
-      // Side Effect: Trigger completion if done
-      if (newFoundCount >= targetCount && targetCount > 0 && !isCompletedRef.current) {
-        isCompletedRef.current = true;
-        setIsCompleted(true);
-        engine.updateMetrics({
-          completionRate: 1,
-          correctCount: newFoundCount,
-          errorCount: errors,
-          reactionTimeMs: newReactionTimes,
-        });
-        engine.complete();
+      // Round done: start a new (slightly harder) round instead of ending
+      // the exercise - it keeps going until the time limit runs out.
+      if (roundFoundCount >= roundTargetCount && roundTargetCount > 0) {
+        setRoundsCompleted(r => r + 1);
       }
     } else {
       setErrors(e => e + 1);
     }
-  }, [engine, grid, lastCorrectTime, reactionTimes, errors, targetCount]);
+  }, [engine, grid, lastCorrectTime, reactionTimes, roundTargetCount]);
 
   const reset = useCallback(() => {
     engine.reset();
-    setGrid(generateScanningGrid(config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng));
+    setRoundsCompleted(0);
+    setGrid(generateScanningGrid(config.gridSize, baseTargetCount, targetSymbol, distractorSymbol, config.rng));
     setFoundCount(0);
     setErrors(0);
     setIsCompleted(false);
@@ -182,14 +184,16 @@ export function useScanningEngine(config: ScanningConfig, onCompleteCallback?: (
     setReactionTimes([]);
     foundCellIds.current.clear();
     isCompletedRef.current = false;
-  }, [engine, config.gridSize, targetCount, targetSymbol, distractorSymbol, config.rng]);
+  }, [engine, config.gridSize, baseTargetCount, targetSymbol, distractorSymbol, config.rng]);
 
   return {
     ...engine,
     reset,
     grid,
     foundCount,
-    targetCount,
+    roundsCompleted,
+    roundTargetCount,
+    targetCount: baseTargetCount,
     errors,
     isCompleted,
     isTimeUp,

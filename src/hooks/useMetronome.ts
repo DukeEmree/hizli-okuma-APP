@@ -103,6 +103,8 @@ export function useMetronome(defaultBpm?: number) {
     setBpm: setMetronomeBpm,
     toggleEnabled,
     increaseBpm,
-    decreaseBpm
+    decreaseBpm,
+    /** Plays a single tick immediately, independent of the bpm-driven interval. */
+    playTick
   };
 }

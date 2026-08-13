@@ -110,7 +110,20 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
             {countdown}
           </Text>
         ) : (
-          <YStack gap="$2" w="100%" ai="center" jc="center">
+          <YStack gap="$2" w="100%" ai="center" jc="center" position="relative">
+            <YStack
+              position="absolute"
+              top="50%"
+              left="50%"
+              width={10}
+              height={10}
+              marginTop={-5}
+              marginLeft={-5}
+              borderRadius={999}
+              bg="$blue10"
+              zIndex={1}
+              pointerEvents="none"
+            />
             {rows.map((row, rowIndex) => (
               <XStack key={`row-${rowIndex}`} gap="$2" w="100%" jc="center">
                 {row.map((num, colIndex) => {

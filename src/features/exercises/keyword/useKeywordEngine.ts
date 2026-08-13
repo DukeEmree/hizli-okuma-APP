@@ -15,7 +15,10 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
   const createSession = useCreateSession();
   
   const [currentItem, setCurrentItem] = useState<KeywordItem | null>(null);
-  
+  // Each passage carries several questions that are asked back-to-back
+  // before a new passage is drawn.
+  const [questionIndex, setQuestionIndex] = useState(0);
+
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -51,6 +54,7 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
     const item = pickByDifficulty(keywordItems, engine.session.currentDifficulty, recentIdsRef.current);
     recentIdsRef.current = [...recentIdsRef.current.slice(-2), item.id];
     setCurrentItem(item);
+    setQuestionIndex(0);
     setLastShowTime(Date.now());
   }, [engine.session.currentDifficulty]);
 
@@ -80,21 +84,31 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
   const handleSelection = useCallback((selectedIndex: number) => {
     if (engine.session.state !== 'running' || isCompleted || !currentItem) return;
 
+    const question = currentItem.questions[questionIndex];
+    if (!question) return;
+
     const rt = Date.now() - lastShowTime;
     setReactionTimes(prev => [...prev, rt]);
     setTotalAttempts(prev => prev + 1);
 
-    if (selectedIndex === currentItem.correctIndex) {
+    if (selectedIndex === question.correctIndex) {
       setCorrectCount(prev => prev + 1);
     }
-    
-    // Next item after a short delay
+
+    const hasMoreQuestions = questionIndex + 1 < currentItem.questions.length;
+
+    // Stay on the same passage until all of its questions are answered,
+    // then draw a new one.
     setTimeout(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      generateNewRound();
+      if (hasMoreQuestions) {
+        setQuestionIndex(prev => prev + 1);
+        setLastShowTime(Date.now());
+      } else {
+        generateNewRound();
+      }
     }, 500);
-    
-  }, [engine, isCompleted, currentItem, lastShowTime, generateNewRound]);
+
+  }, [engine, isCompleted, currentItem, questionIndex, lastShowTime, generateNewRound]);
 
   const reset = useCallback(() => {
     engine.reset();
@@ -103,12 +117,16 @@ export function useKeywordEngine(config: KeywordConfig, onCompleteCallback?: (re
     setIsCompleted(false);
     setReactionTimes([]);
     setCurrentItem(null);
+    setQuestionIndex(0);
   }, [engine]);
 
   return {
     ...engine,
     reset,
     currentItem,
+    currentQuestion: currentItem ? currentItem.questions[questionIndex] ?? null : null,
+    questionIndex,
+    questionCount: currentItem ? currentItem.questions.length : 0,
     correctCount,
     totalAttempts,
     isCompleted,

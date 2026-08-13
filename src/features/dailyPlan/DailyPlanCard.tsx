@@ -22,6 +22,7 @@ export function DailyPlanCard() {
   const completedTypes = useDailyPlanStore((s) => s.completedTypes);
   const lastPlanTypes = useDailyPlanStore((s) => s.lastPlanTypes);
   const ensureTodayPlan = useDailyPlanStore((s) => s.ensureTodayPlan);
+  const setActiveFlowType = useDailyPlanStore((s) => s.setActiveFlowType);
 
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   // eslint-disable-next-line react-hooks/purity
@@ -51,6 +52,7 @@ export function DailyPlanCard() {
 
   const handlePress = () => {
     if (firstPendingType) {
+      setActiveFlowType(firstPendingType);
       router.push(`/(app)/exercises/${firstPendingType}` as Href);
     }
   };

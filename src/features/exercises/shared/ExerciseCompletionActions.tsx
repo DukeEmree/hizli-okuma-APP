@@ -13,10 +13,15 @@ interface ExerciseCompletionActionsProps {
 
 /**
  * Renders the primary action on an exercise's completion screen. Plain
- * "Bitir" unless `exerciseType` is a step of today's daily plan, in which
- * case it chains to the next pending step (or the plan-complete screen on
- * the last one) instead - the single place this decision is made, reused
- * across all exercise screens rather than duplicated per screen.
+ * "Bitir" unless `exerciseType` is the step of today's daily plan that's
+ * actively being run through the chained flow (launched from
+ * DailyPlanCard), in which case it chains to the next pending step (or the
+ * plan-complete screen once every step is done) instead - the single place
+ * this decision is made, reused across all exercise screens rather than
+ * duplicated per screen. A standalone completion of the same exercise type
+ * from the Egzersizler tab still marks the daily step done (via
+ * `markStepCompleted` in each route's `onComplete`) but never matches here,
+ * since `activeFlowType` is only set by the daily-plan flow itself.
  */
 export function ExerciseCompletionActions({ exerciseType, onFinish }: ExerciseCompletionActionsProps) {
   const router = useRouter();
@@ -24,25 +29,46 @@ export function ExerciseCompletionActions({ exerciseType, onFinish }: ExerciseCo
   const { t: tExercises } = useTranslation('exercises');
   const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
   const completedTypes = useDailyPlanStore((s) => s.completedTypes);
+  const activeFlowType = useDailyPlanStore((s) => s.activeFlowType);
+  const setActiveFlowType = useDailyPlanStore((s) => s.setActiveFlowType);
 
-  const stepIndex = exerciseTypes.indexOf(exerciseType);
-  const isPlanStep = stepIndex !== -1 && completedTypes.includes(exerciseType);
+  const isPlanStep =
+    activeFlowType === exerciseType &&
+    exerciseTypes.includes(exerciseType) &&
+    completedTypes.includes(exerciseType);
 
   if (isPlanStep) {
-    const nextType = exerciseTypes.slice(stepIndex + 1).find((type) => !completedTypes.includes(type));
+    // Scan the whole plan in order, not just forward from this step's
+    // index - this step may not be the last *index*, but it can still be
+    // the last one *completed* if earlier steps were done out of order.
+    const nextType = exerciseTypes.find((type) => !completedTypes.includes(type));
 
     if (nextType) {
       const nextDefinition = exerciseRegistry.getByType(nextType);
       const nextLabel = nextDefinition ? tExercises(nextDefinition.nameKey, nextType) : nextType;
       return (
-        <Button size="$5" theme="accent" onPress={() => router.replace(`/(app)/exercises/${nextType}` as Href)}>
+        <Button
+          size="$5"
+          theme="accent"
+          onPress={() => {
+            setActiveFlowType(nextType);
+            router.replace(`/(app)/exercises/${nextType}` as Href);
+          }}
+        >
           {t('actions.next')}: {nextLabel}
         </Button>
       );
     }
 
     return (
-      <Button size="$5" theme="accent" onPress={() => router.replace('/(app)/daily-plan-complete')}>
+      <Button
+        size="$5"
+        theme="accent"
+        onPress={() => {
+          setActiveFlowType(null);
+          router.replace('/(app)/daily-plan-complete');
+        }}
+      >
         {t('actions.finishPlan')}
       </Button>
     );

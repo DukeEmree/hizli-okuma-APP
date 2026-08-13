@@ -74,4 +74,34 @@ describe('ScanningEngine', () => {
     expect(result.current.errors).toBe(1);
     expect(result.current.foundCount).toBe(0);
   });
+
+  test('reaching the round target starts a new round instead of ending the exercise', () => {
+    let i = 0;
+    const mockRng = () => { i++; return (i % 9) / 9; };
+
+    const { result } = renderHook(() => useScanningEngine({
+      gridSize: 3,
+      targetCount: 1,
+      timeLimitMs: 60000,
+      rng: mockRng,
+    }));
+
+    act(() => {
+      result.current.start();
+    });
+
+    const targetIdx = result.current.grid.findIndex(c => c.isTarget);
+    act(() => {
+      result.current.handleCellPress(targetIdx);
+    });
+
+    // Round target (1) reached: exercise keeps running with a fresh grid
+    // instead of completing, and the difficulty ramp raises next round's target.
+    expect(result.current.isCompleted).toBe(false);
+    expect(result.current.session.state).toBe('running');
+    expect(result.current.roundsCompleted).toBe(1);
+    expect(result.current.roundTargetCount).toBe(2);
+    expect(result.current.foundCount).toBe(1);
+    expect(result.current.grid.some(c => c.isFound)).toBe(false);
+  });
 });
