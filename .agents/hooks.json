@@ -1,0 +1,12 @@
+{
+  "graphify-updater": {
+    "enabled": true,
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 scripts/check_graphify.py || python3 .agents/scripts/check_graphify.py",
+        "timeout": 30
+      }
+    ]
+  }
+}
