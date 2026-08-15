@@ -47,3 +47,4 @@ example
 /ios
 /android
 .worktrees/
+graphify-out/cache/
