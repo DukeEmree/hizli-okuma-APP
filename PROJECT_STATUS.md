@@ -140,6 +140,7 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 | `StatisticsDashboard` props are typed `any` | LOW | `currentStats: any` plus six `(d: any)` map callbacks; `PerformanceStats` from `utils/localStatistics.ts` is the type it should use |
 | Leaving an exercise with the X button does not clear `dailyPlanStore.activeFlowType` | LOW | A free user can re-enter and repeat that one exercise until the app restarts. Clearing it on exit would break the legitimate "back out, then restart the step" flow, so it needs a real decision rather than a quick guard |
 | No server-side anti-cheat | LOW | A modified client can inflate its own local numbers; no cross-user data exists (no leaderboard, no cloud sync) so the blast radius is limited to the user's own device |
+| Paket Bağımlılığı Güvenlik Açıkları (`bun audit`) | HIGH/MODERATE | `image-size` (Yüksek risk - DoS açık) ve `uuid` (Orta risk - buffer bounds check) paketlerinde açıklar raporlandı. Bu bağımlılıklar `expo`, `react-native`, `expo-splash-screen` vb. altında geliyor. `bun update` komutuyla uygun zamanda güncellenmesi önerilir. |
 
 ## Audit Findings
 

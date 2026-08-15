@@ -9,6 +9,7 @@ Entities and relationships are grounded in the codebase files.
 graph TD
   subgraph ArchitectureDocs["Architecture & Project Docs"]
     AGENTS["AGENTS.md"]
+    CLAUDE["CLAUDE.md"]
     STATUS["PROJECT_STATUS.md"]
     RELEASE["RELEASE_TODO.md"]
     AUDIT["PRODUCTION_AUDIT.md"]
@@ -159,7 +160,9 @@ graph TD
 | Entity | Type | Description | Source File |
 | :--- | :--- | :--- | :--- |
 | `AGENTS.md` | Doc / Rule | Project rules, architecture conventions, constraints & strict tech stack | [`AGENTS.md`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/AGENTS.md) |
-| `PROJECT_STATUS.md` | Doc | Current architecture, feature statuses, and roadmap | [`PROJECT_STATUS.md`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/PROJECT_STATUS.md) |
+| `CLAUDE.md` | Doc / Index | AI assistant quick references and links to other architecture docs | [`CLAUDE.md`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/CLAUDE.md) |
+| `PROJECT_STATUS.md` | Doc | Current architecture, feature statuses, roadmap, and dependency audit findings | [`PROJECT_STATUS.md`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/PROJECT_STATUS.md) |
+| `BUGS.md` | Doc | Tracks known bugs and UX issues (e.g. daily plan flow, localization) | [`BUGS.md`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/BUGS.md) |
 | `RootLayout` | Component / Shell | Root Expo Router layout initializing Tamagui, Sentry, i18n and revenue purchases | [`src/app/_layout.tsx`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/src/app/_layout.tsx) |
 | `TabLayout` | Component / Navigation | Main 4-tab bottom bar navigation (Home, Exercises, Statistics, Settings) | [`src/app/(app)/(tabs)/_layout.tsx`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/src/app/(app)/(tabs)/_layout.tsx) |
 | `ExerciseRegistry` | Registry / Domain | Central registry and metadata for all 14 speed reading and comprehension exercises | [`src/features/exercises/registry.ts`](file:///home/emre/Masaüstü/yazilim/hizli-okuma/src/features/exercises/registry.ts) |
