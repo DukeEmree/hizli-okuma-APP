@@ -18,8 +18,8 @@ Kullanıcı raporlarına göre taranan açık buglar. Kök neden + dosya:satır 
 
 ## Günlük Plan (Daily Plan)
 
-- ⏳ **Daily Plan Akışı (Bug/UX):** Herhangi bir egzersizden "X" butonuyla çıkıldığında `dailyPlanStore.activeFlowType` temizlenmiyor. Bu, özellikle premium olmayan kullanıcılarda uygulamanın yeniden başlatılana kadar o egzersizi sürekli tekrar etmesi gibi akış hatalarına yol açabilir.
+- ✅ **Daily Plan Akışı (Bug/UX):** `exercises/_layout.tsx`'e, o egzersiz segmentinden ayrılınca (X butonu, geri gesture'ı, her türlü navigasyon) `activeFlowType`'ı temizleyen bir cleanup effect'i eklendi (2026-08-20). Kök neden tek yerde kapatıldı: bu layout zaten tüm `/exercises/<type>` rotalarının tek ortak gate'iydi.
 
 ## Lokalizasyon (i18n)
 
-- ⏳ **Sabitlenmiş Metinler:** Uygulamanın çoğunluğu react-i18next yapısına taşınmış olsa da StatisticsDashboard ve egzersiz sonu (completion) ekranlarında İngilizce/Türkçe dil ayarlarını yoksayacak hardcoded Türkçe stringler hala mevcut.
+- ✅ **Sabitlenmiş Metinler:** StatisticsDashboard ve 15 egzersizin tamamlanma ekranlarındaki hardcoded Türkçe stringler `progress`/`exercises`/`common` i18n namespace'lerine taşındı (2026-08-20). Ayrıca birkaç yerde `t('exercises.x.y', ...)` / `t('common.x', ...)` gibi, default namespace içinde yanlış anahtar yoluna bakan (hiç çözülmeyen, sessizce defaultValue'ya düşen) çağrılar düzeltildi. `StatisticsDashboard`'ın `currentStats: any` prop'u da `PerformanceStats` tipine geçirildi.

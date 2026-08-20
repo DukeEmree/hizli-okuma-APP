@@ -68,10 +68,10 @@ export function WordRecognitionExerciseScreen({ timeLimitMs, onComplete }: WordR
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('common.timeUp', 'Süre doldu!')}
+          {t('timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Doğru: {correctCount} / {totalAttempts} | Doğruluk: %{accuracy}
+          {t('resultAccuracy', 'Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}', { correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="word-recognition" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -83,7 +83,7 @@ export function WordRecognitionExerciseScreen({ timeLimitMs, onComplete }: WordR
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Skor: <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
+          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
       </XStack>
 
@@ -99,7 +99,7 @@ export function WordRecognitionExerciseScreen({ timeLimitMs, onComplete }: WordR
             ) : (
               <YStack w="100%" gap="$4" ai="center">
                 {session.state === 'running' && (
-                   <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">Hangi kelimeyi gördünüz?</Text>
+                   <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">{t('wordRecognition.selectPrompt', 'Hangi kelimeyi gördünüz?', { ns: 'exercises' })}</Text>
                 )}
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {!showTarget && session.state === 'running' && options.map((opt, i) => (

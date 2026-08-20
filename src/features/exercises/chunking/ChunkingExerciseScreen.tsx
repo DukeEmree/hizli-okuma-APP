@@ -72,10 +72,10 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('exercises.chunking.completed', 'Tebrikler, grup okumayı tamamladınız!')}
+          {t('chunking.completed', 'Tebrikler, grup okumayı tamamladınız!', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          WPM: {wpm} | Chunk: {chunkSize}
+          {t('chunking.wpmChunkLabel', 'WPM: {{wpm}} | Chunk: {{chunk}}', { ns: 'exercises', wpm, chunk: chunkSize })}
         </Text>
         <ExerciseCompletionActions exerciseType="chunking" onFinish={() => router.back()} />
       </YStack>

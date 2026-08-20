@@ -67,10 +67,10 @@ export function SentenceMemoryExerciseScreen({ timeLimitMs, onComplete }: Senten
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('common.timeUp', 'Süre doldu!')}
+          {t('timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Doğru: {correctCount} / {totalAttempts} | Doğruluk: %{accuracy}
+          {t('resultAccuracy', 'Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}', { correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="sentence-memory" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -82,7 +82,7 @@ export function SentenceMemoryExerciseScreen({ timeLimitMs, onComplete }: Senten
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Skor: <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
+          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
       </XStack>
 

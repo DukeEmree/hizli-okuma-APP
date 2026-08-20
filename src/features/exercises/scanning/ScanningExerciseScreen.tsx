@@ -134,10 +134,10 @@ export function ScanningExerciseScreen({
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color={isSuccess ? '$green10' : '$red10'}>
-          {t('common.timeUp', 'Süre doldu!')}
+          {t('timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Toplam bulunan: {foundCount} | Tur: {roundsCompleted + 1} | Hata: {errors}
+          {t('scanning.resultLine', 'Toplam bulunan: {{found}} | Tur: {{round}} | Hata: {{errors}}', { ns: 'exercises', found: foundCount, round: roundsCompleted + 1, errors })}
         </Text>
         <ExerciseCompletionActions exerciseType="scanning" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>

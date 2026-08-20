@@ -71,13 +71,13 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          Egzersiz Tamamlandı!
+          {t('comprehensionSpeed.completed', 'Egzersiz tamamlandı!', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Hız: {wpm} WPM
+          {t('comprehensionSpeed.wpmLabel', 'Hız: {{wpm}} WPM', { ns: 'exercises', wpm })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Doğru: {correctCount} / {totalAttempts} | Kavrama: %{accuracy}
+          {t('comprehensionSpeed.resultLine', 'Doğru: {{correct}} / {{total}} | Kavrama: %{{accuracy}}', { ns: 'exercises', correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="comprehension-speed" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -90,7 +90,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         {phase === 'questions' && (
           <Text color="$color11" fontSize="$3">
-            Soru: <Text fontWeight="bold" color="$color">{currentQuestionIndex + 1}/{currentItem?.questions.length}</Text>
+            {t('comprehensionSpeed.questionLabel', 'Soru:', { ns: 'exercises' })} <Text fontWeight="bold" color="$color">{currentQuestionIndex + 1}/{currentItem?.questions.length}</Text>
           </Text>
         )}
       </XStack>
@@ -108,7 +108,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
                   {currentItem.text}
                 </Text>
                 <Button size="$5" theme="accent" onPress={handleFinishedReading}>
-                  Okumayı Bitirdim
+                  {t('comprehensionSpeed.finishReading', 'Okumayı Bitirdim', { ns: 'exercises' })}
                 </Button>
               </YStack>
             ) : phase === 'questions' && session.state === 'running' && currentItem ? (

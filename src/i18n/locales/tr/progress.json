@@ -1,4 +1,37 @@
 {
   "statisticsPlaceholder": "İstatistikler Placeholder",
-  "profilePlaceholder": "Profil Placeholder"
+  "profilePlaceholder": "Profil Placeholder",
+  "title": "Gelişim & İstatistikler",
+  "ranges": {
+    "7d": "7G",
+    "30d": "30G",
+    "90d": "90G",
+    "all": "Tümü"
+  },
+  "emptyTitle": "Henüz Yeterli Veri Yok",
+  "emptyMessage": "İstatistiklerinizi görebilmek için egzersizleri tamamlamanız gerekmektedir.",
+  "summary": {
+    "totalTime": "Toplam Süre",
+    "totalSessions": "Tamamlanan Seans",
+    "averageScore": "Ortalama Skor",
+    "exerciseTypeCount": "Egzersiz Türü"
+  },
+  "charts": {
+    "wpmTitle": "Okuma Hızı (WPM) Trendi",
+    "comprehensionTitle": "Anlama Oranı (%)",
+    "accuracyTitle": "Doğruluk Oranı (%)",
+    "exerciseScoreTitle": "Egzersiz Türüne Göre En İyi Skor",
+    "needMoreDays": "Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.",
+    "noExerciseStats": "Egzersiz istatistiği bulunmuyor."
+  },
+  "breakdown": {
+    "title": "Egzersiz İstatistikleri",
+    "sessions": "{{count}} Seans",
+    "bestScore": "En İyi Skor: {{score}}",
+    "maxWpm": "Max WPM: {{wpm}}"
+  },
+  "time": {
+    "minutes": "{{minutes}} dk",
+    "hoursMinutes": "{{hours}} sa {{minutes}} dk"
+  }
 }

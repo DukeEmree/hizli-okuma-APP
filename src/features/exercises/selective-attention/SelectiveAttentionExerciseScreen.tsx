@@ -70,10 +70,10 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('common.timeUp', 'Süre doldu!')}
+          {t('timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Doğru: {correctCount} | Hatalı: {errorCount} | Doğruluk: %{accuracy}
+          {t('selectiveAttention.resultLine', 'Doğru: {{correct}} | Hatalı: {{incorrect}} | Doğruluk: %{{accuracy}}', { ns: 'exercises', correct: correctCount, incorrect: errorCount, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="selective-attention" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -85,7 +85,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Skor: <Text fontWeight="bold" color="$green10">{correctCount}</Text> / <Text fontWeight="bold" color="$red10">{errorCount}</Text>
+          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$green10">{correctCount}</Text> / <Text fontWeight="bold" color="$red10">{errorCount}</Text>
         </Text>
       </XStack>
 
@@ -99,10 +99,10 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
             {session.state === 'running' && gridWords.length > 0 ? (
               <YStack gap="$4" ai="center" w="100%">
                 <Text fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body">
-                  Kategori: {targetCategoryName}
+                  {t('selectiveAttention.categoryLabel', 'Kategori: {{category}}', { ns: 'exercises', category: targetCategoryName })}
                 </Text>
                 <Text fontSize="$4" color="$color11" fontFamily="$body" mb="$2">
-                  Aşağıdaki kelimelerden bu kategoriye ait olanları seçin.
+                  {t('selectiveAttention.categoryPrompt', 'Aşağıdaki kelimelerden bu kategoriye ait olanları seçin.', { ns: 'exercises' })}
                 </Text>
                 
                 <XStack flexWrap="wrap" jc="center" gap="$2" px="$2">

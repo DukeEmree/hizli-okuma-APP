@@ -2,17 +2,18 @@ import React from 'react';
 import { View } from 'react-native';
 import { H1, H4, Text, XStack, YStack, Button, Spinner, ScrollView, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
-import { TimeRange } from "@/utils/localStatistics";
+import type { TFunction } from 'i18next';
+import { PerformanceStats, TimeRange } from "@/utils/localStatistics";
 import { CartesianChart, Line, Bar } from 'victory-native';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { StreakWeeklyCalendar } from "@/features/streak/StreakWeeklyCalendar";
 
-export function formatTime(ms: number) {
+export function formatTime(ms: number, t: TFunction<'progress'>) {
   const mins = Math.floor(ms / 60000);
-  if (mins < 60) return `${mins} dk`;
+  if (mins < 60) return t('time.minutes', { minutes: mins });
   const hours = Math.floor(mins / 60);
   const remainingMins = mins % 60;
-  return `${hours} sa ${remainingMins} dk`;
+  return t('time.hoursMinutes', { hours, minutes: remainingMins });
 }
 
 interface StatisticsDashboardProps {
@@ -20,7 +21,7 @@ interface StatisticsDashboardProps {
   hasData: boolean;
   timeRange: TimeRange;
   onTimeRangeChange: (range: TimeRange) => void;
-  currentStats: any;
+  currentStats: PerformanceStats;
 }
 
 export function StatisticsDashboard({
@@ -30,7 +31,7 @@ export function StatisticsDashboard({
   onTimeRangeChange,
   currentStats
 }: StatisticsDashboardProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('progress');
   const theme = useTheme();
 
   if (isLoading) {
@@ -41,25 +42,25 @@ export function StatisticsDashboard({
     );
   }
 
-  const chartDataWpm: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1 
-    ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: d.avgWpm || 0 }))
+  const chartDataWpm: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1
+    ? currentStats.dailyTrends.map((d, i) => ({ x: i, y: d.avgWpm || 0 }))
     : [];
 
   const chartDataComp: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1
-    ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: (d.avgComprehension || 0) * 100 }))
+    ? currentStats.dailyTrends.map((d, i) => ({ x: i, y: (d.avgComprehension || 0) * 100 }))
     : [];
 
   const chartDataAcc: {x: number, y: number}[] = hasData && currentStats.dailyTrends.length > 1
-    ? currentStats.dailyTrends.map((d: any, i: number) => ({ x: i, y: (d.avgAccuracy || 0) * 100 }))
+    ? currentStats.dailyTrends.map((d, i) => ({ x: i, y: (d.avgAccuracy || 0) * 100 }))
     : [];
 
   const chartDataExercise: {x: number, y: number}[] = hasData
-    ? currentStats.exerciseStats.map((ex: any, i: number) => ({ x: i, y: ex.bestScore }))
+    ? currentStats.exerciseStats.map((ex, i) => ({ x: i, y: ex.bestScore }))
     : [];
 
   const overallAverageScore = hasData && currentStats.exerciseStats.length > 0
     ? Math.round(
-        currentStats.exerciseStats.reduce((sum: number, ex: any) => sum + ex.averageScore, 0) /
+        currentStats.exerciseStats.reduce((sum, ex) => sum + ex.averageScore, 0) /
           currentStats.exerciseStats.length,
       )
     : 0;
@@ -68,7 +69,7 @@ export function StatisticsDashboard({
     <ScrollView flex={1} backgroundColor="$background">
       <YStack padding="$4" gap="$4">
         <XStack justifyContent="space-between" alignItems="center">
-          <H1 fontSize="$8">{t('progress.title', 'Gelişim & İstatistikler')}</H1>
+          <H1 fontSize="$8">{t('title')}</H1>
           <StreakBadge />
         </XStack>
 
@@ -84,16 +85,16 @@ export function StatisticsDashboard({
               theme={timeRange === range ? 'accent' : undefined}
               onPress={() => onTimeRangeChange(range)}
             >
-              {t(`progress.ranges.${range}`, range.toUpperCase())}
+              {t(`ranges.${range}`)}
             </Button>
           ))}
         </XStack>
 
         {!hasData ? (
           <YStack flex={1} justifyContent="center" alignItems="center" padding="$6" gap="$3">
-            <H4>{t('progress.emptyTitle', 'Henüz Yeterli Veri Yok')}</H4>
+            <H4>{t('emptyTitle')}</H4>
             <Text textAlign="center" color="$color11">
-              {t('progress.emptyMessage', 'İstatistiklerinizi görebilmek için egzersizleri tamamlamanız gerekmektedir.')}
+              {t('emptyMessage')}
             </Text>
           </YStack>
         ) : (
@@ -101,26 +102,26 @@ export function StatisticsDashboard({
             {/* Toplam Özet */}
             <XStack flexWrap="wrap" justifyContent="space-between" marginVertical="$4">
               <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" marginBottom="$3">
-                <Text color="$color11" fontSize="$4">Toplam Süre</Text>
-                <H4>{formatTime(currentStats.totalTrainingTimeMs)}</H4>
+                <Text color="$color11" fontSize="$4">{t('summary.totalTime')}</Text>
+                <H4>{formatTime(currentStats.totalTrainingTimeMs, t)}</H4>
               </YStack>
               <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" marginBottom="$3">
-                <Text color="$color11" fontSize="$4">Tamamlanan Seans</Text>
+                <Text color="$color11" fontSize="$4">{t('summary.totalSessions')}</Text>
                 <H4>{currentStats.totalSessions}</H4>
               </YStack>
               <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4">
-                <Text color="$color11" fontSize="$4">Ortalama Skor</Text>
+                <Text color="$color11" fontSize="$4">{t('summary.averageScore')}</Text>
                 <H4>{overallAverageScore}</H4>
               </YStack>
               <YStack width="48%" backgroundColor="$backgroundHover" padding="$3" borderRadius="$4">
-                <Text color="$color11" fontSize="$4">Egzersiz Türü</Text>
+                <Text color="$color11" fontSize="$4">{t('summary.exerciseTypeCount')}</Text>
                 <H4>{currentStats.exerciseStats.length}</H4>
               </YStack>
             </XStack>
 
             {/* WPM Trend Chart */}
             <YStack gap="$2">
-              <H4>Okuma Hızı (WPM) Trendi</H4>
+              <H4>{t('charts.wpmTitle')}</H4>
               <View style={{ height: 250, width: '100%' }}>
                 {currentStats.dailyTrends.length > 1 ? (
                   <CartesianChart
@@ -134,14 +135,14 @@ export function StatisticsDashboard({
                     )}
                   </CartesianChart>
                 ) : (
-                  <Text padding="$4" textAlign="center" color="$color11">Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.</Text>
+                  <Text padding="$4" textAlign="center" color="$color11">{t('charts.needMoreDays')}</Text>
                 )}
               </View>
             </YStack>
 
             {/* Comprehension Chart */}
             <YStack gap="$2">
-              <H4>Anlama Oranı (%)</H4>
+              <H4>{t('charts.comprehensionTitle')}</H4>
               <View style={{ height: 250, width: '100%' }}>
                 {currentStats.dailyTrends.length > 1 ? (
                   <CartesianChart
@@ -155,14 +156,14 @@ export function StatisticsDashboard({
                     )}
                   </CartesianChart>
                 ) : (
-                  <Text padding="$4" textAlign="center" color="$color11">Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.</Text>
+                  <Text padding="$4" textAlign="center" color="$color11">{t('charts.needMoreDays')}</Text>
                 )}
               </View>
             </YStack>
 
             {/* Accuracy Trend Chart */}
             <YStack gap="$2">
-              <H4>Doğruluk Oranı (%)</H4>
+              <H4>{t('charts.accuracyTitle')}</H4>
               <View style={{ height: 250, width: '100%' }}>
                 {currentStats.dailyTrends.length > 1 ? (
                   <CartesianChart
@@ -176,14 +177,14 @@ export function StatisticsDashboard({
                     )}
                   </CartesianChart>
                 ) : (
-                  <Text padding="$4" textAlign="center" color="$color11">Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.</Text>
+                  <Text padding="$4" textAlign="center" color="$color11">{t('charts.needMoreDays')}</Text>
                 )}
               </View>
             </YStack>
 
             {/* Per-Exercise Best Score Bar Chart */}
             <YStack gap="$2">
-              <H4>Egzersiz Türüne Göre En İyi Skor</H4>
+              <H4>{t('charts.exerciseScoreTitle')}</H4>
               <View style={{ height: 220, width: '100%' }}>
                 {currentStats.exerciseStats.length > 0 ? (
                   <CartesianChart
@@ -206,23 +207,23 @@ export function StatisticsDashboard({
                     )}
                   </CartesianChart>
                 ) : (
-                  <Text padding="$4" textAlign="center" color="$color11">Egzersiz istatistiği bulunmuyor.</Text>
+                  <Text padding="$4" textAlign="center" color="$color11">{t('charts.noExerciseStats')}</Text>
                 )}
               </View>
             </YStack>
 
             {/* Per-Exercise Breakdown */}
             <YStack gap="$3" marginTop="$4">
-              <H4>Egzersiz İstatistikleri</H4>
-              {currentStats.exerciseStats.map((ex: any) => (
+              <H4>{t('breakdown.title')}</H4>
+              {currentStats.exerciseStats.map((ex) => (
                 <XStack key={ex.type} backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" justifyContent="space-between" alignItems="center">
                   <YStack>
                     <Text fontWeight="bold" textTransform="capitalize">{ex.type}</Text>
-                    <Text color="$color11" fontSize="$2">{ex.attemptCount} Seans</Text>
+                    <Text color="$color11" fontSize="$2">{t('breakdown.sessions', { count: ex.attemptCount })}</Text>
                   </YStack>
                   <YStack alignItems="flex-end">
-                    <Text fontWeight="bold">En İyi Skor: {ex.bestScore}</Text>
-                    {ex.bestWpm > 0 && <Text fontSize="$2">Max WPM: {ex.bestWpm}</Text>}
+                    <Text fontWeight="bold">{t('breakdown.bestScore', { score: ex.bestScore })}</Text>
+                    {ex.bestWpm > 0 && <Text fontSize="$2">{t('breakdown.maxWpm', { wpm: ex.bestWpm })}</Text>}
                   </YStack>
                 </XStack>
               ))}

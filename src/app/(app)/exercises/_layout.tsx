@@ -34,6 +34,22 @@ export default function ExercisesLayout() {
     }
   }, [isConfigured, isAllowed, router]);
 
+  // Leaving this step before it's marked done (exit button, back gesture,
+  // or any other navigation away) must release the flow lock - otherwise
+  // it stays set to `currentType` until the app restarts (it's in-memory
+  // only), letting a free user re-enter this one exercise indefinitely
+  // from the Egzersizler tab, which only reads `activeFlowType` and never
+  // sets it. A normal completion already clears it itself before
+  // navigating away, so this is a no-op on that path.
+  useEffect(() => {
+    return () => {
+      const store = useDailyPlanStore.getState();
+      if (store.activeFlowType === currentType) {
+        store.setActiveFlowType(null);
+      }
+    };
+  }, [currentType]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val as string }}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }} />

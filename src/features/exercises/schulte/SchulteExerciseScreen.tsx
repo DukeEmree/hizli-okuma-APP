@@ -72,10 +72,10 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('common.timeUp', 'Süre doldu!')}
+          {t('timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Tablo: {roundsCompleted} | Doğru: {totalCorrect} | Hata: {errors}
+          {t('schulte.resultLine', 'Tablo: {{tables}} | Doğru: {{correct}} | Hata: {{errors}}', { ns: 'exercises', tables: roundsCompleted, correct: totalCorrect, errors })}
         </Text>
         <ExerciseCompletionActions exerciseType="schulte" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -100,7 +100,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Tablo {roundsCompleted + 1} · Sıradaki: <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
+          {t('schulte.nextLabel', 'Tablo {{table}} · Sıradaki:', { ns: 'exercises', table: roundsCompleted + 1 })} <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
         </Text>
       </XStack>
 

@@ -91,10 +91,10 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('exercises.pacer.completed', 'Tebrikler, hızınızı korudunuz!')}
+          {t('pacer.completed', 'Tebrikler, hızınızı korudunuz!', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          WPM: {wpm}
+          {t('pacer.wpmLabel', 'WPM: {{wpm}}', { ns: 'exercises', wpm })}
         </Text>
         <ExerciseCompletionActions exerciseType="pacer" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>

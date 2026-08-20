@@ -2,7 +2,7 @@
 
 > Living documentation of the current architecture and implementation status. Everything here was verified by reading the code in this working tree; anything that could only be confirmed in an external dashboard is marked **VERIFY**.
 
-Last updated: 2026-08-13, after the pre-production audit pass (see `## Audit Findings` below) which followed the Clerk/Convex removal migration (see `docs/superpowers/plans/2026-08-12-remove-clerk-convex.md` and `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`) and its final-review fix pass. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
+Last updated: 2026-08-20, after a pre-release bug sweep (`BUGS.md`'s two open code items — the daily-plan flow-lock leak and the remaining hardcoded/i18n-broken strings — were fixed) and an EAS/RevenueCat production-readiness check. Before that: 2026-08-13, after the pre-production audit pass (see `## Audit Findings` below) which followed the Clerk/Convex removal migration (see `docs/superpowers/plans/2026-08-12-remove-clerk-convex.md` and `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`) and its final-review fix pass. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
 
 ## Overview
 
@@ -106,7 +106,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - **Subscription** — RevenueCat hosted paywall and Customer Center. The free tier is **daily-plan-only**: a free user may run an exercise only as the current step of today's 4-step daily plan (`dailyPlanStore.activeFlowType`), enforced in both `app/(app)/exercises/_layout.tsx` and `app/(app)/exercise/[exerciseId].tsx`. Picking any exercise standalone from the Egzersizler tab is premium. There is no per-day count cap.
 - **Notifications** — local daily/streak/inactivity reminders (`expo-notifications`); there is no server-sent push, since there is no server.
 - **Weekly summary** — home card (below the "Daily Goal" card) plus a full `/(app)/weekly-summary` screen recapping the past week's minutes, WPM change and streak, from the shared `buildWeeklySummary` calculator, driven off local history for everyone. Delivered via a local recurring `WEEKLY` notification.
-- **Legal** — Privacy Policy and Terms of Service, Turkish and English, hosted on Cloudflare Workers at `privacy.dukeemree.xyz` (source in `legal/`, see its README). Linked from Settings via `src/constants/legal.ts`.
+- **Legal** — Privacy Policy and Terms of Service, Turkish and English, hosted on Cloudflare Workers (source in `legal/`, see its README). Live at both `hizliokuma.dukeemree.xyz` (primary, linked from the app since 2026-08-20) and `privacy.dukeemree.xyz` (kept live, no longer linked). Linked from Settings via `src/constants/legal.ts`.
 - **Onboarding** — a reading test that seeds the daily-goal minutes, `bestWpm`/`bestComprehension` in `userProgressStore`, and the starting difficulty of the reading exercises (RSVP and Chunking, via `startingLevelFromWpm`; Pacer follows RSVP's progression).
 
 ## Completed
@@ -123,6 +123,8 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - Single green brand hue across the splash, notification colour, adaptive icon background and every screen token
 - Weekly summary: shared `buildWeeklySummary` calculator, local `WEEKLY` recurring notification, home card and full-screen view
 - `gamificationStore` persists `xp`/`level`/`unlockedAchievementIds` via `partialize`; the in-memory `pendingAchievements` popup queue is deliberately excluded so a stale popup can't replay (and re-fire its analytics event) after a killed app relaunches
+- Daily-plan flow lock (`dailyPlanStore.activeFlowType`) is now released in `exercises/_layout.tsx` whenever the active step's route segment is left for any reason (exit button, back gesture, any other navigation), not only on a normal completion — closes the free-tier bypass where leaving early let a user keep re-entering that one exercise from the Egzersizler tab until the app restarted
+- Every exercise screen's completion/result copy and `StatisticsDashboard` now resolve through real i18n keys (`progress`/`exercises`/`common` namespaces); this also fixed several `t('exercises.x.y', ...)` / `t('common.x', ...)` / `t('progress.x', ...)` calls that, called against the default `common` namespace without a matching key path, always silently fell back to their Turkish default value. `StatisticsDashboard`'s `currentStats` prop is now typed `PerformanceStats` instead of `any`
 - Validation: typecheck clean, lint clean, tests passing, i18n check passing
 
 ## In Progress
@@ -136,10 +138,8 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 | `.env.production` still holds a RevenueCat **Test Store** key (`test_…`) | HIGH | Any locally-produced release build would ship simulated purchases and earn nothing. EAS cloud builds are unaffected because they read the EAS-hosted `production` environment, not this gitignored file — but the value on EAS has not been verified from this tree |
 | The EAS `production` environment uses the **development** Amplitude key | HIGH | `EXPO_PUBLIC_AMPLITUDE_API_KEY` is one shared variable attached to development, preview *and* production, set to `57f66…` — the `hizli-okuma-development` project's key. Production traffic would land in the dev project. `.env.production` names `5b42…` (the `hizli-okuma-production` project, id 851786) as the intended value. Splitting the variable was blocked by a permission classifier in this session; the commands are in the handover |
 | `SENTRY_AUTH_TOKEN` is missing from the EAS `production` environment | HIGH | It exists only in `preview`, and being a secret it cannot be copied across without re-entering the value. Without it a production build cannot upload source maps, so every production crash report is an unsymbolicated minified stack. `SENTRY_ORG` and `SENTRY_PROJECT` were attached to production in this session |
-| Statistics dashboard and a few completion screens still use hardcoded Turkish strings | LOW | Home, onboarding, settings, exercise detail and the exercise-screen accessibility labels were moved to i18n in this pass; `StatisticsDashboard.tsx` and some per-exercise result copy were not. Invisible while Turkish is the only locale. `settingsStore.LanguageType` declares `en`/`de`, but only `tr` resources exist and only `tr` is offered in the language sheet |
-| `StatisticsDashboard` props are typed `any` | LOW | `currentStats: any` plus six `(d: any)` map callbacks; `PerformanceStats` from `utils/localStatistics.ts` is the type it should use |
-| Leaving an exercise with the X button does not clear `dailyPlanStore.activeFlowType` | LOW | A free user can re-enter and repeat that one exercise until the app restarts. Clearing it on exit would break the legitimate "back out, then restart the step" flow, so it needs a real decision rather than a quick guard |
 | No server-side anti-cheat | LOW | A modified client can inflate its own local numbers; no cross-user data exists (no leaderboard, no cloud sync) so the blast radius is limited to the user's own device |
+| EAS `production` environment still carries a RevenueCat **Test Store** key, the development Amplitude key, and no `SENTRY_AUTH_TOKEN` | HIGH | Verified directly against `eas env:list` on 2026-08-20, unchanged since the 2026-08-13 audit. The real Play Store app (`app0fad1bdb19`, created 2026-08-20) has zero products attached to the `hizli-okuma Pro` entitlement yet — all three products (Yearly/Lifetime/Monthly) are still only on the Test Store app — so the RC key swap is blocked on that Play Console + RevenueCat catalog work, not just an `eas env:update` call. Commands for all three are in `RELEASE_TODO.md` |
 | Paket Bağımlılığı Güvenlik Açıkları (`bun audit`) | HIGH/MODERATE | `image-size` (Yüksek risk - DoS açık) ve `uuid` (Orta risk - buffer bounds check) paketlerinde açıklar raporlandı. Bu bağımlılıklar `expo`, `react-native`, `expo-splash-screen` vb. altında geliyor. `bun update` komutuyla uygun zamanda güncellenmesi önerilir. |
 
 ## Audit Findings
@@ -200,9 +200,8 @@ only, and its RevenueCat key is a Test Store key.
 ## Remaining Work
 
 - Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
-- Move the last hardcoded Turkish strings (`StatisticsDashboard`, per-exercise result copy) into i18n, and type `StatisticsDashboard`'s props with `PerformanceStats` instead of `any`
 - Accessibility pass: touch-target sizes and large-font layout (icon-only buttons already carry labels)
-- Clear `dailyPlanStore.activeFlowType` on exercise exit, once the "back out then restart the step" flow has a decided behaviour
+- Create the real Play Store products in RevenueCat (Yearly/Lifetime/Monthly, currently only on the Test Store app) and attach them to the `hizli-okuma Pro` entitlement, then swap the EAS production RC key, split the Amplitude key, and add `SENTRY_AUTH_TOKEN` to production — see `RELEASE_TODO.md`
 
 ## Handover
 

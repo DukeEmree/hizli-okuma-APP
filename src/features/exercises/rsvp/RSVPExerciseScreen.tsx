@@ -116,10 +116,10 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
         y={0}
       >
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('exercises.rsvp.completed', 'Tebrikler!')}
+          {t('rsvp.completed', 'Tebrikler!', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          WPM: {wpm}
+          {t('rsvp.wpmLabel', 'WPM: {{wpm}}', { ns: 'exercises', wpm })}
         </Text>
         <ExerciseCompletionActions exerciseType="rsvp" onFinish={() => router.back()} />
       </YStack>

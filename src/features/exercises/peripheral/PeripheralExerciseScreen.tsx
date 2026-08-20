@@ -72,10 +72,10 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('common.timeUp', 'Süre doldu!')}
+          {t('timeUp', 'Süre doldu!')}
         </Text>
         <Text fontSize="$4" color="$color11">
-          Doğru: {correctCount} / {totalAttempts} | Doğruluk: %{accuracy}
+          {t('resultAccuracy', 'Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}', { correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="peripheral" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -109,7 +109,7 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
       <XStack w="100%" jc="space-between" ai="center">
         <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          Skor: <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
+          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
       </XStack>
 
@@ -135,7 +135,7 @@ export function PeripheralExerciseScreen({ timeLimitMs, onComplete }: Peripheral
             {/* Options */}
             {!showTarget && session.state === 'running' && (
               <YStack position="absolute" bottom={0} w="100%" gap="$2">
-                <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">Gördüğünüz kelimeyi seçin:</Text>
+                <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">{t('peripheral.selectPrompt', 'Gördüğünüz kelimeyi seçin:', { ns: 'exercises' })}</Text>
                 <XStack flexWrap="wrap" jc="center" gap="$2">
                   {options.map((opt, i) => (
                     <Button key={i} onPress={() => handleSelection(opt)} minWidth={120}>

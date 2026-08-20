@@ -7,5 +7,9 @@
   "done": "Bitir",
   "exit": "Çıkış",
   "pause": "Duraklat",
-  "start": "Başlat"
+  "start": "Başlat",
+  "timeUp": "Süre doldu!",
+  "resultAccuracy": "Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}",
+  "resultScore": "Skor:",
+  "questionOfTotal": "Soru {{index}} / {{total}}"
 }
