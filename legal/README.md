@@ -1,14 +1,15 @@
-# Legal site — privacy.dukeemree.xyz
+# Legal site — hizliokuma.dukeemree.xyz
 
 The Privacy Policy and Terms of Service for the Hızlı Okuma app. Google Play
 requires a publicly reachable Privacy Policy URL for the store listing, and
 the app links both documents from Settings (`src/constants/legal.ts`).
 
-Live at:
+Live at (both hostnames serve the same Worker/content):
 
-- <https://privacy.dukeemree.xyz/> — index
-- <https://privacy.dukeemree.xyz/privacy> — Gizlilik Politikası / Privacy Policy
-- <https://privacy.dukeemree.xyz/terms> — Kullanım Koşulları / Terms of Service
+- <https://hizliokuma.dukeemree.xyz/> — index — primary, linked from the app
+- <https://hizliokuma.dukeemree.xyz/privacy> — Gizlilik Politikası / Privacy Policy
+- <https://hizliokuma.dukeemree.xyz/terms> — Kullanım Koşulları / Terms of Service
+- <https://privacy.dukeemree.xyz/> — kept live as a working legacy URL (2026-08-20); no longer linked from the app
 
 Both documents ship Turkish and English in the same HTML file, with a toggle.
 The Turkish block is visible without JavaScript, so a store reviewer or a
@@ -17,8 +18,9 @@ crawler can always read the policy.
 ## Hosting
 
 Cloudflare Workers, in the `dukeemree.xyz` zone (account
-`Kozanfurkanemre@gmail.com's Account`). The custom domain and its DNS record
-are already attached to the `hizli-okuma-legal` Worker.
+`Kozanfurkanemre@gmail.com's Account`). Two custom domains are attached to the
+`hizli-okuma-legal` Worker: `hizliokuma.dukeemree.xyz` and
+`privacy.dukeemree.xyz` (`legal/wrangler.jsonc` → `routes`).
 
 ## Deploying a change
 
@@ -27,9 +29,9 @@ cd legal
 npx wrangler deploy
 ```
 
-`wrangler.jsonc` serves `public/` as static assets and claims
-`privacy.dukeemree.xyz` as a custom domain, so the files in `public/` are the
-single source of truth.
+`wrangler.jsonc` serves `public/` as static assets and claims both
+`privacy.dukeemree.xyz` and `hizliokuma.dukeemree.xyz` as custom domains, so
+the files in `public/` are the single source of truth for both.
 
 > The version currently live was pushed through the Cloudflare API with the
 > page content embedded in a Worker script, before this directory existed.

@@ -14,6 +14,10 @@
     {
       "pattern": "privacy.dukeemree.xyz",
       "custom_domain": true
+    },
+    {
+      "pattern": "hizliokuma.dukeemree.xyz",
+      "custom_domain": true
     }
   ]
 }

@@ -113,7 +113,7 @@ kaybedersen aynı paket adıyla bir daha güncelleme yayınlayamazsın — yede�
 ### Gizlilik politikası URL'i
 
 ```
-https://privacy.dukeemree.xyz/privacy
+https://hizliokuma.dukeemree.xyz/privacy
 ```
 
 Play Console → Policy → App content → Privacy policy alanına yapıştır.
@@ -145,7 +145,7 @@ Uygulamanın gerçekte ne topladığı (gizlilik politikasıyla birebir uyumlu):
 - İçerik derecelendirme anketi
 - Hedef kitle: 13 yaş üstü (gizlilik politikası bu şekilde yazıldı)
 - Kullanım koşulları (isteğe bağlı ama önerilir):
-  `https://privacy.dukeemree.xyz/terms`
+  `https://hizliokuma.dukeemree.xyz/terms`
 
 ---
 

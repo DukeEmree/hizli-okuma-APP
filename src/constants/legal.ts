@@ -7,6 +7,6 @@
  * at a different host later is a single edit rather than a search.
  */
 export const LEGAL_URLS = {
-  privacyPolicy: 'https://privacy.dukeemree.xyz/privacy',
-  termsOfService: 'https://privacy.dukeemree.xyz/terms',
+  privacyPolicy: 'https://hizliokuma.dukeemree.xyz/privacy',
+  termsOfService: 'https://hizliokuma.dukeemree.xyz/terms',
 } as const;
