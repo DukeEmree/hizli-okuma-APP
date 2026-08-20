@@ -34,6 +34,7 @@ yarn-error.*
 # local env files
 .env*.local
 .env
+revenuecat-key.json
 
 # build output
 build/
