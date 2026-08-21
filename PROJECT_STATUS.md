@@ -2,7 +2,7 @@
 
 > Living documentation of the current architecture and implementation status. Everything here was verified by reading the code in this working tree; anything that could only be confirmed in an external dashboard is marked **VERIFY**.
 
-Last updated: 2026-08-20, after a pre-release bug sweep (`BUGS.md`'s two open code items — the daily-plan flow-lock leak and the remaining hardcoded/i18n-broken strings — were fixed) and an EAS/RevenueCat production-readiness check. Before that: 2026-08-13, after the pre-production audit pass (see `## Audit Findings` below) which followed the Clerk/Convex removal migration (see `docs/superpowers/plans/2026-08-12-remove-clerk-convex.md` and `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`) and its final-review fix pass. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
+Last updated: 2026-08-21 (third pass, same day), after fixing the actual root cause of a user-reported RevenueCat error 23 (`ConfigurationError`) on a Google Play test install. The real bug: the real Play Store app's (`app0fad1bdb19`) RevenueCat products were created with a guessed `store_identifier` (`premium:monthly` / `premium:yearly`), but Play Console's actual base plan ids are `aylik-abonelik` and `yillik` — since RevenueCat's `store_identifier` format is `productId:basePlanId`, it was pointing at base plans that don't exist, so Google Play returned "not found" (dashboard: "Product not found — check the imported identifiers and the product configuration in the Play console") no matter how correct the service-account permissions or entitlement/offering wiring were. Fixed live via the RevenueCat API: archived the two wrong-id products, created `prodab0b6f0e29` (`premium:aylik-abonelik`) and `prodf4eb88c5d1` (`premium:yillik`) in their place, re-attached both to the `hizli-okuma Pro` entitlement and the `default` offering's Monthly/Yearly packages alongside the existing Test Store products. Verified live afterward: both now return `store_status: ok` with `ACTIVE` base plans and pricing across 174 territories. No code change was needed — this was purely a RevenueCat dashboard/catalog misconfiguration. Still open: the real Play Store app has no Lifetime (one-time) product at all (Test-Store-only), see `RELEASE_TODO.md` § 1b. Earlier that day: the service account's Play Console permissions (previously invalid) were confirmed valid, and before that the RC Android key, `SENTRY_AUTH_TOKEN` and the Amplitude key split were confirmed correctly set on the EAS `production` environment, and a `production`-profile build (version code 3) completed successfully. Before that: 2026-08-20, after a pre-release bug sweep (`BUGS.md`'s two open code items — the daily-plan flow-lock leak and the remaining hardcoded/i18n-broken strings — were fixed). Before that: 2026-08-13, after the pre-production audit pass (see `## Audit Findings` below) which followed the Clerk/Convex removal migration (see `docs/superpowers/plans/2026-08-12-remove-clerk-convex.md` and `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`) and its final-review fix pass. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
 
 ## Overview
 
@@ -126,6 +126,9 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 - Daily-plan flow lock (`dailyPlanStore.activeFlowType`) is now released in `exercises/_layout.tsx` whenever the active step's route segment is left for any reason (exit button, back gesture, any other navigation), not only on a normal completion — closes the free-tier bypass where leaving early let a user keep re-entering that one exercise from the Egzersizler tab until the app restarted
 - Every exercise screen's completion/result copy and `StatisticsDashboard` now resolve through real i18n keys (`progress`/`exercises`/`common` namespaces); this also fixed several `t('exercises.x.y', ...)` / `t('common.x', ...)` / `t('progress.x', ...)` calls that, called against the default `common` namespace without a matching key path, always silently fell back to their Turkish default value. `StatisticsDashboard`'s `currentStats` prop is now typed `PerformanceStats` instead of `any`
 - Validation: typecheck clean, lint clean, tests passing, i18n check passing
+- EAS `production` environment now carries a real RevenueCat Android SDK key (`goog_…`, not the Test Store `test_…` key), its own Amplitude key (the `hizli-okuma-production` project's, split from the shared dev/preview value), and `SENTRY_AUTH_TOKEN` — all verified directly via `eas env:list` on 2026-08-21
+- A `production`-profile Android build (version code 3, build `ea81aaa4`) completed successfully on 2026-08-21
+- RevenueCat's real Play Store products were pointing at wrong `store_identifier`s (`premium:monthly`/`premium:yearly`, guessed) instead of the real Play Console base plan ids (`aylik-abonelik`/`yillik`), which made Google Play return "not found" and caused the RevenueCat error 23 (`ConfigurationError`) seen on a Google Play test install. Fixed 2026-08-21 via the RevenueCat API: archived the wrong products, created `prodab0b6f0e29` (`premium:aylik-abonelik`) and `prodf4eb88c5d1` (`premium:yillik`), re-attached both to the `hizli-okuma Pro` entitlement and the `default` offering's Monthly/Yearly packages. Verified live against Play Store afterward (`store_status: ok`, base plans `ACTIVE`, priced across 174 territories)
 
 ## In Progress
 
@@ -135,11 +138,9 @@ Nothing is mid-implementation in the code. The open work is release configuratio
 
 | Issue | Severity | Notes |
 |---|---|---|
-| `.env.production` still holds a RevenueCat **Test Store** key (`test_…`) | HIGH | Any locally-produced release build would ship simulated purchases and earn nothing. EAS cloud builds are unaffected because they read the EAS-hosted `production` environment, not this gitignored file — but the value on EAS has not been verified from this tree |
-| The EAS `production` environment uses the **development** Amplitude key | HIGH | `EXPO_PUBLIC_AMPLITUDE_API_KEY` is one shared variable attached to development, preview *and* production, set to `57f66…` — the `hizli-okuma-development` project's key. Production traffic would land in the dev project. `.env.production` names `5b42…` (the `hizli-okuma-production` project, id 851786) as the intended value. Splitting the variable was blocked by a permission classifier in this session; the commands are in the handover |
-| `SENTRY_AUTH_TOKEN` is missing from the EAS `production` environment | HIGH | It exists only in `preview`, and being a secret it cannot be copied across without re-entering the value. Without it a production build cannot upload source maps, so every production crash report is an unsymbolicated minified stack. `SENTRY_ORG` and `SENTRY_PROJECT` were attached to production in this session |
+| The real Play Store app has no Lifetime product in RevenueCat | LOW | `app0fad1bdb19` has real Monthly/Yearly products now (fixed 2026-08-21, see `## Completed`), but the one-time Lifetime product is still Test-Store-only (`appcc3a1f3a7e`) — relevant only if the paywall offers a lifetime option. See `RELEASE_TODO.md` § 1b |
 | No server-side anti-cheat | LOW | A modified client can inflate its own local numbers; no cross-user data exists (no leaderboard, no cloud sync) so the blast radius is limited to the user's own device |
-| EAS `production` environment still carries a RevenueCat **Test Store** key, the development Amplitude key, and no `SENTRY_AUTH_TOKEN` | HIGH | Verified directly against `eas env:list` on 2026-08-20, unchanged since the 2026-08-13 audit. The real Play Store app (`app0fad1bdb19`, created 2026-08-20) has zero products attached to the `hizli-okuma Pro` entitlement yet — all three products (Yearly/Lifetime/Monthly) are still only on the Test Store app — so the RC key swap is blocked on that Play Console + RevenueCat catalog work, not just an `eas env:update` call. Commands for all three are in `RELEASE_TODO.md` |
+| Legal site's static-asset deploy hasn't happened yet | MEDIUM | Confirmed via the Cloudflare Workers API on 2026-08-21: the `hizli-okuma-legal` Worker was last modified 2026-08-13, the same day its content was pushed as an embedded script (before `legal/` existed in this repo). No `wrangler deploy` has run since, so editing `legal/public/` still does not change the live site — see `RELEASE_TODO.md` |
 | Paket Bağımlılığı Güvenlik Açıkları (`bun audit`) | HIGH/MODERATE | `image-size` (Yüksek risk - DoS açık) ve `uuid` (Orta risk - buffer bounds check) paketlerinde açıklar raporlandı. Bu bağımlılıklar `expo`, `react-native`, `expo-splash-screen` vb. altında geliyor. `bun update` komutuyla uygun zamanda güncellenmesi önerilir. |
 
 ## Audit Findings
@@ -183,13 +184,7 @@ Checked and **not** changed, because the premise did not survive verification:
 
 **Code: ready.** `bun run typecheck`, `bun run lint` (0 warnings), `bun test` (158 tests / 25 files) and `bun run i18n:check` all succeed against this tree. The 2026-08-13 audit pass closed the observability, crash-reporting, notification-delivery, premium-gate and RevenueCat-misconfiguration defects listed under `## Audit Findings`; what remains open is either release configuration or non-blocking polish.
 
-**Release configuration: not ready.** Three of the blockers are values only the
-account holder can supply — the RevenueCat production key (the `production`
-environment still carries a Test Store `test_…` key), the Sentry auth token
-(missing from `production`, so source maps cannot upload) and the Amplitude
-key split (production currently reports into the development project). Those,
-plus the keystore check, the Play Console forms and the device smoke test, are
-written out step by step in **`RELEASE_TODO.md`**.
+**Release configuration: RevenueCat↔Google Play is now fixed.** The EAS-side secrets (RevenueCat key, Sentry auth token, Amplitude key split) are set correctly, the service account has valid Play Console permissions, and the real Play Store app's Monthly/Yearly products are correctly wired end to end (verified live against Play Store, see `## Completed`). What's left: the real-store Lifetime product (LOW, only matters if it's offered in the paywall), the Play Console store-listing forms, the legal site's first `wrangler deploy`, and the device smoke test — including confirming a real sandbox purchase now succeeds. Written out step by step in **`RELEASE_TODO.md`**.
 
 One thing worth knowing before touching any of it: EAS builds do **not** read
 the gitignored `.env.production`. `eas-build.log` shows `NODE_ENV` unset and
@@ -201,20 +196,23 @@ only, and its RevenueCat key is a Test Store key.
 
 - Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
 - Accessibility pass: touch-target sizes and large-font layout (icon-only buttons already carry labels)
-- Create the real Play Store products in RevenueCat (Yearly/Lifetime/Monthly, currently only on the Test Store app) and attach them to the `hizli-okuma Pro` entitlement, then swap the EAS production RC key, split the Amplitude key, and add `SENTRY_AUTH_TOKEN` to production — see `RELEASE_TODO.md`
+- Fix the RevenueCat↔Google Play service account's Play Console permissions, then create the real Play Store products (Yearly/Lifetime/Monthly, currently only on the Test Store app) and attach them to the `hizli-okuma Pro` entitlement — see `RELEASE_TODO.md`
+- Run the legal site's first `wrangler deploy` so `legal/public/` becomes the live source
 
 ## Handover
 
-Everything left that cannot be done from the code — the RevenueCat production
-key, the Sentry auth token, the Amplitude key split, the keystore check, the
-Play Console forms, the legal site's first `wrangler deploy` and the device
-smoke test — is in **`RELEASE_TODO.md`**, in order, with the exact commands
-and where each value comes from.
+Everything left that cannot be done from the code — the RevenueCat↔Play Console
+permissions fix, creating and attaching the real products, the Play Console
+store-listing forms, the legal site's first `wrangler deploy` and the device
+smoke test on the existing production build — is in **`RELEASE_TODO.md`**, in
+order, with the exact commands and where each value comes from.
 
-Already done on EAS in the 2026-08-13 pass: the stale
-`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_CONVEX_URL` variables
-were deleted from all three environments, and `SENTRY_ORG` / `SENTRY_PROJECT`
-were attached to `production`.
+Already done: the stale `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and
+`EXPO_PUBLIC_CONVEX_URL` variables were deleted from all three EAS
+environments (2026-08-13 pass); `SENTRY_ORG`/`SENTRY_PROJECT` were attached to
+`production` (2026-08-13); and as of 2026-08-21, `production` also carries the
+real RevenueCat key, its own Amplitude key and `SENTRY_AUTH_TOKEN` — all
+confirmed live via `eas env:list`, not just recorded as "should be done".
 
 ## Recommended Next Steps
 

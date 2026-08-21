@@ -304,6 +304,17 @@ Avoid duplicate RevenueCat listeners.
 
 Never expose RevenueCat secrets in client code.
 
+When creating a Google Play product in the RevenueCat dashboard/API, never
+guess the `store_identifier`. Its format is `productId:basePlanId`, and the
+base plan id must be copied verbatim from Play Console (Monetize → Products →
+Subscriptions → the base plan's "Temel planı göster" / "View base plan" →
+"Temel plan kimliği" / "Base plan ID" field) — it is often not `monthly` /
+`yearly`. A guessed id makes RevenueCat report the product as "Not found"
+against a real, active Play Console product, which surfaces to users as
+RevenueCat error 23 (`ConfigurationError`). Base plan ids can't be renamed
+after creation, so fix a wrong guess on the RevenueCat side (archive the
+wrong product, create a new one with the correct id), not in Play Console.
+
 ---
 
 ## UI
