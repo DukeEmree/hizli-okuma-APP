@@ -2,7 +2,7 @@
 
 > Living documentation of the current architecture and implementation status. Everything here was verified by reading the code in this working tree; anything that could only be confirmed in an external dashboard is marked **VERIFY**.
 
-Last updated: 2026-08-21 (third pass, same day), after fixing the actual root cause of a user-reported RevenueCat error 23 (`ConfigurationError`) on a Google Play test install. The real bug: the real Play Store app's (`app0fad1bdb19`) RevenueCat products were created with a guessed `store_identifier` (`premium:monthly` / `premium:yearly`), but Play Console's actual base plan ids are `aylik-abonelik` and `yillik` — since RevenueCat's `store_identifier` format is `productId:basePlanId`, it was pointing at base plans that don't exist, so Google Play returned "not found" (dashboard: "Product not found — check the imported identifiers and the product configuration in the Play console") no matter how correct the service-account permissions or entitlement/offering wiring were. Fixed live via the RevenueCat API: archived the two wrong-id products, created `prodab0b6f0e29` (`premium:aylik-abonelik`) and `prodf4eb88c5d1` (`premium:yillik`) in their place, re-attached both to the `hizli-okuma Pro` entitlement and the `default` offering's Monthly/Yearly packages alongside the existing Test Store products. Verified live afterward: both now return `store_status: ok` with `ACTIVE` base plans and pricing across 174 territories. No code change was needed — this was purely a RevenueCat dashboard/catalog misconfiguration. Still open: the real Play Store app has no Lifetime (one-time) product at all (Test-Store-only), see `RELEASE_TODO.md` § 1b. Earlier that day: the service account's Play Console permissions (previously invalid) were confirmed valid, and before that the RC Android key, `SENTRY_AUTH_TOKEN` and the Amplitude key split were confirmed correctly set on the EAS `production` environment, and a `production`-profile build (version code 3) completed successfully. Before that: 2026-08-20, after a pre-release bug sweep (`BUGS.md`'s two open code items — the daily-plan flow-lock leak and the remaining hardcoded/i18n-broken strings — were fixed). Before that: 2026-08-13, after the pre-production audit pass (see `## Audit Findings` below) which followed the Clerk/Convex removal migration (see `docs/superpowers/plans/2026-08-12-remove-clerk-convex.md` and `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`) and its final-review fix pass. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
+Last updated: 2026-08-30, after deleting two stale RevenueCat webhook integrations (`hizli-okuma-webhook` production, `hizli-okuma-webhook-dev` sandbox) that still pointed at `*.convex.site/revenuecat-webhook` URLs — Convex was fully removed in the 2026-08-12 migration, so every delivery to those URLs had a 100% error rate (flagged by a RevenueCat integration-health email). No code consumed this webhook (confirmed via `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`, which explicitly deferred it as a future enhancement), so deletion was a pure RevenueCat dashboard cleanup with no code change. Before that: doc consolidation pass: `PRODUCTION_AUDIT.md` and `PRODUCTION_CHECKLIST.md` (both pre-migration, Clerk/Convex-era snapshots) were deleted — their still-relevant open items were folded into `## Remaining Work` below and `RELEASE_TODO.md`, and their historical findings are superseded by this file's own `## Audit Findings` section. Before that: 2026-08-21 (third pass, same day), after fixing the actual root cause of a user-reported RevenueCat error 23 (`ConfigurationError`) on a Google Play test install. The real bug: the real Play Store app's (`app0fad1bdb19`) RevenueCat products were created with a guessed `store_identifier` (`premium:monthly` / `premium:yearly`), but Play Console's actual base plan ids are `aylik-abonelik` and `yillik` — since RevenueCat's `store_identifier` format is `productId:basePlanId`, it was pointing at base plans that don't exist, so Google Play returned "not found" (dashboard: "Product not found — check the imported identifiers and the product configuration in the Play console") no matter how correct the service-account permissions or entitlement/offering wiring were. Fixed live via the RevenueCat API: archived the two wrong-id products, created `prodab0b6f0e29` (`premium:aylik-abonelik`) and `prodf4eb88c5d1` (`premium:yillik`) in their place, re-attached both to the `hizli-okuma Pro` entitlement and the `default` offering's Monthly/Yearly packages alongside the existing Test Store products. Verified live afterward: both now return `store_status: ok` with `ACTIVE` base plans and pricing across 174 territories. No code change was needed — this was purely a RevenueCat dashboard/catalog misconfiguration. Still open: the real Play Store app has no Lifetime (one-time) product at all (Test-Store-only), see `RELEASE_TODO.md` § 1b. Earlier that day: the service account's Play Console permissions (previously invalid) were confirmed valid, and before that the RC Android key, `SENTRY_AUTH_TOKEN` and the Amplitude key split were confirmed correctly set on the EAS `production` environment, and a `production`-profile build (version code 3) completed successfully. Before that: 2026-08-20, after a pre-release bug sweep (`BUGS.md`'s two open code items — the daily-plan flow-lock leak and the remaining hardcoded/i18n-broken strings — were fixed). Before that: 2026-08-13, after the pre-production audit pass (see `## Audit Findings` below) which followed the Clerk/Convex removal migration (see `docs/superpowers/plans/2026-08-12-remove-clerk-convex.md` and `docs/superpowers/specs/2026-08-12-remove-clerk-convex-design.md`) and its final-review fix pass. Planned but unbuilt work lives in `FEATURE_BACKLOG.md`.
 
 ## Overview
 
@@ -111,6 +111,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 
 ## Completed
 
+- Deleted the two RevenueCat webhook integrations (`hizli-okuma-webhook`, `hizli-okuma-webhook-dev`) left over from the removed Convex backend — they pointed at `*.convex.site/revenuecat-webhook` and had a 100% delivery error rate since nothing has served that endpoint since the 2026-08-12 migration; no code referenced them
 - Clerk and Convex fully removed: no auth, no backend, no `convex/` directory, no network round trip for app data
 - Streak, gamification (XP/level/achievements) and statistics all run locally for every user, from `src/utils/streak.ts`, `src/utils/gamification.ts` and `src/utils/localStatistics.ts` — no premium/free split in where or whether this logic runs
 - `useCreateSession` writes directly to `localHistoryStore`, `streakCacheStore` and `gamificationStore`, with an idempotency guard keyed on `exerciseId` + `completedAt` (stable across a retried call, unlike the `clientSessionId`, which is regenerated per attempt)
@@ -132,7 +133,7 @@ Tamagui v5 with a custom neutral grey palette and a green accent, plus `light`/`
 
 ## In Progress
 
-Nothing is mid-implementation in the code. The open work is release configuration (see `PRODUCTION_CHECKLIST.md`, itself now superseded in its Clerk/Convex sections — see the note at its top) and the deferred design decisions below.
+Nothing is mid-implementation in the code. The open work is release configuration (see `RELEASE_TODO.md`) and the non-blocking polish items below.
 
 ## Known Issues
 
@@ -194,10 +195,11 @@ only, and its RevenueCat key is a Test Store key.
 
 ## Remaining Work
 
-- Run `npx expo prebuild --clean` and confirm the merged manifest has `POST_NOTIFICATIONS` and no `RECORD_AUDIO`
-- Accessibility pass: touch-target sizes and large-font layout (icon-only buttons already carry labels)
-- Fix the RevenueCat↔Google Play service account's Play Console permissions, then create the real Play Store products (Yearly/Lifetime/Monthly, currently only on the Test Store app) and attach them to the `hizli-okuma Pro` entitlement — see `RELEASE_TODO.md`
-- Run the legal site's first `wrangler deploy` so `legal/public/` becomes the live source
+- Run the legal site's first `wrangler deploy` so `legal/public/` becomes the live source — see `RELEASE_TODO.md` § 3
+- Create the real Play Store Lifetime product and attach it to the `hizli-okuma Pro` entitlement (Monthly/Yearly are already live, see `## Known Issues`)
+- Accessibility pass: contrast ratios in both themes, system font scaled up, a screen-reader pass over the exercise runner screens (touch targets and icon-only button labels are already in place)
+- Add a `test` script to `package.json` (`bun test` works without one, but `AGENTS.md` documents it)
+- Decide on Android auto-backup: `allowBackup` defaults to true with no `dataExtractionRules` file, so MMKV progress data may be included in device backups — low risk with no auth/token data in scope, but still an open product decision
 
 ## Handover
 
@@ -216,7 +218,7 @@ confirmed live via `eas env:list`, not just recorded as "should be done".
 
 ## Recommended Next Steps
 
-1. Work through `PRODUCTION_CHECKLIST.md` top to bottom — treat its Clerk/Convex-era items as superseded (see the note at its top) and focus on the RevenueCat, signing and store-listing items that still apply.
-2. Produce a production build and smoke-test the full path on a physical device: onboarding → exercise → completion → statistics → paywall → sandbox purchase → settings.
+1. Work through `RELEASE_TODO.md` top to bottom — it's the current, verified list of what's left before shipping.
+2. Produce a production build and smoke-test the full path on a physical device: onboarding → exercise → completion → statistics → paywall → sandbox purchase → settings (full checklist in `RELEASE_TODO.md` § 5).
 3. Confirm Sentry and Amplitude traffic actually arrives from that build.
 4. Planned features live in `FEATURE_BACKLOG.md` — daily plan, interstitial paywall, RevenueCat custom paywall, and the achievement overhaul with confetti (weekly summary already shipped, see `## Completed` above).
