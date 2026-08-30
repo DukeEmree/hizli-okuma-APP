@@ -117,8 +117,10 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
                         handleSelection(i);
                       }}
                       size="$4"
+                      height="auto"
+                      paddingVertical="$3"
                     >
-                      <Text fontSize="$4" color="$color" fontFamily="$body" style={{ whiteSpace: 'normal', textAlign: 'center' }}>
+                      <Text fontSize="$4" color="$color" fontFamily="$body" flexWrap="wrap" flexShrink={1} textAlign="center">
                         {opt}
                       </Text>
                     </Button>

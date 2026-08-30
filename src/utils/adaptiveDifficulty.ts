@@ -6,7 +6,7 @@ export const MIN_DIFFICULTY = 1;
 export const SUCCESS_THRESHOLD_ACCURACY = 0.8;
 export const FAILURE_THRESHOLD_ACCURACY = 0.5;
 
-export const SUCCESS_CONSECUTIVE_REQUIRED = 2;
+export const SUCCESS_CONSECUTIVE_REQUIRED = 3;
 export const FAILURE_CONSECUTIVE_REQUIRED = 2;
 
 export function calculateNextProgression(

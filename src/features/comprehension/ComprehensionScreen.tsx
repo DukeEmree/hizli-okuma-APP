@@ -162,12 +162,14 @@ export function ComprehensionScreen() {
             <Button
               key={idx}
               size="$5"
+              height="auto"
               variant="outlined"
               onPress={() => handleAnswer(idx)}
               justifyContent="flex-start"
               paddingHorizontal="$4"
+              paddingVertical="$3"
             >
-              <Text color="$color" fontSize="$4">{option}</Text>
+              <Text color="$color" fontSize="$4" flexWrap="wrap" flexShrink={1}>{option}</Text>
             </Button>
           ))}
         </YStack>

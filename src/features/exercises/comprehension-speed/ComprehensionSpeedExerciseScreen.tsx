@@ -120,8 +120,10 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
                       key={i} 
                       onPress={() => handleSelection(i)} 
                       size="$5"
+                      height="auto"
+                      paddingVertical="$3"
                     >
-                      <Text fontSize="$4" color="$color" fontFamily="$body" style={{ whiteSpace: 'normal', textAlign: 'center' }}>
+                      <Text fontSize="$4" color="$color" fontFamily="$body" flexWrap="wrap" flexShrink={1} textAlign="center">
                         {opt}
                       </Text>
                     </Button>

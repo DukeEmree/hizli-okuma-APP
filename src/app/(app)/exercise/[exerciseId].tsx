@@ -223,7 +223,7 @@ export default function ExerciseInfoScreen() {
                     </XStack>
                     <Slider
                       value={[config.wpm]}
-                      max={1000}
+                      max={700}
                       min={100}
                       step={50}
                       onValueChange={(val) => handleSettingChange('wpm', val[0])}
