@@ -2,7 +2,7 @@
 
 > Planlanan özellikler ve karar bekleyen teknik borç. Tamamlanan maddeler bu dosyadan çıkarılmıştır.
 
-İlgili dokümanlar: `PRODUCTION_AUDIT.md` (mevcut durum ve bulgular), `PROJECT_STATUS.md` (mimari), `PRODUCTION_CHECKLIST.md` (yayın öncesi işler).
+İlgili dokümanlar: `PROJECT_STATUS.md` (mimari, mevcut durum ve bulgular), `RELEASE_TODO.md` (yayın öncesi işler).
 
 ---
 
