@@ -5,7 +5,12 @@ import { userScopedStorageAdapter } from "./storage";
 interface DailyPlanState {
   date: string;
   exerciseTypes: string[];
-  completedTypes: string[];
+  /**
+   * Indices into `exerciseTypes`, not types. A plan can legitimately list the
+   * same exercise twice; keying completion by type made finishing it once tick
+   * both rows and fire `isAllDone` early.
+   */
+  completedIndices: number[];
   lastPlanTypes: string[];
   /**
    * The plan step type currently being run through the daily-plan flow
@@ -17,19 +22,28 @@ interface DailyPlanState {
    */
   activeFlowType: string | null;
   /**
-   * Regenerates today's plan if the stored one is for a different day (or
-   * doesn't exist yet). `computePlan` is only called on that transition -
-   * the plan is derived once per day and then cached here, so it doesn't
-   * drift mid-day as the user's stats change from unrelated sessions.
+   * Regenerates today's plan if the stored one is for a different day, doesn't
+   * exist yet, or contains a duplicated step. `computePlan` is only called on
+   * that transition - the plan is derived once per day and then cached here,
+   * so it doesn't drift mid-day as the user's stats change from unrelated
+   * sessions.
+   *
+   * The duplicate check is a self-heal for plans an older build already wrote
+   * to MMKV: the generator was fixed, the stored data wasn't, and a persisted
+   * plan otherwise survives untouched until midnight.
    */
   ensureTodayPlan: (today: string, computePlan: () => string[]) => void;
   /**
-   * Marks a step done if it belongs to today's plan. Idempotent. Returns
-   * whether `type` is (or was) a step of today's plan, so callers can tell
-   * plan-relevant completions apart from ad-hoc exercise runs.
+   * Marks the first not-yet-completed step of `type` done. Idempotent per
+   * step. Returns whether `type` is (or was) a step of today's plan, so
+   * callers can tell plan-relevant completions apart from ad-hoc runs.
    */
   markStepCompleted: (type: string) => boolean;
   setActiveFlowType: (type: string | null) => void;
+}
+
+function hasDuplicate(types: string[]): boolean {
+  return new Set(types).size !== types.length;
 }
 
 export const useDailyPlanStore = create<DailyPlanState>()(
@@ -37,26 +51,31 @@ export const useDailyPlanStore = create<DailyPlanState>()(
     (set, get) => ({
       date: "",
       exerciseTypes: [],
-      completedTypes: [],
+      completedIndices: [],
       lastPlanTypes: [],
       activeFlowType: null,
       ensureTodayPlan: (today, computePlan) => {
         const state = get();
-        if (state.date === today && state.exerciseTypes.length > 0) return;
+        const isUsable =
+          state.date === today &&
+          state.exerciseTypes.length > 0 &&
+          !hasDuplicate(state.exerciseTypes);
+        if (isUsable) return;
         set({
           date: today,
           exerciseTypes: computePlan(),
-          completedTypes: [],
+          completedIndices: [],
           lastPlanTypes: state.date ? state.exerciseTypes : state.lastPlanTypes,
           activeFlowType: null,
         });
       },
       markStepCompleted: (type) => {
         const state = get();
-        if (!state.exerciseTypes.includes(type)) return false;
-        if (!state.completedTypes.includes(type)) {
-          set({ completedTypes: [...state.completedTypes, type] });
-        }
+        const pendingIndex = state.exerciseTypes.findIndex(
+          (t, i) => t === type && !state.completedIndices.includes(i),
+        );
+        if (pendingIndex === -1) return state.exerciseTypes.includes(type);
+        set({ completedIndices: [...state.completedIndices, pendingIndex] });
         return true;
       },
       setActiveFlowType: (type) => set({ activeFlowType: type }),
@@ -64,7 +83,19 @@ export const useDailyPlanStore = create<DailyPlanState>()(
     {
       name: "daily-plan-store",
       storage: createJSONStorage(() => userScopedStorageAdapter),
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as Partial<DailyPlanState> & { completedTypes?: string[] };
+        if (version >= 2) return state as DailyPlanState;
+        // v1 keyed completion by type; map each completed type onto its first
+        // occurrence so a mid-day upgrade doesn't lose today's progress.
+        const types = state.exerciseTypes ?? [];
+        const completedIndices = (state.completedTypes ?? [])
+          .map((t) => types.indexOf(t))
+          .filter((i) => i >= 0);
+        const { completedTypes: _dropped, ...rest } = state;
+        return { ...rest, completedIndices } as DailyPlanState;
+      },
       partialize: (state) => {
         const { activeFlowType: _activeFlowType, ...persisted } = state;
         return persisted;

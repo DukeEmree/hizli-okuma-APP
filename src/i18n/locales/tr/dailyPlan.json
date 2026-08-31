@@ -5,7 +5,10 @@
     "start": "Başla",
     "continue": "Devam et",
     "completedTitle": "Bugünkü planı tamamladın!",
-    "viewSummary": "Özeti gör"
+    "viewSummary": "Özeti gör",
+    "completedSummary": "{{minutes}} dk, {{count}} egzersiz — bugün sayıldı",
+    "stepDone": "{{name}}, tamamlandı",
+    "stepPending": "{{name}}, bekliyor"
   },
   "actions": {
     "backToList": "Listeye dön"
@@ -15,7 +18,7 @@
     "premiumSummary": "{{xp}} XP kazandın",
     "streakLabel": "Seri: {{days}} gün",
     "freeSummary": "{{minutes}} dakika, {{count}} egzersiz tamamladın",
-    "premiumTeaser": "Premium ile sınırsız günlük egzersiz ve zayıf yönüne özel plan",
+    "premiumTeaser": "Premium'la bugünün planı bitince durmak zorunda değilsin — istediğin egzersize geç.",
     "premiumTeaserCta": "İncele",
     "backHome": "Ana ekrana dön"
   }

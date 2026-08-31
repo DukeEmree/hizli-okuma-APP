@@ -1,6 +1,4 @@
 {
-  "placeholder": "Egzersizler Placeholder",
-  "detailPlaceholder": "Egzersiz Placeholder: {{id}}",
   "title": "Egzersizler",
   "subtitle": "Okuma hızını, kavramanı ve odağını geliştiren egzersizler.",
   "categories": {
@@ -13,153 +11,164 @@
   },
   "buttons": {
     "start": "Başla",
-    "premium": "Premium",
-    "completed": "Tamamlandı",
-    "limitReached": "Limit Doldu - Premium'a Geç",
-    "loading": "Yükleniyor..."
+    "loading": "Yükleniyor...",
+    "unlockPremium": "Premium'a Geç"
   },
   "labels": {
     "emptyState": "Henüz kullanılabilir egzersiz yok.",
     "best": "En İyi:",
-    "level": "Seviye",
     "estimatedTime": "{{time}} sn",
     "purpose": "Amacı",
     "howItWorks": "Nasıl Çalışır?",
     "settings": "Ayarlar",
     "progressHistory": "Geçmiş Performans",
-    "notEnoughHistory": "Henüz yeterli geçmiş yok. İlk denemeni tamamla!",
+    "notEnoughHistory": "Henüz yeterli geçmiş yok. İlk denemeni tamamla.",
     "historicalBest": "En İyi Seviye: {{level}}",
-    "noSettings": "Bu egzersiz için değiştirilebilir bir ayar bulunmuyor."
+    "noSettings": "Bu egzersiz için değiştirilebilir bir ayar bulunmuyor.",
+    "metronome": "Metronom",
+    "metronomeToggle": "Metronomu aç veya kapat"
   },
   "settings": {
     "wpm": "Hız (WPM)",
-    "gridSize": "Tablo Boyutu (3-9)",
+    "gridSize": "Tablo Boyutu",
     "timeLimitMs": "Süre Limiti",
-    "chunkSize": "Grup Büyüklüğü (Kelime)",
-    "updateIntervalMs": "Tazeleme Hızı"
+    "chunkSize": "Grup Büyüklüğü (Kelime)"
   },
   "rsvp": {
     "name": "Hızlı Kelime Akışı",
     "description": "Kelimeler ekranda belirlenen hızda akar. Okuma hızını ve odaklanmayı artırır.",
     "completed": "Tebrikler!",
     "wpmLabel": "WPM: {{wpm}}",
-    "purpose": "Bu egzersiz, kelimeleri seslendirmeden (iç ses olmadan) hızlıca görerek anlamanızı ve gözlerinizin odaklanma süresini kısaltmayı hedefler.",
-    "howItWorks": "1. Ekrana odaklanın.\n2. Kelimeler belirlediğiniz hızda sırayla akacaktır.\n3. Kelimeleri okumak yerine sadece görmeye ve kavramaya çalışın."
+    "purpose": "Kelimeleri iç ses olmadan hızlıca görüp anlamanı sağlar ve gözünün bir kelimede kalma süresini kısaltır.",
+    "howItWorks": "1. Ekrana odaklan.\n2. Kelimeler belirlediğin hızda sırayla akar.\n3. Kelimeleri okumak yerine görmeye ve kavramaya çalış."
   },
   "chunking": {
     "name": "Kelime Gruplama",
     "description": "Kelimeleri tek tek değil, bloklar (öbekler) halinde görmeyi ve işlemeyi öğretir.",
-    "completed": "Tebrikler, grup okumayı tamamladınız!",
-    "wpmChunkLabel": "WPM: {{wpm}} | Chunk: {{chunk}}",
-    "purpose": "Beynimizin kelimeleri tek tek değil, bloklar halinde algılama kapasitesini kullanarak göz sıçrama (sakkad) sayısını azaltmayı ve okuma hızını artırmayı hedefler.",
-    "howItWorks": "1. Ekranda kelimeler gruplar halinde belirecektir.\n2. Gözlerinizi grubun merkezine odaklayın.\n3. Tüm kelimeleri tek bakışta algılamaya çalışın."
+    "completed": "Tebrikler, grup okumayı tamamladın!",
+    "wpmChunkLabel": "{{wpm}} WPM · {{chunk}} kelimelik grup",
+    "purpose": "Beynin kelimeleri tek tek değil bloklar halinde algılar. Bunu kullanarak göz sıçraması (sakkad) sayını azaltır ve hızını artırır.",
+    "howItWorks": "1. Kelimeler ekranda gruplar halinde belirir.\n2. Gözünü grubun merkezine odakla.\n3. Tüm kelimeleri tek bakışta algılamaya çalış."
   },
   "pacer": {
     "name": "Görsel Yönlendirici",
-    "description": "Ekranda kayan bir vurgu yardımıyla okuma hızınızı ve ritminizi sabit tutar.",
-    "completed": "Tebrikler, hızınızı korudunuz!",
+    "description": "Ekranda kayan bir vurgu, okuma hızını ve ritmini sabit tutar.",
+    "completed": "Tebrikler, hızını korudun!",
     "wpmLabel": "WPM: {{wpm}}",
-    "purpose": "Gözlerin metin üzerindeki hareketlerini disipline ederek, geriye dönüşleri (regresyon) engeller ve sabit bir ritim kazandırır.",
-    "howItWorks": "1. Ekranda vurgulanan (highlight edilen) kelimeleri takip edin.\n2. Vurgunun hızından geri kalmamaya özen gösterin."
+    "purpose": "Gözünün metin üzerindeki hareketini disipline eder, geriye dönüşleri (regresyon) engeller ve sabit bir ritim kazandırır.",
+    "howItWorks": "1. Ekranda vurgulanan kelimeleri takip et.\n2. Vurgunun hızından geri kalmamaya çalış."
   },
   "schulte": {
     "name": "Schulte Tablosu",
     "description": "Görsel dikkati ve periferal (çevresel) görüşü geliştiren tarama egzersizidir.",
-    "completed": "Tabloyu başarıyla tamamladınız!",
-    "resultLine": "Tablo: {{tables}} | Doğru: {{correct}} | Hata: {{errors}}",
+    "completed": "Tabloyu tamamladın!",
+    "resultLine": "Tablo {{tables}} · Doğru {{correct}} · Hata {{errors}}",
     "nextLabel": "Tablo {{table}} · Sıradaki:",
-    "purpose": "Görsel alanı (periferal görüş) genişleterek tek bakışta daha fazla bilgi algılamayı ve odaklanma süresini kısaltmayı hedefler.",
-    "howItWorks": "1. Gözlerinizi tablonun tam merkezine sabitleyin.\n2. Gözlerinizi merkezden ayırmadan 1'den başlayarak sayıları sırasıyla bulun ve işaretleyin."
+    "purpose": "Görüş alanını genişleterek tek bakışta daha fazla bilgi algılamanı sağlar ve odaklanma süresini kısaltır.",
+    "howItWorks": "1. Gözünü tablonun tam merkezine sabitle.\n2. Gözünü merkezden ayırmadan 1'den başlayarak sayıları sırayla bul ve işaretle."
   },
   "scanning": {
     "name": "Görsel Tarama",
-    "description": "Karmaşık bir yapı içerisinde istenen hedefi hızlıca bulmanızı sağlar.",
-    "completed": "Tüm hedefleri başarıyla buldunuz!",
-    "resultLine": "Toplam bulunan: {{found}} | Tur: {{round}} | Hata: {{errors}}",
-    "purpose": "Gözlerin metin içinde aranan bilgiyi hızla seçip bulabilme (tarama) yeteneğini ve dikkat seviyesini geliştirmeyi amaçlar.",
-    "howItWorks": "1. Üst kısımda verilen hedef karakteri/şekli aklınızda tutun.\n2. Tablo içerisindeki eşleşen hedefleri olabildiğince hızlı şekilde bulun ve işaretleyin."
+    "description": "Kalabalık bir tablo içinde aradığın hedefi hızlıca bulmanı sağlar.",
+    "completed": "Tüm hedefleri buldun!",
+    "resultLine": "Bulunan {{found}} · Tur {{round}} · Hata {{errors}}",
+    "purpose": "Metin içinde aradığın bilgiyi hızla seçip bulma yeteneğini ve dikkat seviyeni geliştirir.",
+    "howItWorks": "1. Üstteki hedef karakteri aklında tut.\n2. Tablodaki eşleşen hedefleri olabildiğince hızlı bul ve işaretle.",
+    "target": "Hedef: {{symbol}}",
+    "progress": "{{found}}/{{total}} · Toplam {{all}}"
   },
   "peripheral": {
     "name": "Periferal Görüş",
     "description": "Merkeze odaklanırken çevresel (periferal) alandaki kelimeleri algılamayı sağlar.",
-    "completed": "Egzersiz tamamlandı!",
-    "selectPrompt": "Gördüğünüz kelimeyi seçin:",
-    "purpose": "Görüş alanınızı genişleterek tek bakışta daha fazla kelime okumanızı sağlar.",
-    "howItWorks": "1. Kırmızı noktaya odaklanın.\n2. Çevrede beliren kelimeleri görmeye çalışın.\n3. Gördüğünüz kelimeyi alttaki seçeneklerden işaretleyin."
+    "completed": "Egzersizi tamamladın!",
+    "selectPrompt": "Gördüğün kelimeyi seç",
+    "purpose": "Görüş alanını genişleterek tek bakışta daha fazla kelime okumanı sağlar.",
+    "howItWorks": "1. Ortadaki noktaya odaklan.\n2. Çevrede beliren kelimeleri görmeye çalış.\n3. Gördüğün kelimeyi aşağıdaki seçeneklerden işaretle."
   },
   "wordRecognition": {
     "name": "Hızlı Kelime Tanıma",
-    "description": "Çok kısa süreliğine görünen kelimeleri hızlıca tanımanızı sağlar.",
-    "completed": "Egzersiz tamamlandı!",
-    "selectPrompt": "Hangi kelimeyi gördünüz?",
-    "purpose": "Beyninizin kelimeleri bütün olarak algılama hızını artırır.",
-    "howItWorks": "1. Ekranda çok kısa süre bir kelime belirecek.\n2. Kelimeyi okuyun.\n3. Hangi kelimeyi gördüğünüzü seçeneklerden bulun."
+    "description": "Çok kısa süre görünen kelimeleri hızlıca tanımanı sağlar.",
+    "completed": "Egzersizi tamamladın!",
+    "selectPrompt": "Hangi kelimeyi gördün?",
+    "purpose": "Beyninin kelimeleri bütün olarak algılama hızını artırır.",
+    "howItWorks": "1. Ekranda çok kısa süre bir kelime belirir.\n2. Kelimeyi oku.\n3. Gördüğün kelimeyi seçeneklerden bul."
   },
   "memory": {
     "name": "Kelime Hafızası",
-    "description": "Kısa süreli görsel hafızanızı geliştirir.",
-    "completed": "Egzersiz tamamlandı!",
-    "recallPrompt": "Bu kelimeleri hatırla:",
-    "selectPrompt": "Hatırladığınız kelimeleri seçin ({{selected}}/{{total}}):",
-    "purpose": "Okuduğunuz kelimeleri akılda tutma kapasitenizi artırır.",
-    "howItWorks": "1. Ekranda gösterilen kelimeleri aklınızda tutun.\n2. Kelimeler kaybolduktan sonra, hatırladığınız kelimeleri seçenekler arasından seçin."
+    "description": "Kısa süreli görsel hafızanı geliştirir.",
+    "completed": "Egzersizi tamamladın!",
+    "recallPrompt": "Bu kelimeleri hatırla",
+    "selectPrompt": "Hatırladığın kelimeleri seç ({{selected}}/{{total}})",
+    "purpose": "Okuduğun kelimeleri akılda tutma kapasiteni artırır.",
+    "howItWorks": "1. Ekranda gösterilen kelimeleri aklında tut.\n2. Kelimeler kaybolduktan sonra hatırladıklarını seçeneklerden seç."
   },
   "sentenceMemory": {
     "name": "Cümle Hafızası",
     "description": "Okunan cümlenin detaylarını hızlıca kavramayı ve hatırlamayı sağlar.",
-    "completed": "Egzersiz tamamlandı!",
-    "purpose": "Okuma hızı artarken kavrama ve hatırlama oranının düşmesini engeller.",
-    "howItWorks": "1. Ekranda bir cümle belirecek.\n2. Cümleyi okuduktan sonra size bir soru sorulacak.\n3. Doğru cevabı seçin."
+    "completed": "Egzersizi tamamladın!",
+    "purpose": "Hızın artarken kavrama ve hatırlama oranının düşmesini engeller.",
+    "howItWorks": "1. Ekranda bir cümle belirir.\n2. Cümleyi okuduktan sonra sana bir soru sorulur.\n3. Doğru cevabı seç."
   },
   "mainIdea": {
     "name": "Ana Fikir Bulma",
     "description": "Kısa bir metni hızlıca okuyup ana fikrini kavramayı geliştirir.",
-    "completed": "Egzersiz tamamlandı!",
+    "completed": "Egzersizi tamamladın!",
     "readDone": "Okudum",
-    "purpose": "Hızlı okuma sırasında metnin genel bağlamını ve ana mesajını kaçırmamanızı sağlar.",
-    "howItWorks": "1. Metni olabildiğince hızlı ve anlayarak okuyun.\n2. 'Okudum' butonuna basın.\n3. Metnin ana fikrini soran soruya cevap verin."
+    "purpose": "Hızlı okurken metnin genel bağlamını ve ana mesajını kaçırmamanı sağlar.",
+    "howItWorks": "1. Metni olabildiğince hızlı, anlayarak oku.\n2. \"Okudum\" butonuna dokun.\n3. Metnin ana fikrini soran soruyu cevapla."
   },
   "keyword": {
     "name": "Anahtar Kelime Avı",
     "description": "Belirli bir bilgi parçasını bulmak için metni hızlıca taramayı öğretir.",
-    "completed": "Egzersiz tamamlandı!",
-    "purpose": "Uzun metinler içerisinde sadece aranan bilgiyi hızla bulma yeteneğini (skimming) geliştirir.",
-    "howItWorks": "1. Üstteki soruyu okuyun ve aradığınız bilgiyi aklınızda tutun.\n2. Metni hızlıca tarayarak sorunun cevabını bulun.\n3. Doğru seçeneği işaretleyin."
+    "completed": "Egzersizi tamamladın!",
+    "purpose": "Uzun metinlerde sadece aradığın bilgiyi hızla bulma yeteneğini geliştirir.",
+    "howItWorks": "1. Üstteki soruyu oku ve aradığın bilgiyi aklında tut.\n2. Metni hızlıca tarayarak cevabı bul.\n3. Doğru seçeneği işaretle."
   },
   "selectiveAttention": {
     "name": "Seçici Dikkat",
     "description": "Belirli bir kategoriye ait kelimeleri dikkat dağıtıcılar arasından seçmeyi sağlar.",
-    "completed": "Egzersiz tamamlandı!",
-    "resultLine": "Doğru: {{correct}} | Hatalı: {{incorrect}} | Doğruluk: %{{accuracy}}",
+    "completed": "Egzersizi tamamladın!",
+    "resultLine": "Doğru {{correct}} · Hatalı {{incorrect}} · Doğruluk %{{accuracy}}",
     "categoryLabel": "Kategori: {{category}}",
-    "categoryPrompt": "Aşağıdaki kelimelerden bu kategoriye ait olanları seçin.",
-    "purpose": "Dikkat dağıtıcı unsurlar varken hedefe odaklanma süresini ve doğruluğunu artırır.",
-    "howItWorks": "1. Hedef kategoriyi okuyun.\n2. Aşağıdaki kelime havuzundan sadece o kategoriye ait olan kelimeleri bulun ve seçin."
+    "categoryPrompt": "Aşağıdaki kelimelerden bu kategoriye ait olanları seç.",
+    "purpose": "Dikkat dağıtıcılar varken hedefe odaklanma süreni ve doğruluğunu artırır.",
+    "howItWorks": "1. Hedef kategoriyi oku.\n2. Aşağıdaki kelimelerden sadece o kategoriye ait olanları bul ve seç."
   },
   "numberScan": {
     "name": "Sayı Taraması",
     "description": "Sayı kalabalığı içerisinde istenen sayıyı hızlıca tespit etmeyi sağlar.",
-    "completed": "Egzersiz tamamlandı!",
+    "completed": "Egzersizi tamamladın!",
     "findPrompt": "Şu sayıyı bul: {{target}}",
-    "purpose": "Görsel tarama hızını artırır ve detaylara odaklanma becerisini geliştirir.",
-    "howItWorks": "1. İstenen sayıyı aklınızda tutun.\n2. Aşağıdaki tablodan o sayıyı en hızlı şekilde bulun ve işaretleyin."
+    "purpose": "Görsel tarama hızını artırır ve detaylara odaklanma becerini geliştirir.",
+    "howItWorks": "1. İstenen sayıyı aklında tut.\n2. Aşağıdaki tablodan o sayıyı en hızlı şekilde bul ve işaretle."
   },
   "visualSearch": {
     "name": "Kelime Arama",
     "description": "Kelime kalabalığı içerisinde istenen kelimeyi hızlıca tespit etmeyi sağlar.",
-    "completed": "Egzersiz tamamlandı!",
+    "completed": "Egzersizi tamamladın!",
     "purpose": "Kelime dağarcığını kullanarak görsel algı ve tarama hızını artırır.",
-    "howItWorks": "1. İstenen kelimeyi aklınızda tutun.\n2. Aşağıdaki tablodan o kelimeyi en hızlı şekilde bulun ve işaretleyin."
+    "howItWorks": "1. İstenen kelimeyi aklında tut.\n2. Aşağıdaki tablodan o kelimeyi en hızlı şekilde bul ve işaretle."
   },
   "comprehensionSpeed": {
     "name": "Kavrama Deparı",
     "description": "Uzun bir metni hızla okuyup detaylı kavrama sorularını cevaplamayı gerektirir.",
-    "completed": "Egzersiz tamamlandı!",
+    "completed": "Egzersizi tamamladın!",
     "wpmLabel": "Hız: {{wpm}} WPM",
-    "resultLine": "Doğru: {{correct}} / {{total}} | Kavrama: %{{accuracy}}",
+    "resultLine": "Doğru {{correct}}/{{total}} · Kavrama %{{accuracy}}",
     "questionLabel": "Soru:",
     "finishReading": "Okumayı Bitirdim",
-    "purpose": "Hem hızlı okuma (WPM) hem de okuduğunu anlama oranını (Comprehension) aynı anda maksimize eder.",
-    "howItWorks": "1. Metni olabildiğince hızlı ama anlayarak okuyun.\n2. 'Okumayı Bitirdim' butonuna basın.\n3. Ardından gelecek olan soruları cevaplayın."
+    "purpose": "Hem okuma hızını hem de okuduğunu anlama oranını aynı anda yükseltmeyi hedefler.",
+    "howItWorks": "1. Metni olabildiğince hızlı ama anlayarak oku.\n2. \"Okumayı Bitirdim\" butonuna dokun.\n3. Ardından gelen soruları cevapla."
+  },
+  "a11y": {
+    "exerciseCard": "{{name}}, {{category}}",
+    "exerciseCardBest": "{{name}}, {{category}}, en iyi {{score}}",
+    "openExercise": "Egzersizi aç",
+    "lockedHint": "Premium gerekiyor. Abonelik ekranını açar.",
+    "categoryFilter": "{{category}} kategorisini göster"
+  },
+  "notFound": {
+    "title": "Bu egzersiz bulunamadı",
+    "body": "Bağlantı eski olabilir. Egzersizler listesinden tekrar dene."
   }
 }

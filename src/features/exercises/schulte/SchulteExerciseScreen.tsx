@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWindowDimensions } from 'react-native';
+import { computeGridLayout } from '@/features/exercises/gridLayout';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useSchulteEngine } from './useSchulteEngine';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
   const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const {
     session,
@@ -72,10 +73,10 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('timeUp', 'Süre doldu!')}
+          {t('schulte.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('schulte.resultLine', 'Tablo: {{tables}} | Doğru: {{correct}} | Hata: {{errors}}', { ns: 'exercises', tables: roundsCompleted, correct: totalCorrect, errors })}
+          {t('schulte.resultLine', { ns: 'exercises', tables: roundsCompleted, correct: totalCorrect, errors })}
         </Text>
         <ExerciseCompletionActions exerciseType="schulte" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -88,19 +89,21 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
     rows.push(grid.slice(i * currentGridSize, (i + 1) * currentGridSize));
   }
 
-  // Responsive calculations
-  const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
-  const GAP_SIZE = 8; // gap="$2"
-  const availableWidth = screenWidth - HORIZONTAL_PADDING - ((currentGridSize - 1) * GAP_SIZE);
-  const cellSize = Math.min(60, Math.floor(availableWidth / currentGridSize));
+  const layout = computeGridLayout(screenWidth, currentGridSize, {
+    maxCell: 60,
+    availableHeight: screenHeight,
+    rows: currentGridSize,
+  });
+  const { cellSize, gap, hitSlop } = layout;
   const cellFontSize = cellSize > 45 ? '$6' : '$5';
+  const cellHitSlop = { top: hitSlop, bottom: hitSlop, left: hitSlop, right: hitSlop };
 
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          {t('schulte.nextLabel', 'Tablo {{table}} · Sıradaki:', { ns: 'exercises', table: roundsCompleted + 1 })} <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
+          {t('schulte.nextLabel', { ns: 'exercises', table: roundsCompleted + 1 })} <Text fontWeight="bold" color="$color">{expectedNumber}</Text>
         </Text>
       </XStack>
 
@@ -120,12 +123,12 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
               marginTop={-5}
               marginLeft={-5}
               borderRadius={999}
-              bg="$blue10"
+              bg="$color11"
               zIndex={1}
               pointerEvents="none"
             />
             {rows.map((row, rowIndex) => (
-              <XStack key={`row-${tableVersion}-${rowIndex}`} gap="$2" w="100%" jc="center">
+              <XStack key={`row-${tableVersion}-${rowIndex}`} gap={gap} w="100%" jc="center">
                 {row.map((num, colIndex) => {
                   const isPressed = num < expectedNumber;
                   return (
@@ -134,6 +137,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
                       width={cellSize}
                       height={cellSize}
                       padding={0}
+                      hitSlop={cellHitSlop}
                       bg={isPressed ? '$green5' : '$backgroundHover'}
                       onPress={() => {
                         if (num === expectedNumber) haptics.light();
@@ -161,7 +165,7 @@ export function SchulteExerciseScreen({ gridSize, timeLimitMs, onComplete }: Sch
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

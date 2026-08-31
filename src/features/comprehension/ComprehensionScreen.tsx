@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { YStack, Text, Button, XStack, ScrollView, Progress, Card } from 'tamagui';
+import { YStack, Text, Button, XStack, ScrollView, Progress } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useComprehensionStore } from "@/stores/useComprehensionStore";
 import { useCreateSession } from "@/hooks/useCreateSession";
 import { calculateReadingScore, CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
+import { AppCard } from '@/components/ui/AppCard';
 
 export function ComprehensionScreen() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function ComprehensionScreen() {
         <Text color="$color" fontSize="$5" mb="$4">
           Metin veya sonuç bulunamadı.
         </Text>
-        <Button onPress={() => router.replace('/(app)/(tabs)/exercises')}>
+        <Button size="$4.5" onPress={() => router.replace('/(app)/(tabs)/exercises')}>
           Geri Dön
         </Button>
       </YStack>
@@ -126,15 +127,15 @@ export function ComprehensionScreen() {
       <YStack f={1} bg="$background" p="$4" ai="center" jc="center" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">Sonuç</Text>
         
-        <Card borderWidth={1} borderColor="$borderColor" p="$4" w="100%" maxWidth={400} ai="center" bg="$backgroundHover">
+        <AppCard w="100%" maxWidth={400} ai="center">
           <Text fontSize="$6" mb="$2" color="$color">Okuma Hızı</Text>
           <Text fontSize="$8" fontWeight="bold" color="$green10">{pendingResult.metrics.wpm || 0} WPM</Text>
-        </Card>
+        </AppCard>
 
-        <Card borderWidth={1} borderColor="$borderColor" p="$4" w="100%" maxWidth={400} ai="center" bg="$backgroundHover">
+        <AppCard w="100%" maxWidth={400} ai="center">
           <Text fontSize="$6" mb="$2" color="$color">Anlama Oranı</Text>
           <Text fontSize="$8" fontWeight="bold" color="$green10">% {comprehensionScore}</Text>
-        </Card>
+        </AppCard>
         
         <Button size="$5" mt="$4" theme="accent" onPress={handleFinish}>
           Tamamla

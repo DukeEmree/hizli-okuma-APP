@@ -116,10 +116,10 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
         y={0}
       >
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('rsvp.completed', 'Tebrikler!', { ns: 'exercises' })}
+          {t('rsvp.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('rsvp.wpmLabel', 'WPM: {{wpm}}', { ns: 'exercises', wpm })}
+          {t('rsvp.wpmLabel', { ns: 'exercises', wpm })}
         </Text>
         <ExerciseCompletionActions exerciseType="rsvp" onFinish={() => router.back()} />
       </YStack>
@@ -131,7 +131,7 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
 
         {/* Üst Bar: İlerleme ve Çıkış */}
         <XStack w="100%" jc="space-between" ai="center">
-          <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+          <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
           <View style={{ flex: 1, marginHorizontal: 20 }}>
             <Progress value={progress * 100}>
               <Progress.Indicator transition="quick" />
@@ -163,7 +163,7 @@ export function RSVPExerciseScreen({ text, wpm, skipDefaultStorage, onComplete }
             theme="accent"
             onPress={handleTogglePlay}
             disabled={countdown !== null}
-           icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+           icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
         </XStack>
 
       </YStack>

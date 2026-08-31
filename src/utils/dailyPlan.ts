@@ -10,6 +10,51 @@ const COMPREHENSION_POOL = ['comprehension-speed', 'main-idea', 'keyword'] as co
 
 export const DAILY_PLAN_SIZE = 4;
 
+/** Used only for an exercise type the user has never run. */
+export const FALLBACK_MINUTES_PER_EXERCISE = 3;
+
+/**
+ * How long today's plan will actually take, from the user's own median
+ * duration per exercise type. The flat "3 minutes each" it replaces was the
+ * most decision-relevant string on the home screen and it was fiction - a
+ * Schulte grid and a comprehension passage are not the same three minutes.
+ * Median rather than mean so one abandoned 20-second run or one session left
+ * open on a locked phone doesn't move the estimate.
+ */
+export function estimatePlanMinutes(
+  exerciseTypes: string[],
+  medianMsByType: Record<string, number | undefined>,
+): number {
+  const fallbackMs = FALLBACK_MINUTES_PER_EXERCISE * 60_000;
+  const totalMs = exerciseTypes.reduce(
+    (sum, type) => sum + (medianMsByType[type] ?? fallbackMs),
+    0,
+  );
+  return Math.max(1, Math.round(totalMs / 60_000));
+}
+
+/** Median session duration per exercise type, in ms. */
+export function medianDurationByType(
+  sessions: readonly { exerciseType: string; durationMs: number }[],
+): Record<string, number> {
+  const byType = new Map<string, number[]>();
+  for (const session of sessions) {
+    if (session.durationMs <= 0) continue;
+    const list = byType.get(session.exerciseType);
+    if (list) list.push(session.durationMs);
+    else byType.set(session.exerciseType, [session.durationMs]);
+  }
+
+  const result: Record<string, number> = {};
+  for (const [type, durations] of byType) {
+    durations.sort((a, b) => a - b);
+    const mid = Math.floor(durations.length / 2);
+    result[type] =
+      durations.length % 2 === 0 ? (durations[mid - 1] + durations[mid]) / 2 : durations[mid];
+  }
+  return result;
+}
+
 export interface ExercisePerformance {
   averageScore: number;
   attemptCount: number;
@@ -23,14 +68,23 @@ function hashSeed(seed: string): number {
   return Math.abs(h);
 }
 
+/**
+ * `avoid` is a preference (don't repeat yesterday's plan) and is dropped when
+ * honoring it would leave nothing to pick. `forbid` is a hard constraint (the
+ * same exercise cannot appear twice in one plan) and survives that fallback -
+ * conflating the two is what let a plan list the same exercise as both main
+ * blocks once yesterday's plan already covered the pool.
+ */
 function pickWeakest(
   pool: readonly string[],
   performanceByType: Record<string, ExercisePerformance | undefined>,
-  exclude: string[],
+  avoid: string[],
   seed: number,
+  forbid: string[] = [],
 ): string {
-  const candidates = pool.filter((type) => !exclude.includes(type));
-  const usable = candidates.length > 0 ? candidates : pool;
+  const allowed = pool.filter((type) => !forbid.includes(type));
+  const candidates = allowed.filter((type) => !avoid.includes(type));
+  const usable = candidates.length > 0 ? candidates : allowed;
 
   let weakest: string | null = null;
   let weakestScore = Infinity;
@@ -65,7 +119,7 @@ export function selectDailyPlan(input: {
 
   const warmup = pickWeakest(WARMUP_POOL, performanceByType, lastPlanTypes, seed);
   const main1 = pickWeakest(MAIN_POOL, performanceByType, lastPlanTypes, seed + 1);
-  const main2 = pickWeakest(MAIN_POOL, performanceByType, [...lastPlanTypes, main1], seed + 2);
+  const main2 = pickWeakest(MAIN_POOL, performanceByType, lastPlanTypes, seed + 2, [main1]);
   const comprehension = pickWeakest(COMPREHENSION_POOL, performanceByType, lastPlanTypes, seed + 3);
 
   return [warmup, main1, main2, comprehension];

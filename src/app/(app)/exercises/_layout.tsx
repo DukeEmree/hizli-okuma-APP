@@ -1,11 +1,22 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { useKeepAwake } from 'expo-keep-awake';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from 'tamagui';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 
 export default function ExercisesLayout() {
+  // Every route in this group is a timed exercise the user watches without
+  // touching the screen - RSVP and Pacer present words for minutes with zero
+  // input. On default display-timeout settings the screen dims, locks, and
+  // backgrounds the app, which trips the engine's auto-pause and costs the
+  // user their run. Held here rather than in each of the 15 runner screens:
+  // this layout is the single gate every one of them already passes through,
+  // and the hook releases the lock on unmount, so leaving the group by any
+  // route - exit button, Back gesture, completion - restores normal timeout.
+  useKeepAwake();
+
   const theme = useTheme();
   const router = useRouter();
   const segments = useSegments();

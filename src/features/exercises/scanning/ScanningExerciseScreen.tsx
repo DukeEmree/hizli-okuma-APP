@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useWindowDimensions } from 'react-native';
+import { computeGridLayout } from '@/features/exercises/gridLayout';
 import { YStack, XStack, Text, Button } from 'tamagui';
 import { useScanningEngine } from './useScanningEngine';
 import type { ScanningCell } from './useScanningEngine';
@@ -18,11 +19,6 @@ interface ScanningExerciseScreenProps {
   onComplete?: () => void;
 }
 
-// Responsive calculations - mirrors Schulte's sizing so cells never
-// clip/overflow on narrow screens at high grid sizes.
-const HORIZONTAL_PADDING = 32; // p="$4" on both sides (16 * 2)
-const GAP_SIZE = 8; // gap="$2"
-
 // Memoized so a tap on one cell (or the once-a-second elapsed-time tick,
 // which re-renders the whole screen) doesn't force every other cell in the
 // grid through Tamagui's style resolution - that was the real cause of the
@@ -31,12 +27,14 @@ const ScanCell = memo(function ScanCell({
   cell,
   cellSize,
   cellFontSize,
+  hitSlop,
   disabled,
   onCellPress,
 }: {
   cell: ScanningCell;
   cellSize: number;
   cellFontSize: '$5' | '$6';
+  hitSlop: number;
   disabled: boolean;
   onCellPress: (id: number, isTarget: boolean) => void;
 }) {
@@ -45,7 +43,7 @@ const ScanCell = memo(function ScanCell({
       width={cellSize}
       height={cellSize}
       padding={0}
-      hitSlop={{ top: GAP_SIZE / 2, bottom: GAP_SIZE / 2, left: GAP_SIZE / 2, right: GAP_SIZE / 2 }}
+      hitSlop={{ top: hitSlop, bottom: hitSlop, left: hitSlop, right: hitSlop }}
       bg={cell.isFound ? '$green5' : '$backgroundHover'}
       onPress={() => onCellPress(cell.id, cell.isTarget)}
       disabled={disabled}
@@ -68,7 +66,7 @@ export function ScanningExerciseScreen({
   const { t } = useTranslation();
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(3);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const {
     session,
@@ -134,10 +132,10 @@ export function ScanningExerciseScreen({
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color={isSuccess ? '$green10' : '$red10'}>
-          {t('timeUp', 'Süre doldu!')}
+          {t('scanning.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('scanning.resultLine', 'Toplam bulunan: {{found}} | Tur: {{round}} | Hata: {{errors}}', { ns: 'exercises', found: foundCount, round: roundsCompleted + 1, errors })}
+          {t('scanning.resultLine', { ns: 'exercises', found: foundCount, round: roundsCompleted + 1, errors })}
         </Text>
         <ExerciseCompletionActions exerciseType="scanning" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -150,18 +148,32 @@ export function ScanningExerciseScreen({
     rows.push(grid.slice(i * gridSize, (i + 1) * gridSize));
   }
 
-  const availableWidth = screenWidth - HORIZONTAL_PADDING - ((gridSize - 1) * GAP_SIZE);
-  const cellSize = Math.min(64, Math.floor(availableWidth / gridSize));
+  const { cellSize, gap, hitSlop } = computeGridLayout(screenWidth, gridSize, {
+    availableHeight: screenHeight,
+    rows: gridSize,
+  });
   const cellFontSize = cellSize > 45 ? '$6' : '$5';
   const roundFoundCount = grid.filter((cell) => cell.isFound).length;
 
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
-        <Text color="$color11" fontSize="$3">
-          Hedef: <Text fontWeight="bold" color="$color">"{targetSymbol}"</Text> ({roundFoundCount}/{roundTargetCount}) · Toplam: {foundCount}
-        </Text>
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        {/* Two complete messages rather than one sentence assembled out of JSX
+            fragments, so a translator can reorder either of them. */}
+        <XStack gap="$2" alignItems="baseline">
+          <Text fontWeight="bold" color="$color" fontSize="$3">
+            {t('scanning.target', { ns: 'exercises', symbol: targetSymbol })}
+          </Text>
+          <Text color="$color11" fontSize="$3">
+            {t('scanning.progress', {
+              ns: 'exercises',
+              found: roundFoundCount,
+              total: roundTargetCount,
+              all: foundCount,
+            })}
+          </Text>
+        </XStack>
       </XStack>
 
       <YStack f={1} w="100%" jc="center" ai="center">
@@ -172,13 +184,14 @@ export function ScanningExerciseScreen({
         ) : (
           <YStack gap="$2" w="100%" ai="center" jc="center">
             {rows.map((row, rowIndex) => (
-              <XStack key={`row-${rowIndex}`} gap="$2" w="100%" jc="center">
+              <XStack key={`row-${rowIndex}`} gap={gap} w="100%" jc="center">
                 {row.map((cell) => (
                   <ScanCell
                     key={`cell-${cell.id}`}
                     cell={cell}
                     cellSize={cellSize}
                     cellFontSize={cellFontSize}
+                    hitSlop={hitSlop}
                     disabled={cell.isFound || session.state !== 'running'}
                     onCellPress={handleCellTap}
                   />
@@ -196,7 +209,7 @@ export function ScanningExerciseScreen({
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

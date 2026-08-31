@@ -2,10 +2,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 
-import auth from './locales/tr/auth.json';
 import common from './locales/tr/common.json';
-import dailyPlan from './locales/tr/dailyPlan.json';
 import errors from './locales/tr/errors.json';
+import dailyPlan from './locales/tr/dailyPlan.json';
 import exercises from './locales/tr/exercises.json';
 import home from './locales/tr/home.json';
 import navigation from './locales/tr/navigation.json';
@@ -19,10 +18,9 @@ import weeklySummary from './locales/tr/weeklySummary.json';
 export const defaultNS = 'common';
 export const resources = {
   tr: {
-    auth,
     common,
-    dailyPlan,
     errors,
+    dailyPlan,
     exercises,
     home,
     navigation,

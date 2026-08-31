@@ -70,10 +70,10 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('timeUp', 'Süre doldu!')}
+          {t('selectiveAttention.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('selectiveAttention.resultLine', 'Doğru: {{correct}} | Hatalı: {{incorrect}} | Doğruluk: %{{accuracy}}', { ns: 'exercises', correct: correctCount, incorrect: errorCount, accuracy })}
+          {t('selectiveAttention.resultLine', { ns: 'exercises', correct: correctCount, incorrect: errorCount, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="selective-attention" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -83,9 +83,9 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$green10">{correctCount}</Text> / <Text fontWeight="bold" color="$red10">{errorCount}</Text>
+          {t('resultScore')} <Text fontWeight="bold" color="$green10">{correctCount}</Text> / <Text fontWeight="bold" color="$red10">{errorCount}</Text>
         </Text>
       </XStack>
 
@@ -99,10 +99,10 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
             {session.state === 'running' && gridWords.length > 0 ? (
               <YStack gap="$4" ai="center" w="100%">
                 <Text fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body">
-                  {t('selectiveAttention.categoryLabel', 'Kategori: {{category}}', { ns: 'exercises', category: targetCategoryName })}
+                  {t('selectiveAttention.categoryLabel', { ns: 'exercises', category: targetCategoryName })}
                 </Text>
                 <Text fontSize="$4" color="$color11" fontFamily="$body" mb="$2">
-                  {t('selectiveAttention.categoryPrompt', 'Aşağıdaki kelimelerden bu kategoriye ait olanları seçin.', { ns: 'exercises' })}
+                  {t('selectiveAttention.categoryPrompt', { ns: 'exercises' })}
                 </Text>
                 
                 <XStack flexWrap="wrap" jc="center" gap="$2" px="$2">
@@ -114,7 +114,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
                     let color = '$color';
                     if (isSelected) {
                         if (isCorrect) {
-                            bg = '$green8';
+                            bg = '$green9';
                             color = 'white';
                         } else {
                             bg = '$red8';
@@ -130,7 +130,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
                           else haptics.error();
                           handleSelection(word);
                         }}
-                        size="$3"
+                        size="$4.5"
                         minWidth={100}
                         bg={bg as any}
                         color={color as any}
@@ -153,7 +153,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

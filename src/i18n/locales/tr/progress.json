@@ -1,7 +1,5 @@
 {
-  "statisticsPlaceholder": "İstatistikler Placeholder",
-  "profilePlaceholder": "Profil Placeholder",
-  "title": "Gelişim & İstatistikler",
+  "title": "İstatistikler",
   "ranges": {
     "7d": "7G",
     "30d": "30G",
@@ -9,7 +7,7 @@
     "all": "Tümü"
   },
   "emptyTitle": "Henüz Yeterli Veri Yok",
-  "emptyMessage": "İstatistiklerinizi görebilmek için egzersizleri tamamlamanız gerekmektedir.",
+  "emptyMessage": "İlk egzersizini tamamla, istatistiklerin burada görünsün.",
   "summary": {
     "totalTime": "Toplam Süre",
     "totalSessions": "Tamamlanan Seans",
@@ -21,8 +19,8 @@
     "comprehensionTitle": "Anlama Oranı (%)",
     "accuracyTitle": "Doğruluk Oranı (%)",
     "exerciseScoreTitle": "Egzersiz Türüne Göre En İyi Skor",
-    "needMoreDays": "Trend oluşturmak için daha fazla gün egzersiz yapmalısınız.",
-    "noExerciseStats": "Egzersiz istatistiği bulunmuyor."
+    "needMoreDays": "Trendi görmek için en az iki ayrı günde çalışman gerekiyor.",
+    "noExerciseStats": "Henüz egzersiz istatistiğin yok."
   },
   "breakdown": {
     "title": "Egzersiz İstatistikleri",
@@ -33,5 +31,10 @@
   "time": {
     "minutes": "{{minutes}} dk",
     "hoursMinutes": "{{hours}} sa {{minutes}} dk"
+  },
+  "achievement": {
+    "unlocked": "Yeni başarım açıldı",
+    "a11yAnnounce": "Yeni başarım açıldı: {{title}}",
+    "dismiss": "Bildirimi kapat"
   }
 }

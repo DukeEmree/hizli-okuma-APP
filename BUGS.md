@@ -18,7 +18,28 @@ Kullanıcı raporlarına göre taranan açık buglar. Kök neden + dosya:satır 
 
 ## Günlük Plan (Daily Plan)
 
+- ✅ **Aynı egzersiz planda iki kez çıkıyordu:** `selectDailyPlan`, "dünkü planı tekrarlama" tercihi ile "aynı planda aynı egzersiz iki kez olamaz" kuralını tek `exclude` parametresinde birleştirmişti. Dünkü plan `MAIN_POOL`'u (rsvp/pacer/chunking) tamamen kapladığında `candidates` boşalıyor, "hepsini kullan" fallback'i `main1`'in dışlanmasını da düşürüyor ve iki ana blok aynı egzersize düşüyordu (emülatörde "Görsel Yönlendirici" iki kez + React `pacer` duplicate key uyarısı). `pickWeakest` artık `avoid` (tercih, fallback'te düşer) ile `forbid` (katı kural, fallback'te de korunur) ayrımını yapıyor. Regresyon testi eklendi (2026-08-30).
 - ✅ **Daily Plan Akışı (Bug/UX):** `exercises/_layout.tsx`'e, o egzersiz segmentinden ayrılınca (X butonu, geri gesture'ı, her türlü navigasyon) `activeFlowType`'ı temizleyen bir cleanup effect'i eklendi (2026-08-20). Kök neden tek yerde kapatıldı: bu layout zaten tüm `/exercises/<type>` rotalarının tek ortak gate'iydi.
+
+## Ana Sayfa
+
+`.scratch/home-screen/` altındaki beş ticket 2026-08-31'de kapatıldı. Kod
+tarafında kalıcı iz bırakanlar:
+
+- ✅ **Bozuk günlük plan kendini iyileştiriyor:** `selectDailyPlan` 2026-08-30'da
+  düzeltilmişti ama `ensureTodayPlan` aynı gün içinde planı yeniden üretmediği
+  için eski build'in MMKV'ye yazdığı tekrarlı plan hayatta kalıyordu (ana
+  ekranda "Görsel Yönlendirici" iki kez + `Encountered two children with the
+  same key, pacer` toast'ı). Artık kalıcı planda tekrar varsa plan atılıp
+  yeniden üretiliyor.
+- ✅ **Adım tamamlanması indeks bazlı:** `completedTypes` → `completedIndices`
+  (persist `version: 2` + migrate). Tekrarlı bir adımı bir kez bitirmek artık
+  iki kutucuğu birden işaretlemiyor, `isAllDone` erken tetiklenmiyor.
+- ✅ **Plan süresi tahmini gerçek:** düz `ESTIMATED_MINUTES_PER_EXERCISE = 3`
+  yerine kullanıcının kendi medyan egzersiz süreleri (`estimatePlanMinutes`).
+- ✅ **Yuvarlak kutucuk kenarlığı:** `backgroundColor: 'transparent'` + 1px
+  yuvarlak kenarlık Android'de yalnızca sol yayı çiziyordu; `$background`'a
+  alındı.
 
 ## Lokalizasyon (i18n)
 

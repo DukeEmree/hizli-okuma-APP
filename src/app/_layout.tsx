@@ -3,8 +3,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
-import { TamaguiProvider, Theme, YStack } from "tamagui";
-import { Toast, ToastProvider, ToastViewport, useToastState } from "@tamagui/toast";
+import { TamaguiProvider, Theme } from "tamagui";
 
 import * as Sentry from "@sentry/react-native";
 
@@ -17,7 +16,7 @@ import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
 import { AppNotificationProvider } from "@/providers/NotificationProvider";
 import { useSettingsStore } from "@/stores/settingsStore";
 
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import tamaguiConfig from "../../tamagui.config";
 import "../i18n";
@@ -55,36 +54,6 @@ function RootNavigation() {
     </Stack>
   );
 }
-function CurrentToast() {
-  const currentToast = useToastState();
-  if (!currentToast || currentToast.isHandledNatively) return null;
-  return (
-    <Toast
-      key={currentToast.id}
-      duration={currentToast.duration}
-      viewportName={currentToast.viewportName}
-      transition="quick"
-      enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-      exitStyle={{ opacity: 0, scale: 1, y: -20 }}
-      y={0}
-      opacity={1}
-      scale={1}
-    >
-      <YStack>
-        <Toast.Title>{currentToast.title}</Toast.Title>
-        {!!currentToast.message && (
-          <Toast.Description>{currentToast.message}</Toast.Description>
-        )}
-      </YStack>
-    </Toast>
-  );
-}
-
-function AppToastViewport() {
-  const insets = useSafeAreaInsets();
-  return <ToastViewport top={insets.top} left={0} right={0} />;
-}
-
 SplashScreen.preventAutoHideAsync();
 
 // Initialize Observability. analytics.init() must run before the first
@@ -137,14 +106,10 @@ function RootLayout() {
                 style={activeTheme === "dark" ? "light" : "dark"}
                 animated
               />
-              <ToastProvider swipeDirection="horizontal" duration={3000}>
-                <AppNotificationProvider>
-                  <RootNavigation />
-                  <AchievementPopupGlobal />
-                </AppNotificationProvider>
-                <CurrentToast />
-                <AppToastViewport />
-              </ToastProvider>
+              <AppNotificationProvider>
+                <RootNavigation />
+                <AchievementPopupGlobal />
+              </AppNotificationProvider>
             </ThemeProvider>
           </Theme>
         </TamaguiProvider>

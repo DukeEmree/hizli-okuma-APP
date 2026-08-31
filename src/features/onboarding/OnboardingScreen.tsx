@@ -4,15 +4,17 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
+import { useKeepAwake } from "expo-keep-awake";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
 import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
 import { startingLevelFromWpm } from "@/utils/onboarding";
 import { RSVP_ID } from "@/features/exercises/rsvp";
 import { CHUNKING_ID } from "@/features/exercises/chunking";
-import { Button, Card, H2, H4, Text, XStack, YStack } from "tamagui";
+import { Button, H2, H4, Text, XStack, YStack } from "tamagui";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Track } from "@/components/ui/track/Track";
+import { AppCard } from '@/components/ui/AppCard';
 
 function OptionRow({ label, onPress }: { label: string; onPress: () => void }) {
   return (
@@ -25,7 +27,7 @@ function OptionRow({ label, onPress }: { label: string; onPress: () => void }) {
       borderColor="$borderColor"
       alignItems="center"
       justifyContent="space-between"
-      pressStyle={{ borderColor: "$accent9" }}
+      pressStyle={{ borderColor: "$green9" }}
       onPress={onPress}
     >
       <Text fontSize="$5" fontWeight="500">{label}</Text>
@@ -62,6 +64,12 @@ export function OnboardingScreen() {
   const updateBestWpm = useUserProgressStore(s => s.updateBestWpm);
   const updateBestComprehension = useUserProgressStore(s => s.updateBestComprehension);
   const updateExerciseMetrics = useExerciseProgressStore(s => s.updateExerciseMetrics);
+
+  // Step 3 is a self-paced timed reading test whose measured WPM seeds the
+  // starting difficulty of RSVP and Chunking. A display timeout firing mid-read
+  // would inflate the duration and permanently mis-seed those levels, so the
+  // screen is held awake for the (short) duration of the whole flow.
+  useKeepAwake();
 
   const [step, setStep] = useState(1);
   const insets = useSafeAreaInsets();
@@ -141,7 +149,16 @@ export function OnboardingScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$background" padding="$4" paddingTop={insets.top + 16} paddingBottom={insets.bottom + 16}>
-      <YStack marginBottom="$6">
+      {/* The Track here is a decorative step meter, not data - it hides itself
+          from the accessibility tree, so the step count is spoken by the
+          wrapper instead of leaving the flow's only progress cue silent. */}
+      <YStack
+        marginBottom="$6"
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={t('a11y.progress', { step, total: 3 })}
+        accessibilityValue={{ min: 1, max: 3, now: step }}
+      >
         <Track data={stepTrackData} size="compact" height={5} showBaseline={false} />
       </YStack>
 
@@ -185,15 +202,15 @@ export function OnboardingScreen() {
 
       {step === 3 && !showQuestion && (
         <YStack flex={1} gap="$4">
-          <H4 color="$accent9">{t('assessment.title')}</H4>
+          <H4 color="$green11">{t('assessment.title')}</H4>
           <Text color="$color11">{t('assessment.instructions')}</Text>
 
           <ScrollView>
-            <Card padding="$4" backgroundColor="$backgroundHover">
+            <AppCard>
               <Text fontSize="$6" lineHeight={28}>
                 {ASSESSMENT_TEXT}
               </Text>
-            </Card>
+            </AppCard>
           </ScrollView>
 
           <Button size="$5" theme="accent" onPress={handleFinishReading}>

@@ -1,2 +1,58 @@
 {
+  "close": "Kapat",
+  "trace": {
+    "label": "Şimdiye kadar bıraktığın iz",
+    "streak": "gün seri",
+    "minutes": "dakika",
+    "bestWpm": "en iyi WPM",
+    "a11y": "Şimdiye kadarki izin: {{days}} günlük seri, {{minutes}} dakika, en iyi {{wpm}} WPM"
+  },
+  "empty": {
+    "label": "Seni bekleyen 15 egzersiz",
+    "planNote": "Bugünün planındaki 4 tanesi ücretsiz açık."
+  },
+  "offer": {
+    "title": "Planın bittiğinde durma",
+    "body": "Ücretsizde günün dört adımını sırayla yaparsın. Premium'la on beş egzersizin hepsi açık — istediğini, istediğin sırada.",
+    "cta": "Premium'a geç",
+    "restore": "Satın alımları geri yükle",
+    "terms": "Kullanım Koşulları",
+    "privacy": "Gizlilik Politikası",
+    "renewNote": "Abonelik, iptal etmediğin sürece kendini yeniler. Google Play üzerinden dilediğin an iptal edebilirsin."
+  },
+  "plan": {
+    "MONTHLY": "Aylık",
+    "ANNUAL": "Yıllık",
+    "LIFETIME": "Tek seferlik",
+    "WEEKLY": "Haftalık",
+    "SIX_MONTH": "6 aylık",
+    "THREE_MONTH": "3 aylık",
+    "TWO_MONTH": "2 aylık",
+    "other": "Plan",
+    "perMonth": "ayda {{price}}",
+    "saving": "%{{percent}} tasarruf",
+    "selected": "seçili"
+  },
+  "states": {
+    "loading": "Planlar yükleniyor…",
+    "unavailableTitle": "Planlar şu anda yüklenemedi",
+    "unavailableBody": "Bağlantını kontrol edip tekrar dene.",
+    "retry": "Tekrar dene",
+    "alreadyPremiumTitle": "Aboneliğin zaten aktif",
+    "alreadyPremiumBody": "Bütün egzersizler sana açık.",
+    "continue": "Devam et",
+    "failed": "Satın alma tamamlanamadı. Tekrar dene.",
+    "nothingToRestore": "Bu hesapta geri yüklenecek bir abonelik bulunamadı."
+  },
+  "trial": {
+    "period": {
+      "DAY": "{{count}} gün",
+      "WEEK": "{{count}} hafta",
+      "MONTH": "{{count}} ay",
+      "YEAR": "{{count}} yıl"
+    },
+    "badge": "{{period}} ücretsiz",
+    "cta": "{{period}} ücretsiz dene",
+    "renewNote": "İlk {{period}} ücretsiz. Deneme bitmeden iptal edersen ücret alınmaz; etmezsen {{price}} üzerinden yenilenir. Google Play'den dilediğin an iptal edebilirsin."
+  }
 }

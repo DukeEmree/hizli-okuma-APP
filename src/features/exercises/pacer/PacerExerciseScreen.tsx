@@ -91,10 +91,10 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('pacer.completed', 'Tebrikler, hızınızı korudunuz!', { ns: 'exercises' })}
+          {t('pacer.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('pacer.wpmLabel', 'WPM: {{wpm}}', { ns: 'exercises', wpm })}
+          {t('pacer.wpmLabel', { ns: 'exercises', wpm })}
         </Text>
         <ExerciseCompletionActions exerciseType="pacer" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -104,7 +104,7 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <View style={{ flex: 1, marginHorizontal: 20 }}>
           <Progress value={progress * 100}>
             <Progress.Indicator transition="quick" />
@@ -153,7 +153,7 @@ export function PacerExerciseScreen({ text, wpm, onComplete }: PacerExerciseScre
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

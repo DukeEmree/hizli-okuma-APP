@@ -71,13 +71,13 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('comprehensionSpeed.completed', 'Egzersiz tamamlandı!', { ns: 'exercises' })}
+          {t('comprehensionSpeed.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('comprehensionSpeed.wpmLabel', 'Hız: {{wpm}} WPM', { ns: 'exercises', wpm })}
+          {t('comprehensionSpeed.wpmLabel', { ns: 'exercises', wpm })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('comprehensionSpeed.resultLine', 'Doğru: {{correct}} / {{total}} | Kavrama: %{{accuracy}}', { ns: 'exercises', correct: correctCount, total: totalAttempts, accuracy })}
+          {t('comprehensionSpeed.resultLine', { ns: 'exercises', correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="comprehension-speed" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -87,10 +87,10 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         {phase === 'questions' && (
           <Text color="$color11" fontSize="$3">
-            {t('comprehensionSpeed.questionLabel', 'Soru:', { ns: 'exercises' })} <Text fontWeight="bold" color="$color">{currentQuestionIndex + 1}/{currentItem?.questions.length}</Text>
+            {t('comprehensionSpeed.questionLabel', { ns: 'exercises' })} <Text fontWeight="bold" color="$color">{currentQuestionIndex + 1}/{currentItem?.questions.length}</Text>
           </Text>
         )}
       </XStack>
@@ -108,7 +108,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
                   {currentItem.text}
                 </Text>
                 <Button size="$5" theme="accent" onPress={handleFinishedReading}>
-                  {t('comprehensionSpeed.finishReading', 'Okumayı Bitirdim', { ns: 'exercises' })}
+                  {t('comprehensionSpeed.finishReading', { ns: 'exercises' })}
                 </Button>
               </YStack>
             ) : phase === 'questions' && session.state === 'running' && currentItem ? (
@@ -142,7 +142,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

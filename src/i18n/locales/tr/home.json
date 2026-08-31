@@ -1,22 +1,33 @@
 {
-  "greeting": "Merhaba 👋",
-  "greetingSubtitle": "Hoş geldin, hazır mısın?",
+  "greeting": "Hoş geldin",
   "stats": {
-    "avgWpm": "Ort. Hız",
     "wpmUnit": "WPM",
-    "comprehension": "Kavrama",
-    "trainingTime": "Çalışma",
     "minutesUnit": "dk"
   },
   "premiumCard": {
     "title": "Premium'a Geç",
-    "subtitle": "Sınırsız egzersiz ve detaylı analizler için hemen yükseltin.",
-    "cta": "İncele"
+    "subtitle": "15 egzersizin tamamı, plan dışında da açık."
   },
   "recentActivity": {
     "title": "Son Aktiviteler",
-    "empty": "Henüz bir egzersiz yapmadınız.",
+    "empty": "Henüz egzersiz yapmadın.",
     "score": "Skor: {{score}}",
     "wpm": "{{wpm}} WPM"
+  },
+  "today": {
+    "sectionLabel": "Bugün",
+    "notStarted": "Bugün henüz başlamadın",
+    "inProgress": "Bugün {{done}}/{{total}} adım",
+    "counted": "Bugün sayıldı · {{minutes}} dk",
+    "wpmLabel": "Bugünkü hız",
+    "comprehensionLabel": "Bugünkü anlama",
+    "goalLabel": "Bugün / hedef",
+    "goalA11y": "Bugün {{minutes}} dakika, günlük hedef {{goal}} dakika",
+    "noData": "bugün veri yok",
+    "deltaUp": "son {{days}} güne göre {{delta}} WPM üstünde",
+    "deltaDown": "son {{days}} güne göre {{delta}} WPM altında",
+    "examReference": "Bu hızda {{words}} kelimelik bir paragraf sorusu ≈ {{seconds}} sn",
+    "examReferenceRecent": "Son {{days}} günde {{wpm}} WPM — bu hızda {{words}} kelimelik bir paragraf sorusu ≈ {{seconds}} sn",
+    "examReferenceEmpty": "Paragraf soruları ~{{words}} kelime. Buradaki hız, onları kaç saniyede okuduğun demek."
   }
 }

@@ -8,8 +8,13 @@
   "exit": "Çıkış",
   "pause": "Duraklat",
   "start": "Başlat",
-  "timeUp": "Süre doldu!",
-  "resultAccuracy": "Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}",
+  "resultAccuracy": "Doğru {{correct}}/{{total}} · Doğruluk %{{accuracy}}",
   "resultScore": "Skor:",
-  "questionOfTotal": "Soru {{index}} / {{total}}"
+  "questionOfTotal": "Soru {{index}} / {{total}}",
+  "streakBadge": "{{days}} günlük seri",
+  "streakBadgeWithFreeze": "{{days}} günlük seri, {{freezes}} dondurma hakkı",
+  "streak": {
+    "weeklyActivity": "Son 7 Günlük Aktivite",
+    "weeklyActivityA11y": "Son 7 günlük aktivite: 7 günün {{active}} günü çalışıldı"
+  }
 }

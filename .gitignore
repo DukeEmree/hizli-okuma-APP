@@ -51,3 +51,6 @@ example
 
 # graphify
 graphify-out/
+
+# Impeccable design-system sidecar
+.impeccable/

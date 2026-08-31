@@ -21,13 +21,13 @@
     "reminderTime": "Hatırlatma Saati",
     "streakReminder": "Seri Hatırlatması",
     "progressNotifications": "İlerleme Bildirimleri",
-    "permissionRequired": "Bildirimlere izin vermek için cihaz ayarlarından uygulamaya izin vermelisiniz."
+    "permissionRequired": "Bildirimler kapalı. Cihaz ayarlarından Hızlı Okuma'ya bildirim izni ver."
   },
   "legal": {
     "title": "Yasal",
     "privacyPolicy": "Gizlilik Politikası",
     "termsOfService": "Kullanım Koşulları",
-    "openError": "Bağlantı açılamadı. Lütfen daha sonra tekrar deneyin."
+    "openError": "Bağlantı açılamadı. Daha sonra tekrar dene."
   },
   "subscription": {
     "title": "Abonelik",
@@ -38,10 +38,10 @@
     "premiumDesc": "Aktif aboneliğin bulunuyor.",
     "manage": "Aboneliği Yönet",
     "errorTitle": "Hata",
-    "errorCustomerCenter": "Abonelik yönetimi şu anda açılamıyor. Lütfen tekrar deneyin."
+    "errorCustomerCenter": "Abonelik yönetimi şu anda açılamıyor. Birazdan tekrar dene."
   },
   "dangerZone": {
-    "title": "Tehlikeli Bölge",
+    "title": "Veriler",
     "resetStats": "İstatistikleri Sıfırla",
     "resetStatsDesc": "Okuma geçmişini ve performans verilerini sil.",
     "resetStatsConfirm": "Tüm okuma geçmişin, performans verilerin ve istatistiklerin silinecek. Bu işlem geri alınamaz.",

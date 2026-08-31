@@ -1,4 +1,4 @@
-import { green, greenDark, yellow, yellowDark } from "@tamagui/colors";
+import { yellow, yellowDark } from "@tamagui/colors";
 import { createV5Theme, defaultChildrenThemes } from "@tamagui/config/v5";
 import { v5ComponentThemes } from "@tamagui/themes/v5";
 
@@ -39,6 +39,19 @@ const lightPalette = [
 // $accent-themed Button backgrounds resolve to accent2; accent11/12 are the
 // on-accent text color (white on the light teal, dark ink on the pale dark-mode
 // mint, since #3EC6A0 is too light for white text to stay legible).
+//
+// ⚠ THIS RAMP RUNS THE OPPOSITE WAY TO RADIX. Tamagui resolves a themed
+// Button's background to step 2, so step 2 has to be the solid brand color and
+// the scale climbs toward *lighter* from there — accent9/accent10 are its
+// palest end, not its solid. Reaching for `accent9`/`accent10` out of Radix
+// habit yields a pale mint that measures ~1.6:1 on a light card, which is how
+// the Track's fill, both charts, the settings toggles and an onboarding
+// heading all ended up invisible in light mode while glaring in dark.
+//
+// Only use `accent*` for a themed Button (which picks the right steps itself)
+// or for accent2/accent11 explicitly. For every other surface — data marks,
+// glyphs, tinted grounds, control states — use the `green` scale below, which
+// IS Radix-ordered and whose step 9 is authored to equal accent2 exactly.
 const accentLight = {
   accent1: "hsl(165, 82%, 29%)",
   accent2: "hsl(165, 82%, 31%)",
@@ -116,6 +129,45 @@ const alertLight = {
   red11: "hsl(7, 55%, 42%)",
   red12: "hsl(7, 55%, 17%)",
 };
+// Mineral green — the same recolor trick as ember/alert above, applied to the
+// stock `green` scale. The app has ~70 `$green*` usages (cards, badges, correct
+// answers, the tab bar's active tint) that came from a mechanical $blue* ->
+// $green* rename and landed on Radix's leaf green (hue 151), a hue that matches
+// neither the accent ramp (165) nor the icon (149). Rehueing the scale here
+// fixes every one of them at once instead of touching 25 files, and keeps
+// Radix's step semantics intact: 3-5 component backgrounds, 6-8 borders,
+// 9 the solid brand color, 10 its hover, 11 low-contrast text (readable on
+// 3-5), 12 high-contrast text. Step 9 is deliberately identical to accent2,
+// so `$green9` and a `theme="accent"` button are the same green.
+const mineralLight = {
+  green1: "hsl(165, 45%, 97%)",
+  green2: "hsl(165, 48%, 94%)",
+  green3: "hsl(165, 50%, 90%)",
+  green4: "hsl(165, 53%, 85%)",
+  green5: "hsl(165, 56%, 78%)",
+  green6: "hsl(165, 60%, 69%)",
+  green7: "hsl(165, 64%, 58%)",
+  green8: "hsl(165, 72%, 44%)",
+  green9: "hsl(165, 82%, 31%)",
+  green10: "hsl(165, 82%, 27%)",
+  green11: "hsl(165, 80%, 24%)",
+  green12: "hsl(165, 60%, 11%)",
+};
+const mineralDark = {
+  green1: "hsl(163, 32%, 7%)",
+  green2: "hsl(163, 34%, 9%)",
+  green3: "hsl(163, 38%, 13%)",
+  green4: "hsl(163, 42%, 17%)",
+  green5: "hsl(163, 45%, 21%)",
+  green6: "hsl(163, 47%, 26%)",
+  green7: "hsl(163, 49%, 33%)",
+  green8: "hsl(163, 52%, 42%)",
+  green9: "hsl(163, 54%, 51%)",
+  green10: "hsl(163, 56%, 58%)",
+  green11: "hsl(163, 62%, 72%)",
+  green12: "hsl(163, 72%, 91%)",
+};
+
 const alertDark = {
   red1: "hsl(5, 71%, 8%)",
   red2: "hsl(5, 71%, 9%)",
@@ -143,8 +195,9 @@ const builtThemes = createV5Theme({
     // Include default color themes (blue, red, green, yellow, etc.)
     ...defaultChildrenThemes,
 
-    // Recolor the stock orange/red scales to the design's ember/alert tokens
-    // so existing $orange9/$red10-style usages update without a rename.
+    // Recolor the stock orange/red/green scales to the design's ember/alert/
+    // mineral tokens so existing $orange9/$red10/$green10-style usages update
+    // without a rename.
     orange: {
       light: emberLight,
       dark: emberDark,
@@ -152,6 +205,10 @@ const builtThemes = createV5Theme({
     red: {
       light: alertLight,
       dark: alertDark,
+    },
+    green: {
+      light: mineralLight,
+      dark: mineralDark,
     },
 
     // Semantic color themes for warnings, errors, and success states
@@ -164,8 +221,8 @@ const builtThemes = createV5Theme({
       dark: alertDark,
     },
     success: {
-      light: green,
-      dark: greenDark,
+      light: mineralLight,
+      dark: mineralDark,
     },
   },
 });

@@ -1,5 +1,5 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, XStack, H2, H4, Text, Button, Card } from 'tamagui';
+import { YStack, XStack, H2, H4, Text, Button, useTheme } from 'tamagui';
 import { Check, Lock, ChevronLeft } from 'lucide-react-native';
 import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -7,20 +7,22 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useDailyPlan } from '@/features/dailyPlan/useDailyPlan';
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { analytics } from '@/lib/analytics';
-
-const ESTIMATED_MINUTES_PER_EXERCISE = 3;
+import { AppCard } from '@/components/ui/AppCard';
+import { contentColumn } from '@/constants/layout';
 
 export function DailyPlanListScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { t } = useTranslation('dailyPlan');
   const { t: tCommon } = useTranslation('common');
   const { t: tExercises } = useTranslation('exercises');
   const { isPremium } = useRevenueCat();
 
-  const { exerciseTypes, completedTypes, isAllDone, firstPendingType, setActiveFlowType } = useDailyPlan();
+  const { exerciseTypes, completedIndices, isAllDone, firstPendingIndex, estimatedMinutes, setActiveFlowType } =
+    useDailyPlan();
 
-  const handlePress = (type: string, isDone: boolean) => {
-    const isUnlocked = isPremium || isDone || type === firstPendingType;
+  const handlePress = (type: string, index: number) => {
+    const isUnlocked = isPremium || completedIndices.includes(index) || index === firstPendingIndex;
     if (!isUnlocked) {
       router.push('/paywall');
       return;
@@ -28,7 +30,7 @@ export function DailyPlanListScreen() {
     // Only the first step of the day opens the funnel; later steps are
     // continuations, and firing on each would make the plan look four times
     // more popular than it is.
-    if (completedTypes.length === 0) {
+    if (completedIndices.length === 0) {
       analytics.track('daily_plan_started', { stepCount: exerciseTypes.length });
     }
 
@@ -39,9 +41,9 @@ export function DailyPlanListScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
-      <YStack flex={1} backgroundColor="$background" padding="$4" gap="$5">
+      <YStack flex={1} backgroundColor="$background" padding="$4" gap="$5" {...contentColumn}>
         <Button
-          size="$3"
+          size="$4.5"
           circular
           chromeless
           alignSelf="flex-start"
@@ -56,28 +58,23 @@ export function DailyPlanListScreen() {
             <Text color="$color11" fontSize="$3">
               {t('card.subtitle', {
                 count: exerciseTypes.length,
-                minutes: exerciseTypes.length * ESTIMATED_MINUTES_PER_EXERCISE,
+                minutes: estimatedMinutes,
               })}
             </Text>
           )}
         </YStack>
 
         <YStack gap="$3">
-          {exerciseTypes.map((type) => {
+          {exerciseTypes.map((type, index) => {
             const definition = exerciseRegistry.getByType(type);
-            const isDone = completedTypes.includes(type);
-            const isUnlocked = isPremium || isDone || type === firstPendingType;
+            const isDone = completedIndices.includes(index);
+            const isUnlocked = isPremium || isDone || index === firstPendingIndex;
 
             return (
-              <Card
-                key={type}
-                padding="$4"
-                borderWidth={1}
-                borderColor="$borderColor"
-                backgroundColor="$backgroundHover"
-                elevation={1}
+              <AppCard
+                key={`${type}-${index}`}
                 opacity={isUnlocked ? 1 : 0.6}
-                onPress={() => handlePress(type, isDone)}
+                onPress={() => handlePress(type, index)}
                 pressStyle={{ scale: 0.98 }}
               >
                 <XStack alignItems="center" gap="$3">
@@ -86,12 +83,12 @@ export function DailyPlanListScreen() {
                     height={24}
                     borderRadius={12}
                     borderWidth={1}
-                    borderColor={isDone ? '$green8' : '$borderColor'}
-                    backgroundColor={isDone ? '$green8' : 'transparent'}
+                    borderColor={isDone ? '$green9' : '$borderColor'}
+                    backgroundColor={isDone ? '$green9' : '$background'}
                     alignItems="center"
                     justifyContent="center"
                   >
-                    {isDone && <Check size={14} color="white" />}
+                    {isDone && <Check size={14} color={theme.green1?.val as string} />}
                   </YStack>
                   <YStack flex={1}>
                     <H4
@@ -101,9 +98,9 @@ export function DailyPlanListScreen() {
                       {definition ? tExercises(definition.nameKey, type) : type}
                     </H4>
                   </YStack>
-                  {!isUnlocked && <Lock size={18} color="$color11" />}
+                  {!isUnlocked && <Lock size={18} color={theme.color11?.val as string} />}
                 </XStack>
-              </Card>
+              </AppCard>
             );
           })}
         </YStack>

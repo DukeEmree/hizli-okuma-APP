@@ -6,39 +6,35 @@
 
 ---
 
-## Önce bilinmesi gereken: gamification şu an sadece premium çalışıyor
-
-Bu, aşağıdaki özelliklerin bazılarını (ör. başarım sistemi) doğrudan etkiliyor:
-
-- XP, level ve başarımlar **yalnızca** `convex/exerciseSessions.createSession` içinde, sunucuda hesaplanıyor. O mutation premium olmayan kullanıcı için hiçbir şey yazmadan erken dönüyor, ve `SyncProvider` zaten kuyruğu sadece premium kullanıcı için boşaltıyor.
-- Guest ve ücretsiz kullanıcı **hiç XP kazanmıyor, hiç başarım açmıyor**, `AchievementPopupGlobal` onlar için hiç tetiklenmiyor.
-- `useGamificationStore` persist edilmiyor (sadece bellekte), yani premium kullanıcıda bile uygulama kapanınca bekleyen popup kayboluyor (bkz. 7.3).
-
-**Karar gereken:** gamification (XP/level/başarım/streak) ücretsiz kullanıcıda da çalışsın mı? Öneri: evet — hesaplamayı istemci tarafına da alıp (aynı saf fonksiyonlarla) yerel olarak çalıştırmak, cloud sync'i premium tutmaya devam etmek.
-
----
-
 ## 3. Ara Ekran Premium Teklifi (Interstitial Paywall)
 
-**Kullanıcı problemi.** Şu an paywall'a yalnızca kullanıcı kendisi giderse (ayarlar, ana ekrandaki kart) veya günlük limite çarparsa ulaşıyor. Limit anı en kötü teklif anı: kullanıcı tam çalışmak isterken engelleniyor ve rahatsız oluyor.
+**Durum: büyük ölçüde tamam.** İki tetikleyici çalışıyor, ortak `paywallPromptStore` +
+`shouldShowInterstitialPaywall` (`src/utils/paywall.ts`) üzerinden, 4 günlük sessizlik
+kuralıyla ve premium kullanıcıya hiç çıkmayacak şekilde:
 
-**Çözüm.** Doğru anda, seyrek, kapatılabilir tam ekran teklif. Hosted `RevenueCatUI.Paywall` (`/paywall` route) kullanılır — ayrı bir custom paywall tasarımı yok.
+- **Günlük plan tamamlanma** — `DailyPlanCompleteScreen` (`trigger=daily_plan_complete`)
+- **Seri kilometre taşı** (3/7/14/30/50/100/365 gün) — `ExerciseCompletionActions`
+  (`trigger=streak_milestone`)
 
-**Durum.** İki tetikleyici uygulandı, ortak `paywallPromptStore` + `shouldShowInterstitialPaywall` (`src/utils/paywall.ts`, 4 günlük sessizlik kuralı) üzerinden:
-- Günlük plan tamamlanma — `DailyPlanCompleteScreen`, premium olmayan kullanıcıda otomatik `/paywall`'a yönlendirir (`trigger=daily_plan_complete`). Var olan manuel giriş kartı bu sınırdan etkilenmeden ayrıca duruyor.
-- Streak kilometre taşı (3/7/14/30/50/100/365 gün, `streakCacheStore.STREAK_MILESTONES`) — `ExerciseCompletionActions` (her egzersiz tamamlama ekranının kullandığı tek ortak nokta) `currentStreak` bir kilometre taşındaysa otomatik `/paywall`'a yönlendirir (`trigger=streak_milestone`).
+İkisi de `INTERSTITIAL_DELAY_MS` kadar bekleyip açılıyor, böylece kutlama ekranı önce
+görülüyor. Kullanıcı bu süre içinde ekrandan çıkarsa paywall hiç açılmıyor **ve**
+sessizlik penceresi harcanmıyor — `markShown` navigasyonla aynı callback'in içinde.
 
-**Kalan tetikleyici (henüz yok).** Kişisel rekor kırılınca — kod tabanında "kişisel rekor" kavramı henüz yok, önce WPM rekoru tespiti eklenmeli. Eklendiğinde aynı `paywallPromptStore`/`shouldShowInterstitialPaywall` çiftini kullanmalı.
-
-**Açık sorular.** Play politikası açısından hosted ekrandaki kapat (×) butonunun görünürlüğü RevenueCat dashboard paywall ayarından kontrol ediliyor — orada net olduğundan emin olunmalı.
+**Kalan tek tetikleyici.** Kişisel rekor kırılınca. Kod tabanında "kişisel rekor"
+kavramı hâlâ yok; önce WPM rekoru tespiti eklenmeli. Eklendiğinde aynı
+`paywallPromptStore` / `shouldShowInterstitialPaywall` çiftini kullanmalı ve aynı
+gecikmeye tabi olmalı.
 
 ---
 
 ## 5. Başarım Sisteminin Geliştirilmesi + Konfeti
 
-**Kullanıcı problemi.** Şu an 6 başarım var ve bunların ikisi (`first_exercise`, `exercise_10`) sadece ilk gün tetikleniyor. Sonrasında kullanıcı haftalarca hiçbir başarım görmüyor. Üstelik ücretsiz kullanıcı hiçbirini hiç görmüyor (bkz. en üstteki not). Kutlama da küçük bir popup — "kazandım" hissi vermiyor.
+**Kullanıcı problemi.** Şu an 6 başarım var ve bunların ikisi (`first_exercise`,
+`exercise_10`) sadece ilk gün tetikleniyor. Sonrasında kullanıcı haftalarca hiçbir
+başarım görmüyor. Kutlama da küçük bir popup — "kazandım" hissi vermiyor.
 
-**Çözüm.** Kademeli ve süregelen bir başarım seti, görünür bir başarım ekranı, ve açılış anında konfeti + haptik ile gerçek bir kutlama.
+**Çözüm.** Kademeli ve süregelen bir başarım seti, görünür bir başarım ekranı, ve
+açılış anında konfeti + haptik ile gerçek bir kutlama.
 
 **Önerilen başarım kategorileri** (kademeli olmalı ki bitmesin):
 - Hacim: 1 / 10 / 50 / 100 / 500 egzersiz
@@ -51,30 +47,74 @@ Bu, aşağıdaki özelliklerin bazılarını (ör. başarım sistemi) doğrudan 
 - Gizli/eğlenceli: gece yarısı seansı, sabah 06:00 öncesi seans, tek günde 10 egzersiz
 
 **UX akışı.**
-1. Başarım açıldığında tam genişlikte kutlama: konfeti + rozet + isim + XP miktarı + haptik.
-2. Aynı anda birden fazla açılırsa sırayla, üst üste binmeden.
-3. Yeni bir "Başarımlar" ekranı: açılanlar renkli, açılmayanlar kilitli ve ilerleme çubuğu ile ("100 egzersiz: 47/100").
+1. Başarım açıldığında tam genişlikte kutlama: konfeti + rozet + isim + XP + haptik.
+2. Aynı anda birden fazla açılırsa sırayla, üst üste binmeden (kuyruk zaten var).
+3. Yeni bir "Başarımlar" ekranı: açılanlar renkli, açılmayanlar kilitli ve ilerleme
+   çubuğu ile ("100 egzersiz: 47/100").
 4. Ana ekranda "bir sonraki başarıma ne kadar kaldı" mikro göstergesi.
 
 **Teknik mimari.**
-- Başarım tanımları `src/constants/gamification.ts`'te; koşullar `convex/gamification.ts`'te elle yazılmış `if`'ler. Yeni set için koşulları veriye çevirmek gerekir: her başarım `{ id, kategori, eşik, metrik }` tanımlar, tek bir değerlendirici fonksiyon çalıştırır. Böylece başarım eklemek veri eklemek olur, kod yazmak değil.
-- Değerlendirici **saf fonksiyon** olmalı (`src/utils/` altında), hem Convex hem istemci aynı fonksiyonu çağırsın. `calculateStreakUpdate` bu şekilde zaten paylaşılıyor, aynı desen.
-- Ücretsiz kullanıcı desteği bu sayede bedavaya gelir: aynı fonksiyon yerel veriyle çalışır, sonuç `gamificationStore`'a düşer. Cloud tarafı premium kullanıcıda ayrıca kalıcı yazar.
-- `gamificationStore` **persist edilmeli** (şu an sadece bellekte, uygulama kapanınca bekleyen popup kayboluyor).
-- Bazı yeni koşullar sunucuda ek veri ister: "15 farklı egzersiz" için `exerciseStatistics` zaten yeterli; "bir ayda 20 gün" için `dailyStatistics` yeterli. Ücretsiz kullanıcı tarafında aynı koşullar `localHistoryStore`'daki son 6 aydan hesaplanabilir. Yeni tablo gerekmiyor.
-- **Konfeti:** yeni bağımlılık eklemeden `react-native-reanimated` ile yazılabilir (30-60 parça, her biri rastgele başlangıç hızı + yerçekimi + dönme; `AchievementPopupGlobal` zaten Reanimated kullanıyor). Hazır kütüphane (`react-native-confetti-cannon`) bakımsız ve Reanimated 4 ile uyumu belirsiz — önce kendi implementasyonumuzu deneyelim. Düşük seviye cihazda kare düşürmemesi için parça sayısı ölçülmeli.
-- Haptik: `expo-haptics` ve `src/lib/haptics.ts` sarmalayıcısı kuruldu. Kişisel rekor/başarım anındaki güçlü `Success` + konfeti kombinasyonu bu maddeyi bekliyor.
+- Başarım tanımları `src/constants/gamification.ts`'te; koşullar
+  `src/utils/gamification.ts`'te (`processGamification`) elle yazılmış `if`'ler —
+  saf fonksiyon, tamamen yerel, her kullanıcı için çalışıyor. Yeni set için koşulları
+  veriye çevirmek gerekir: her başarım `{ id, kategori, eşik, metrik }` tanımlar, tek
+  bir değerlendirici çalıştırır. Böylece başarım eklemek veri eklemek olur.
+- Yeni koşulların ihtiyacı olan her şey `localHistoryStore`'daki son 6 aydan
+  hesaplanabilir ("15 farklı egzersiz", "bir ayda 20 gün" dahil). Yeni depolama
+  gerekmiyor.
+- **Konfeti:** yeni bağımlılık eklemeden `react-native-reanimated` ile yazılabilir
+  (30-60 parça, rastgele başlangıç hızı + yerçekimi + dönme; `AchievementPopupGlobal`
+  zaten Reanimated kullanıyor). `react-native-confetti-cannon` bakımsız ve Reanimated
+  4 uyumu belirsiz — önce kendi implementasyonumuz denenmeli. Düşük seviye cihazda
+  kare düşürmemesi için parça sayısı ölçülmeli.
+- **Reduce Motion:** konfeti eklenecekse `useReducedMotion()` ile birlikte gelmeli;
+  uygulamada şu an hiçbir yerde Reduce Motion kontrolü yok (bkz. 7.5).
+- Haptik: `expo-haptics` ve `src/lib/haptics.ts` sarmalayıcısı hazır. Başarım anındaki
+  güçlü `Success` + konfeti kombinasyonu bu maddeyi bekliyor.
 
-**Retention etkisi.** Orta-yüksek, özellikle ücretsiz kullanıcıya açıldığında. Şu an ilerleme hissi veren tek şey streak.
+**Retention etkisi.** Orta-yüksek. Şu an ilerleme hissi veren tek şey streak.
 
-**MVP zorluğu.** Orta. Konfeti ve popup kolay; asıl iş başarım koşullarını veri odaklı hale getirmek ve ücretsiz/premium ayrımını çözmek.
+**MVP zorluğu.** Orta. Konfeti ve popup kolay; asıl iş koşulları veri odaklı hale
+getirmek.
 
-**Açık sorular.** Geçmişe dönük başarımlar: yeni başarım eklendiğinde eski kullanıcı hak ettiklerini toplu mu alacak (o zaman aynı anda 8 konfeti patlar — sessizce açıp tek bir "8 yeni başarım" özeti göstermek daha iyi)? Başarımlar ekranı ayrı sekme mi, istatistik sekmesi içinde mi?
+**Açık sorular.** Geçmişe dönük başarımlar: yeni başarım eklendiğinde eski kullanıcı
+hak ettiklerini toplu mu alacak (o zaman aynı anda 8 konfeti patlar — sessizce açıp
+tek bir "8 yeni başarım" özeti göstermek daha iyi)? Başarımlar ekranı ayrı sekme mi,
+istatistik sekmesi içinde mi?
+
+---
+
+## 6. Paywall'da deneme sonrası adımlar
+
+Custom paywall ve 14 günlük Play denemesi çalışıyor (bkz. `PROJECT_STATUS.md`).
+Bekleyen küçük işler:
+
+- **Yıllık plana da deneme.** Şu an yalnızca aylık temel planda teklif var. Yıllığa da
+  eklenirse rozet kendiliğinden gizlenir (her iki kartta aynı şeyi söyleyen etiket
+  hiçbir şeyi ayırt etmez) ve yalnızca CTA konuşur. Kod değişikliği gerekmiyor.
+- **İndirimli intro fazı.** `trialOffer()` bilerek yalnızca fiyatı sıfır olan fazı
+  kabul ediyor. "İlk 3 ay yarı fiyat" gibi bir teklif istenirse ayrı bir okuma ve ayrı
+  bir kopya gerekir; şu an böyle bir teklif sessizce görünmez.
+- **Kazanım analitiği.** `paywall_viewed` `trigger` taşıyor ama satın almanın hangi
+  tetikleyiciden geldiği izlenmiyor; `subscription_started`'a da `trigger` eklenirse
+  hangi anın sattığı ölçülebilir.
 
 ---
 
 ## 7. Karar bekleyen teknik borç
 
-**7.3 Bekleyen başarım popup'ları kalıcı değil.** `gamificationStore` persist edilmiyor; uygulama kapanırsa gösterilmemiş kutlama kaybolur. 5. madde ile birlikte çözülür.
+**7.3 Bekleyen başarım popup'ları kalıcı değil.** `gamificationStore` artık persist
+ediliyor, ama `partialize` yalnızca `xp` / `level` / `unlockedAchievementIds`'i
+yazıyor; `pendingAchievements` **bilerek** dışarıda, yoksa öldürülmüş bir uygulama
+açıldığında bayat bir kutlama (ve analitik olayı) tekrar oynardı. Sonuç: uygulama
+kapanırsa gösterilmemiş kutlama kaybolur. 5. madde ile birlikte, kuyruğu kalıcı yapıp
+"gösterildi" işaretini ayrıca tutarak çözülebilir.
 
-**7.4 Sync kuyruğu batch değil.** `SyncProvider.syncQueue` bekleyen her session için ayrı `createSession` mutation çağırıyor. N bekleyen session = N call. Çözüm: `createSession`'ı array kabul edecek şekilde batch mutation'a çevirmek, queue tek call'da yollasın. Öncelik düşük.
+**7.5 Reduce Motion hiçbir yerde kontrol edilmiyor.** `useReducedMotion` /
+`AccessibilityInfo` kod tabanında hiç geçmiyor. Başarım popup'ı 160px kayıyor, Track
+canlı modda animasyonlu. Sistem "animasyonları kaldır" ayarı yok sayılıyor. 5. madde
+konfeti eklerse bu madde blocker olur.
+
+**7.6 Android otomatik yedekleme kararı.** `allowBackup` varsayılan olarak açık ve
+`dataExtractionRules` dosyası yok; MMKV ilerleme verisi cihaz yedeklerine girebilir.
+Token/hesap verisi olmadığı için risk düşük, ama ürün kararı olarak açık.

@@ -6,28 +6,42 @@ describe("useDailyPlanStore", () => {
     useDailyPlanStore.setState({
       date: "",
       exerciseTypes: [],
-      completedTypes: [],
+      completedIndices: [],
       lastPlanTypes: [],
       activeFlowType: null,
     });
   });
 
   test("markStepCompleted marks a plan step done regardless of activeFlowType", () => {
-    useDailyPlanStore.setState({ exerciseTypes: ["rsvp", "schulte"], completedTypes: [] });
+    useDailyPlanStore.setState({ exerciseTypes: ["rsvp", "schulte"], completedIndices: [] });
 
     const wasStep = useDailyPlanStore.getState().markStepCompleted("schulte");
 
     expect(wasStep).toBe(true);
-    expect(useDailyPlanStore.getState().completedTypes).toEqual(["schulte"]);
+    expect(useDailyPlanStore.getState().completedIndices).toEqual([1]);
   });
 
-  test("markStepCompleted returns false and doesn't touch completedTypes for a non-plan type", () => {
-    useDailyPlanStore.setState({ exerciseTypes: ["rsvp"], completedTypes: [] });
+  test("markStepCompleted returns false and doesn't touch completion for a non-plan type", () => {
+    useDailyPlanStore.setState({ exerciseTypes: ["rsvp"], completedIndices: [] });
 
     const wasStep = useDailyPlanStore.getState().markStepCompleted("schulte");
 
     expect(wasStep).toBe(false);
-    expect(useDailyPlanStore.getState().completedTypes).toEqual([]);
+    expect(useDailyPlanStore.getState().completedIndices).toEqual([]);
+  });
+
+  test("a repeated step completes one row at a time", () => {
+    useDailyPlanStore.setState({ exerciseTypes: ["pacer", "pacer", "rsvp"], completedIndices: [] });
+
+    expect(useDailyPlanStore.getState().markStepCompleted("pacer")).toBe(true);
+    expect(useDailyPlanStore.getState().completedIndices).toEqual([0]);
+
+    expect(useDailyPlanStore.getState().markStepCompleted("pacer")).toBe(true);
+    expect(useDailyPlanStore.getState().completedIndices).toEqual([0, 1]);
+
+    // Both rows are done now - a third completion must not invent an index.
+    expect(useDailyPlanStore.getState().markStepCompleted("pacer")).toBe(true);
+    expect(useDailyPlanStore.getState().completedIndices).toEqual([0, 1]);
   });
 
   test("ensureTodayPlan resets activeFlowType when regenerating a new day's plan", () => {
@@ -38,6 +52,38 @@ describe("useDailyPlanStore", () => {
     const state = useDailyPlanStore.getState();
     expect(state.exerciseTypes).toEqual(["schulte", "scanning"]);
     expect(state.activeFlowType).toBeNull();
+  });
+
+  test("ensureTodayPlan keeps today's plan and its progress", () => {
+    useDailyPlanStore.setState({
+      date: "2026-08-13",
+      exerciseTypes: ["rsvp", "schulte"],
+      completedIndices: [0],
+    });
+
+    useDailyPlanStore.getState().ensureTodayPlan("2026-08-13", () => ["pacer", "keyword"]);
+
+    const state = useDailyPlanStore.getState();
+    expect(state.exerciseTypes).toEqual(["rsvp", "schulte"]);
+    expect(state.completedIndices).toEqual([0]);
+  });
+
+  test("ensureTodayPlan regenerates a persisted plan that contains a duplicate step", () => {
+    // What an older build wrote to MMKV: the generator was fixed, the stored
+    // plan wasn't, and same-day plans are otherwise never recomputed.
+    useDailyPlanStore.setState({
+      date: "2026-08-13",
+      exerciseTypes: ["peripheral", "pacer", "pacer", "keyword"],
+      completedIndices: [1],
+    });
+
+    useDailyPlanStore
+      .getState()
+      .ensureTodayPlan("2026-08-13", () => ["peripheral", "rsvp", "pacer", "keyword"]);
+
+    const state = useDailyPlanStore.getState();
+    expect(state.exerciseTypes).toEqual(["peripheral", "rsvp", "pacer", "keyword"]);
+    expect(state.completedIndices).toEqual([]);
   });
 
   test("setActiveFlowType stores the step currently running through the daily-plan flow", () => {

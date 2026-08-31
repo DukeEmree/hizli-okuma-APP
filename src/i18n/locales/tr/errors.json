@@ -2,7 +2,6 @@
   "boundary": {
     "title": "Bir şeyler ters gitti",
     "body": "Beklenmeyen bir hata oluştu. Tekrar denemek bu ekranı yeniden yükler; ilerlemen cihazında kayıtlı kaldı.",
-    "retry": "Tekrar Dene",
-    "home": "Ana Sayfaya Dön"
+    "retry": "Tekrar Dene"
   }
 }

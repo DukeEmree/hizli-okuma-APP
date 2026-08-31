@@ -1,8 +1,10 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, Text, H2, H4, Card, Button, Spinner, View } from 'tamagui';
+import { YStack, Text, H2, H4, Button, Spinner, View } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useWeeklySummary } from './useWeeklySummary';
+import { AppCard } from '@/components/ui/AppCard';
+import { contentColumn } from '@/constants/layout';
 
 export function WeeklySummaryScreen() {
   const router = useRouter();
@@ -21,24 +23,24 @@ export function WeeklySummaryScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-      <YStack flex={1} backgroundColor="$background" padding="$4" gap="$4">
+      <YStack flex={1} backgroundColor="$background" padding="$4" gap="$4" {...contentColumn}>
         <H2>{t('screen.title')}</H2>
         <Text color="$color11">{t('screen.range', { start: summary.weekStartDate, end: summary.weekEndDate })}</Text>
 
         {summary.isEmpty ? (
-          <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover">
+          <AppCard>
             <YStack gap="$2">
               <H4>{t('card.emptyTitle')}</H4>
               <Text color="$color11">{t('card.emptyBody')}</Text>
             </YStack>
-          </Card>
+          </AppCard>
         ) : (
           <YStack gap="$3">
-            <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover">
+            <AppCard>
               <Text color="$color11" fontSize="$2">{t('screen.minutesLabel')}</Text>
               <Text fontSize="$8" fontWeight="bold">{summary.totalMinutes}</Text>
-            </Card>
-            <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover">
+            </AppCard>
+            <AppCard>
               <Text color="$color11" fontSize="$2">{t('screen.wpmLabel')}</Text>
               <Text fontSize="$8" fontWeight="bold">{summary.avgWpmThisWeek ?? '-'}</Text>
               {summary.wpmDeltaPercent !== null ? (
@@ -50,11 +52,11 @@ export function WeeklySummaryScreen() {
               ) : (
                 <Text color="$color11" fontSize="$2">{t('screen.noComparison')}</Text>
               )}
-            </Card>
-            <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover">
+            </AppCard>
+            <AppCard>
               <Text color="$color11" fontSize="$2">{t('screen.streakLabel')}</Text>
               <Text fontSize="$8" fontWeight="bold">{summary.streakDays}</Text>
-            </Card>
+            </AppCard>
           </YStack>
         )}
 

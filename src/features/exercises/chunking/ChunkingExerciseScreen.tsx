@@ -72,10 +72,10 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$color">
-          {t('chunking.completed', 'Tebrikler, grup okumayı tamamladınız!', { ns: 'exercises' })}
+          {t('chunking.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('chunking.wpmChunkLabel', 'WPM: {{wpm}} | Chunk: {{chunk}}', { ns: 'exercises', wpm, chunk: chunkSize })}
+          {t('chunking.wpmChunkLabel', { ns: 'exercises', wpm, chunk: chunkSize })}
         </Text>
         <ExerciseCompletionActions exerciseType="chunking" onFinish={() => router.back()} />
       </YStack>
@@ -85,7 +85,7 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <View style={{ flex: 1, marginHorizontal: 20 }}>
           <Progress value={progress * 100}>
             <Progress.Indicator transition="quick" />
@@ -113,7 +113,7 @@ export function ChunkingExerciseScreen({ text, wpm, chunkSize, skipDefaultStorag
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

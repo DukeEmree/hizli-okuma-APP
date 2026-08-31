@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, XStack, H2, H4, Text, Button, Card, View, ScrollView, useTheme } from 'tamagui';
+import { YStack, XStack, H2, H4, Text, Button, View, ScrollView, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Dumbbell, Brain, Eye, Zap, Lock, BookOpen } from 'lucide-react-native';
@@ -14,6 +15,8 @@ import { exerciseRegistry } from '@/features/exercises/registry';
 // Egzersizler registry'den otomatik geliyor
 
 import { ExerciseDefinition } from '@/types/exercise';
+import { AppCard } from '@/components/ui/AppCard';
+import { contentColumn } from '@/constants/layout';
 
 const CATEGORY_ICONS: Record<string, any> = {
   reading: BookOpen,
@@ -83,25 +86,28 @@ export default function ExercisesScreen() {
         flex={1}
         backgroundColor="$background"
         scrollEventThrottle={16}
-        onScroll={(e: any) => { savedExercisesScrollY = e.nativeEvent.contentOffset.y; }}
+        onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => { savedExercisesScrollY = e.nativeEvent.contentOffset.y; }}
       >
-        <YStack padding="$4" gap="$4">
+        <YStack padding="$4" gap="$4" {...contentColumn}>
           
           <YStack gap="$2">
-            <H2>{t('title', 'Egzersizler')}</H2>
-            <Text color="$color11">{t('subtitle', 'Okuma hızını, kavramanı ve odağını geliştiren egzersizler.')}</Text>
+            <H2>{t('title')}</H2>
+            <Text color="$color11">{t('subtitle')}</Text>
           </YStack>
 
           {/* Categories Filter */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
             <XStack gap="$2">
               {categories.map(cat => (
-                <Button 
+                <Button
                   key={cat}
-                  size="$3"
+                  size="$4.5"
                   theme={activeCategory === cat ? 'accent' : undefined}
                   variant={activeCategory === cat ? undefined : 'outlined'}
                   onPress={() => setActiveCategory(cat)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: activeCategory === cat, checked: activeCategory === cat }}
+                  accessibilityLabel={t('a11y.categoryFilter', { category: t(`categories.${cat}`, cat) })}
                 >
                   {t(`categories.${cat}`, cat)}
                 </Button>
@@ -113,7 +119,7 @@ export default function ExercisesScreen() {
           {filteredExercises.length === 0 ? (
             <YStack padding="$6" alignItems="center" justifyContent="center" gap="$3">
               <Dumbbell size={48} color={theme.color11?.val as string} opacity={0.5} />
-              <H4>{t('labels.emptyState', 'Henüz kullanılabilir egzersiz yok.')}</H4>
+              <H4>{t('labels.emptyState')}</H4>
             </YStack>
           ) : (
             <YStack gap="$4">
@@ -122,30 +128,40 @@ export default function ExercisesScreen() {
                 const isLocked = !isPremium;
                 const stat = getExerciseStat(exercise.type);
 
+                const name = t(exercise.nameKey, exercise.type);
+                const categoryLabel = t(`categories.${exercise.category}`, exercise.category);
+                const bestScore = stat && stat.bestScore > 0 ? stat.bestScore : null;
+
                 return (
-                  <Card 
-                    key={exercise.id} 
-                    padding="$4" 
-                    borderWidth={1} 
-                    borderColor="$borderColor" 
-                    backgroundColor="$backgroundHover" 
-                    elevation={1}
+                  <AppCard
+                    key={exercise.id}
                     onPress={() => handlePress(exercise)}
                     pressStyle={{ scale: 0.98 }}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      bestScore !== null
+                        ? t('a11y.exerciseCardBest', { name, category: categoryLabel, score: bestScore })
+                        : t('a11y.exerciseCard', { name, category: categoryLabel })
+                    }
+                    accessibilityHint={isLocked ? t('a11y.lockedHint') : t('a11y.openExercise')}
                   >
                     <XStack gap="$3" alignItems="flex-start">
                       
-                      {/* Icon Container */}
-                      <View backgroundColor="$green4" padding="$3" borderRadius="$3">
-                        <IconComponent color={theme.accent10?.val} size={24} />
+                      {/* Icon Container. Radix step 3 as the ground and step 11
+                          as the glyph is the pairing the scale is built for -
+                          the old accent10 glyph was a mid-lightness teal on a
+                          pale mint tile, well under the 3:1 icons need. */}
+                      <View backgroundColor="$green3" padding="$3" borderRadius="$3">
+                        <IconComponent color={theme.green11?.val as string} size={24} />
                       </View>
 
                       {/* Content Container */}
                       <YStack flex={1} gap="$1">
                         <XStack alignItems="center" gap="$2" flexWrap="wrap">
-                          <H4 numberOfLines={1}>{t(exercise.nameKey, exercise.type)}</H4>
+                          <H4 numberOfLines={1}>{name}</H4>
                           {exercise.isPremium && (
-                            <View backgroundColor="$green4" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$4">
+                            <View backgroundColor="$green3" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$4">
                               <Text fontSize="$1" color="$green11" fontWeight="bold">PRO</Text>
                             </View>
                           )}
@@ -157,27 +173,39 @@ export default function ExercisesScreen() {
                         {/* Stats / Info Row */}
                         <XStack gap="$3" marginTop="$2" flexWrap="wrap">
                           <Text fontSize="$2" color="$color11">
-                            {t(`categories.${exercise.category}`, exercise.category)}
+                            {categoryLabel}
                           </Text>
-                          {stat && stat.bestScore > 0 && (
+                          {bestScore !== null && (
                             <Text fontSize="$2" color="$green10" fontWeight="bold">
-                              {t('labels.best', 'En İyi:')} {stat.bestScore}
+                              {t('labels.best')} {bestScore}
                             </Text>
                           )}
                         </XStack>
                       </YStack>
 
-                      {/* Action Icon */}
+                      {/* Action affordance, deliberately not a Button: the whole
+                          card is already the touch target for the same action, and
+                          a nested pressable made the row two stops in the TalkBack
+                          traversal - the second of them unlabelled. */}
                       <View justifyContent="center" alignItems="center" paddingTop="$1">
                         {isLocked ? (
                           <Lock color={theme.color11?.val as string} size={20} />
                         ) : (
-                          <Button size="$3" theme="accent" circular icon={Zap} onPress={() => handlePress(exercise)} />
+                          <View
+                            width={48}
+                            height={48}
+                            borderRadius={24}
+                            backgroundColor="$accent2"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Zap color={theme.accent11?.val as string} size={20} />
+                          </View>
                         )}
                       </View>
                       
                     </XStack>
-                  </Card>
+                  </AppCard>
                 );
               })}
             </YStack>

@@ -24,15 +24,5 @@
   "weeklySummaryReady": {
     "title": "Haftalık Özetin Hazır 📊",
     "body": "Bu haftaki okuma özetini görmek için dokun."
-  },
-  "settings": {
-    "title": "Bildirimler",
-    "enableNotifications": "Genel Bildirimler",
-    "dailyReminder": "Günlük Hatırlatma",
-    "reminderTime": "Hatırlatma Saati",
-    "streakReminder": "Seri (Streak) Hatırlatmaları",
-    "progressNotifications": "İlerleme Bildirimleri",
-    "permissionRequired": "Bildirimlere izin vermek için ayarlardan uygulamaya izin vermelisiniz.",
-    "permissionGranted": "Bildirimler başarıyla açıldı."
   }
 }

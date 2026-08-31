@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { YStack, Text, H2, Button, Card } from 'tamagui';
+import { YStack, Text, H2, Button } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
@@ -7,9 +7,11 @@ import { useStreakCacheStore } from '@/stores/streakCacheStore';
 import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { usePaywallPromptStore } from '@/stores/paywallPromptStore';
-import { shouldShowInterstitialPaywall } from '@/utils/paywall';
+import { INTERSTITIAL_DELAY_MS, shouldShowInterstitialPaywall } from '@/utils/paywall';
+import { useManagedTimeout } from '@/hooks/useManagedTimeout';
 import { XP_SOURCES } from '@/constants/gamification';
 import { analytics } from '@/lib/analytics';
+import { AppCard } from '@/components/ui/AppCard';
 
 const DAILY_PLAN_COMPLETE_TRIGGER = 'daily_plan_complete';
 
@@ -22,6 +24,10 @@ export function DailyPlanCompleteScreen() {
   const localSessions = useLocalHistoryStore((s) => s.sessions);
   const promptedRef = useRef(false);
   const trackedRef = useRef(false);
+  // Set when the user opens the paywall themselves, so the queued prompt does
+  // not then stack a second copy on top of the one they are already looking at.
+  const supersededRef = useRef(false);
+  const schedule = useManagedTimeout();
 
   useEffect(() => {
     if (trackedRef.current) return;
@@ -31,14 +37,25 @@ export function DailyPlanCompleteScreen() {
 
   useEffect(() => {
     if (promptedRef.current || isPremium) return;
-    const { lastShownAt, markShown } = usePaywallPromptStore.getState();
-    const now = Date.now();
-    if (!shouldShowInterstitialPaywall({ lastShownAt, lastTrigger: null }, isPremium, now)) return;
+    const { lastShownAt } = usePaywallPromptStore.getState();
+    if (!shouldShowInterstitialPaywall({ lastShownAt, lastTrigger: null }, isPremium, Date.now())) return;
 
+    // Claim the slot now so a re-render cannot queue a second timer, but leave
+    // the store untouched until the paywall actually opens. `useManagedTimeout`
+    // cancels on unmount, so leaving the celebration early - "Ana ekrana dön",
+    // back gesture, anything - means no paywall and no spent silence window.
     promptedRef.current = true;
-    markShown(DAILY_PLAN_COMPLETE_TRIGGER, now);
-    router.push({ pathname: '/paywall', params: { trigger: DAILY_PLAN_COMPLETE_TRIGGER } });
-  }, [isPremium, router]);
+    schedule(() => {
+      if (supersededRef.current) return;
+      usePaywallPromptStore.getState().markShown(DAILY_PLAN_COMPLETE_TRIGGER, Date.now());
+      router.push({ pathname: '/paywall', params: { trigger: DAILY_PLAN_COMPLETE_TRIGGER } });
+    }, INTERSTITIAL_DELAY_MS);
+  }, [isPremium, router, schedule]);
+
+  const openPaywall = () => {
+    supersededRef.current = true;
+    router.push('/paywall');
+  };
 
   const todaysMinutes = useMemo(() => {
     const todayStart = new Date();
@@ -69,14 +86,14 @@ export function DailyPlanCompleteScreen() {
       )}
 
       {!isPremium && (
-        <Card padding="$4" borderWidth={1} backgroundColor="$green3" borderColor="$green7" onPress={() => router.push('/paywall')}>
+        <AppCard backgroundColor="$green3" borderColor="$green7" onPress={openPaywall}>
           <YStack gap="$2" ai="center">
             <Text color="$green11" textAlign="center">{t('complete.premiumTeaser')}</Text>
-            <Button size="$3" theme="green" onPress={() => router.push('/paywall')}>
+            <Button size="$4.5" theme="accent" onPress={openPaywall}>
               {t('complete.premiumTeaserCta')}
             </Button>
           </YStack>
-        </Card>
+        </AppCard>
       )}
 
       <Button size="$5" theme="accent" onPress={() => router.replace('/(app)/(tabs)')}>

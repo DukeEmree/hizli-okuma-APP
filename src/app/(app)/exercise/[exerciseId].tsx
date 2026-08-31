@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
-import { YStack, XStack, H2, H4, Text, Button, Card, Slider, Separator, View, Paragraph, useTheme } from 'tamagui';
+import { YStack, XStack, H2, H4, Text, Button, Slider, Separator, View, Paragraph, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
-import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock, TrendingUp } from 'lucide-react-native';
+import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock, TrendingUp, type LucideIcon } from 'lucide-react-native';
 import { CartesianChart, Line } from 'victory-native';
 
 import { exerciseRegistry } from '@/features/exercises/registry';
@@ -13,8 +13,10 @@ import { useAdaptiveExerciseStart } from '@/hooks/useAdaptiveExerciseStart';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { useDailyPlanStore } from '@/stores/dailyPlanStore';
+import { AppCard } from '@/components/ui/AppCard';
+import { contentColumn } from '@/constants/layout';
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   reading: BookOpen,
   focus: Eye,
   comprehension: Brain,
@@ -91,9 +93,12 @@ export default function ExerciseInfoScreen() {
   if (!exercise) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-        <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-          <Text>{t('detailPlaceholder', { id: exerciseId })}</Text>
-          <Button marginTop="$4" onPress={() => router.back()}>{tCommon('back')}</Button>
+        {/* Was "Egzersiz Placeholder: {id}" - scaffolding copy plus an internal
+            id, shown to a user who has simply followed a stale link. */}
+        <YStack flex={1} justifyContent="center" alignItems="center" padding="$4" gap="$2">
+          <H4>{t('notFound.title')}</H4>
+          <Text color="$color11" textAlign="center">{t('notFound.body')}</Text>
+          <Button size="$4.5" marginTop="$4" onPress={() => router.back()}>{tCommon('back')}</Button>
         </YStack>
       </SafeAreaView>
     );
@@ -130,16 +135,16 @@ export default function ExerciseInfoScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
       <ScrollView style={{ flex: 1, backgroundColor: theme.background?.val as string }}>
-        <YStack padding="$4" gap="$5" paddingBottom="$10">
+        <YStack padding="$4" gap="$5" paddingBottom="$10" {...contentColumn}>
           
           {/* Header Section */}
           <XStack alignItems="center" gap="$3">
             <View backgroundColor="$green4" padding="$4" borderRadius="$4">
-              <IconComponent color={theme.accent10?.val} size={32} />
+              <IconComponent color={theme.green11?.val as string} size={32} />
             </View>
             <YStack flex={1}>
               <H2 numberOfLines={2}>{t(exercise.nameKey, exercise.type)}</H2>
-              <Text color="$color11" textTransform="capitalize">{t(`categories.${exercise.category}`, exercise.category)}</Text>
+              <Text color="$color11">{t(`categories.${exercise.category}`, exercise.category)}</Text>
             </YStack>
           </XStack>
 
@@ -154,7 +159,7 @@ export default function ExerciseInfoScreen() {
             <YStack gap="$2">
               <XStack alignItems="center" gap="$2">
                 <Info size={20} color={theme.green10?.val as string} />
-                <H4>{t('labels.purpose', 'Amacı')}</H4>
+                <H4>{t('labels.purpose')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
                 {t(exercise.nameKey.replace('.name', '.purpose'), '')}
@@ -164,7 +169,7 @@ export default function ExerciseInfoScreen() {
             <YStack gap="$2" marginTop="$2">
               <XStack alignItems="center" gap="$2">
                 <Target size={20} color={theme.green10?.val as string} />
-                <H4>{t('labels.howItWorks', 'Nasıl Çalışır?')}</H4>
+                <H4>{t('labels.howItWorks')}</H4>
               </XStack>
               <Paragraph color="$color11" fontSize="$4" lineHeight={22}>
                 {t(exercise.nameKey.replace('.name', '.howItWorks'), '')}
@@ -177,8 +182,8 @@ export default function ExerciseInfoScreen() {
           {/* Progress History Section */}
           <YStack gap="$2">
             <XStack alignItems="center" gap="$2">
-              <TrendingUp size={20} color={theme.accent10?.val as string} />
-              <H4>{t('labels.progressHistory', 'Geçmiş Performans')}</H4>
+              <TrendingUp size={20} color={theme.green11?.val as string} />
+              <H4>{t('labels.progressHistory')}</H4>
             </XStack>
             {chartData.length > 1 ? (
               <View style={{ height: 180, width: '100%' }}>
@@ -189,15 +194,15 @@ export default function ExerciseInfoScreen() {
                   domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                 >
                   {({ points }) => (
-                    <Line points={points.y} color={theme.accent10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                    <Line points={points.y} color={theme.green9?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
                   )}
                 </CartesianChart>
               </View>
             ) : (
               <Text color="$color11">
                 {progressionState
-                  ? t('labels.historicalBest', 'En İyi Seviye: {{level}}', { level: progressionState.historicalBest })
-                  : t('labels.notEnoughHistory', 'Henüz yeterli geçmiş yok. İlk denemeni tamamla!')}
+                  ? t('labels.historicalBest', { level: progressionState.historicalBest })
+                  : t('labels.notEnoughHistory')}
               </Text>
             )}
           </YStack>
@@ -207,99 +212,59 @@ export default function ExerciseInfoScreen() {
           {/* Settings Section */}
           <YStack gap="$4">
             <XStack alignItems="center" gap="$2">
-              <Settings2 size={20} color={theme.orange10?.val as string} />
-              <H4>{t('labels.settings', 'Ayarlar')}</H4>
+              <Settings2 size={20} color={theme.color11?.val as string} />
+              <H4>{t('labels.settings')}</H4>
             </XStack>
 
-            <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover" elevation={1}>
+            <AppCard>
               <YStack gap="$4">
                 
-                {/* WPM Setting */}
                 {config.wpm !== undefined && (
-                  <YStack gap="$2">
-                    <XStack justifyContent="space-between">
-                      <Text fontWeight="bold">{t('settings.wpm', 'Hız (WPM)')}</Text>
-                      <Text color="$green10" fontWeight="bold">{config.wpm}</Text>
-                    </XStack>
-                    <Slider
-                      value={[config.wpm]}
-                      max={700}
-                      min={100}
-                      step={50}
-                      onValueChange={(val) => handleSettingChange('wpm', val[0])}
-                    >
-                      <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$green10" />
-                      </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
-                    </Slider>
-                  </YStack>
+                  <ConfigSlider
+                    label={t('settings.wpm')}
+                    readout={String(config.wpm)}
+                    value={config.wpm}
+                    min={100}
+                    max={700}
+                    step={50}
+                    onChange={(v) => handleSettingChange('wpm', v)}
+                  />
                 )}
 
-                {/* Chunk Size Setting */}
                 {config.chunkSize !== undefined && (
-                  <YStack gap="$2">
-                    <XStack justifyContent="space-between">
-                      <Text fontWeight="bold">{t('settings.chunkSize', 'Grup Büyüklüğü (Kelime)')}</Text>
-                      <Text color="$green10" fontWeight="bold">{config.chunkSize}</Text>
-                    </XStack>
-                    <Slider
-                      value={[config.chunkSize]}
-                      max={5}
-                      min={1}
-                      step={1}
-                      onValueChange={(val) => handleSettingChange('chunkSize', val[0])}
-                    >
-                      <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$green10" />
-                      </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
-                    </Slider>
-                  </YStack>
+                  <ConfigSlider
+                    label={t('settings.chunkSize')}
+                    readout={String(config.chunkSize)}
+                    value={config.chunkSize}
+                    min={1}
+                    max={5}
+                    step={1}
+                    onChange={(v) => handleSettingChange('chunkSize', v)}
+                  />
                 )}
 
-                {/* Grid Size Setting (Schulte vb.) */}
                 {config.gridSize !== undefined && (
-                  <YStack gap="$2">
-                    <XStack justifyContent="space-between">
-                      <Text fontWeight="bold">{t('settings.gridSize', 'Tablo Boyutu')}</Text>
-                      <Text color="$green10" fontWeight="bold">{config.gridSize}x{config.gridSize}</Text>
-                    </XStack>
-                    <Slider
-                      value={[config.gridSize]}
-                      max={7}
-                      min={3}
-                      step={1}
-                      onValueChange={(val) => handleSettingChange('gridSize', val[0])}
-                    >
-                      <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$green10" />
-                      </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
-                    </Slider>
-                  </YStack>
+                  <ConfigSlider
+                    label={t('settings.gridSize')}
+                    readout={`${config.gridSize}x${config.gridSize}`}
+                    value={config.gridSize}
+                    min={3}
+                    max={7}
+                    step={1}
+                    onChange={(v) => handleSettingChange('gridSize', v)}
+                  />
                 )}
 
-                {/* Time Limit Setting (Saniye cinsine çevrilerek gösterilebilir) */}
                 {config.timeLimitMs !== undefined && (
-                  <YStack gap="$2">
-                    <XStack justifyContent="space-between">
-                      <Text fontWeight="bold">{t('settings.timeLimitMs', 'Süre Limiti')}</Text>
-                      <Text color="$green10" fontWeight="bold">{t('labels.estimatedTime', { time: config.timeLimitMs / 1000 })}</Text>
-                    </XStack>
-                    <Slider
-                      value={[config.timeLimitMs / 1000]}
-                      max={300}
-                      min={30}
-                      step={30}
-                      onValueChange={(val) => handleSettingChange('timeLimitMs', val[0] * 1000)}
-                    >
-                      <Slider.Track backgroundColor="$color5">
-                        <Slider.TrackActive backgroundColor="$green10" />
-                      </Slider.Track>
-                      <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green10" />
-                    </Slider>
-                  </YStack>
+                  <ConfigSlider
+                    label={t('settings.timeLimitMs')}
+                    readout={t('labels.estimatedTime', { time: config.timeLimitMs / 1000 })}
+                    value={config.timeLimitMs / 1000}
+                    min={30}
+                    max={300}
+                    step={30}
+                    onChange={(v) => handleSettingChange('timeLimitMs', v * 1000)}
+                  />
                 )}
                 
                 {/* Eğer hiçbir ayar yoksa */}
@@ -310,32 +275,104 @@ export default function ExerciseInfoScreen() {
                 )}
 
               </YStack>
-            </Card>
+            </AppCard>
           </YStack>
 
         </YStack>
       </ScrollView>
 
       {/* Sticky Bottom Action */}
-      <YStack padding="$4" paddingBottom="$6" backgroundColor="$background" borderTopWidth={1} borderColor="$borderColor">
-        <Button 
-          theme="accent"
-          backgroundColor={!canStartExercise ? "$orange9" : undefined}
-          icon={isLoading ? undefined : (!canStartExercise ? Lock : Play)} 
-          onPress={handleStart}
-          borderRadius="$8"
-          elevation={2}
-          opacity={isLoading ? 0.7 : 1}
-          disabled={isLoading}
-        >
-          {isLoading 
-            ? t('buttons.loading')
-            : (!canStartExercise 
-              ? t('buttons.limitReached', "Limit Doldu - Premium'a Geç") 
-              : t('buttons.start', 'Başla'))}
-        </Button>
+      <YStack
+        padding="$4"
+        paddingBottom="$6"
+        backgroundColor="$background"
+        borderTopWidth={1}
+        borderColor="$borderColor"
+      >
+        {/* The bar spans the window so its top border reads as a full-width
+            edge, but the action inside it stays on the content column. */}
+        <YStack {...contentColumn}>
+          {/* The locked state stays on the accent ramp: ember marks what the
+              user has earned, never an upsell, and PRO is mineral. The Lock
+              glyph and the label already carry "you cannot start this yet".
+              $4 radius and $5 height are the system's button, not a one-off
+              pill; depth is the sticky bar's own border, and the press is a
+              scale, per the design's Press Rule. */}
+          <Button
+            size="$5"
+            theme="accent"
+            icon={isLoading ? undefined : (!canStartExercise ? Lock : Play)}
+            onPress={handleStart}
+            borderRadius="$4"
+            pressStyle={{ scale: 0.98 }}
+            opacity={isLoading ? 0.7 : 1}
+            disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
+          >
+            {isLoading
+              ? t('buttons.loading')
+              : (!canStartExercise
+                ? t('buttons.unlockPremium')
+                : t('buttons.start'))}
+          </Button>
+        </YStack>
       </YStack>
 
     </SafeAreaView>
+  );
+}
+
+interface ConfigSliderProps {
+  label: string;
+  /** Rendered value, already formatted with its unit. */
+  readout: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+}
+
+/**
+ * One row of the exercise configuration card. All four settings render through
+ * this so the touch target and the screen-reader semantics are decided once.
+ *
+ * `value` is passed, never `defaultValue`: adaptive difficulty writes a new
+ * value in an effect after mount, and an uncontrolled slider would keep showing
+ * the previous run's position while the number beside it shows the new one.
+ */
+function ConfigSlider({ label, readout, value, min, max, step, onChange }: ConfigSliderProps) {
+  return (
+    <YStack gap="$2">
+      <XStack justifyContent="space-between" alignItems="baseline">
+        <Text fontWeight="bold">{label}</Text>
+        <Text color="$green10" fontWeight="bold">{readout}</Text>
+      </XStack>
+      {/* Tamagui puts the pan responder on the Slider frame, not on the thumb,
+          so vertical padding - not the thumb's size - is what lifts this to the
+          48dp Material floor. A 24px handle on a bare track gave a ~24dp band
+          on the screen every exercise is configured from. */}
+      <Slider
+        value={[value]}
+        max={max}
+        min={min}
+        step={step}
+        onValueChange={(val) => onChange(val[0])}
+        paddingVertical="$3"
+        accessibilityLabel={label}
+        accessibilityValue={{ min, max, now: value, text: readout }}
+      >
+        {/* `$color5` left the unfilled half of the track at ~1.5:1 against the
+            card, so the range being dragged within was invisible; `$color7`
+            reads without competing with the fill. Active track and handle are
+            `$green9`, the ramp's solid step and the same green as every other
+            control - `$green10` is its hover step. */}
+        <Slider.Track backgroundColor="$color7">
+          <Slider.TrackActive backgroundColor="$green9" />
+        </Slider.Track>
+        <Slider.Thumb index={0} size="$1.5" circular elevate backgroundColor="$green9" />
+      </Slider>
+    </YStack>
   );
 }

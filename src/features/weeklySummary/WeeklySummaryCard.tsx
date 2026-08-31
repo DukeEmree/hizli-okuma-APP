@@ -1,9 +1,10 @@
-import { Card, H4, Text, XStack, YStack, Button } from 'tamagui';
+import { H4, Text, YStack } from 'tamagui';
 import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useWeeklySummary } from './useWeeklySummary';
 import { Track } from '@/components/ui/track/Track';
 import { buildTrackFromDailyTrends } from '@/components/ui/track/trackLayout';
+import { AppCard } from '@/components/ui/AppCard';
 
 const TRACK_DAYS = 14;
 
@@ -17,59 +18,70 @@ export function WeeklySummaryCard() {
   const handlePress = () => router.push('/(app)/weekly-summary' as Href);
 
   const trackData = buildTrackFromDailyTrends(dailyTrends ?? [], TRACK_DAYS, timeZone, now);
-  const rangeStartLabel = new Date(now - (TRACK_DAYS - 1) * 86400000)
-    .toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+  const latestWpm = trackData[trackData.length - 1]?.value ?? null;
 
+  // The Track is the one thing on this card a screen reader cannot infer, and
+  // the card is a single tap target, so its label carries the Track's meaning
+  // rather than leaving the chart as an unlabelled node inside a button.
+  const trackLabel =
+    latestWpm === null
+      ? t('a11y.trackEmpty', { days: TRACK_DAYS })
+      : t('a11y.track', { days: TRACK_DAYS, wpm: latestWpm });
+
+  // The Track carried four labels: a range heading, a legend, and a date at
+  // each end. Three of those are an axis and a legend on a component the
+  // design system says has neither - "a texture that rewards a two-second
+  // glance", not a plotted chart. The heading names what you are looking at
+  // and stays; the rest explained a two-tone bar that teaches itself, and the
+  // spoken label below still carries all of it for a screen reader.
   const trackSection = (
     <YStack gap="$2">
-      <XStack justifyContent="space-between" alignItems="baseline">
-        <Text fontSize="$1" color="$color11" letterSpacing={0.6} textTransform="uppercase">
-          Son {TRACK_DAYS} Gün
-        </Text>
-        <Text fontSize="$1" color="$color11">yükseklik: hız · dolgu: kavrama</Text>
-      </XStack>
-      <Track data={trackData} size="expanded" />
-      <XStack justifyContent="space-between">
-        <Text fontSize="$1" color="$color11">{rangeStartLabel}</Text>
-        <Text fontSize="$1" color="$color">bugün</Text>
-      </XStack>
+      <Text fontSize="$1" color="$color11" letterSpacing={0.6} fontWeight="bold">
+        {t('track.rangeLabel', { days: TRACK_DAYS })}
+      </Text>
+      {/* `live` so the bar for a session finished this minute grows into place
+          instead of appearing between renders - the visible "today counted". */}
+      <Track data={trackData} size="expanded" live />
     </YStack>
   );
 
   if (summary.isEmpty) {
     return (
-      <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover" elevation="$1" onPress={handlePress}>
+      <AppCard
+        onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`${trackLabel} ${t('card.emptyTitle')}. ${t('a11y.openSummary')}`}
+      >
         <YStack gap="$4">
           {trackSection}
           <YStack gap="$2">
             <H4>{t('card.emptyTitle')}</H4>
             <Text color="$color11" fontSize="$2">{t('card.emptyBody')}</Text>
-            <Button size="$3" theme="accent" onPress={handlePress}>{t('card.emptyCta')}</Button>
           </YStack>
         </YStack>
-      </Card>
+      </AppCard>
     );
   }
 
   return (
-    <Card padding="$4" borderWidth={1} borderColor="$borderColor" backgroundColor="$backgroundHover" elevation="$1" onPress={handlePress}>
+    <AppCard
+      onPress={handlePress}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${trackLabel} ${t('card.title')}: ${t('card.minutes', { minutes: summary.totalMinutes })}. ${t('a11y.openSummary')}`}
+    >
       <YStack gap="$4">
         {trackSection}
+        {/* Minutes only. The streak is already in the badge at the top of this
+            screen and the speed delta is already on the today line, so stating
+            either again here was the same fact twice in one scroll. Both are
+            one tap away, in full, on the weekly screen this card opens. */}
         <YStack gap="$2">
           <H4>{t('card.title')}</H4>
           <Text fontSize="$5" fontWeight="bold">{t('card.minutes', { minutes: summary.totalMinutes })}</Text>
-          {summary.wpmDeltaPercent !== null && (
-            <Text color={summary.wpmDeltaPercent >= 0 ? '$green10' : '$color11'} fontSize="$3">
-              {t(summary.wpmDeltaPercent >= 0 ? 'card.trendUp' : 'card.trendDown', {
-                percent: Math.abs(summary.wpmDeltaPercent),
-              })}
-            </Text>
-          )}
-          {summary.streakDays > 0 && (
-            <Text color="$color11" fontSize="$2">{t('card.streak', { days: summary.streakDays })}</Text>
-          )}
         </YStack>
       </YStack>
-    </Card>
+    </AppCard>
   );
 }

@@ -72,10 +72,10 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('timeUp', 'Süre doldu!')}
+          {t('mainIdea.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('resultAccuracy', 'Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}', { correct: correctCount, total: totalAttempts, accuracy })}
+          {t('resultAccuracy', { correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="main-idea" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -85,9 +85,9 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
+          {t('resultScore')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
       </XStack>
 
@@ -104,12 +104,12 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
                   {currentItem.paragraph}
                 </Text>
                 <Button size="$5" theme="accent" onPress={handleFinishedReading}>
-                  {t('mainIdea.readDone', 'Okudum', { ns: 'exercises' })}
+                  {t('mainIdea.readDone', { ns: 'exercises' })}
                 </Button>
               </YStack>
             ) : phase === 'question' && session.state === 'running' && currentQuestion ? (
               <YStack w="100%" gap="$6" ai="center" px="$4">
-                <Text color="$color11" fontSize="$3">{t('questionOfTotal', 'Soru {{index}} / {{total}}', { index: questionIndex + 1, total: questionCount })}</Text>
+                <Text color="$color11" fontSize="$3">{t('questionOfTotal', { index: questionIndex + 1, total: questionCount })}</Text>
                 <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body" mb="$4">{currentQuestion.question}</Text>
                 <YStack w="100%" gap="$3">
                   {currentQuestion.options.map((opt, i) => (
@@ -143,7 +143,7 @@ export function MainIdeaExerciseScreen({ timeLimitMs, onComplete }: MainIdeaExer
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

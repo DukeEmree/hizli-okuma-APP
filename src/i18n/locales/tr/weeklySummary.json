@@ -2,12 +2,13 @@
   "card": {
     "title": "Bu Hafta",
     "minutes": "{{minutes}} dakika çalıştın",
-    "trendUp": "Hızın %{{percent}} arttı 📈",
+    "trendUp": "Hızın %{{percent}} arttı",
     "trendDown": "Hızın %{{percent}} azaldı",
-    "streak": "{{days}} günlük seri",
     "emptyTitle": "Bu hafta henüz başlamadın",
-    "emptyBody": "İlk adımı at, haftalık özetin burada görünsün.",
-    "emptyCta": "Egzersize başla"
+    "emptyBody": "İlk adımı at, haftalık özetin burada görünsün."
+  },
+  "track": {
+    "rangeLabel": "Son {{days}} Gün"
   },
   "screen": {
     "title": "Haftalık Özet",
@@ -17,5 +18,10 @@
     "streakLabel": "Güncel Seri",
     "noComparison": "Kıyaslamak için geçen hafta veri yok",
     "completeWeekCta": "Bu haftayı da tamamla"
+  },
+  "a11y": {
+    "track": "Son {{days}} günün izi: çubuk yüksekliği okuma hızı, dolgu anlama. Bugün {{wpm}} WPM.",
+    "trackEmpty": "Son {{days}} günün izi: bugün için veri yok.",
+    "openSummary": "Haftalık özeti aç"
   }
 }

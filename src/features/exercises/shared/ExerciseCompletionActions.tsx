@@ -6,7 +6,8 @@ import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 import { useStreakCacheStore, STREAK_MILESTONES } from '@/stores/streakCacheStore';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { usePaywallPromptStore } from '@/stores/paywallPromptStore';
-import { shouldShowInterstitialPaywall } from '@/utils/paywall';
+import { INTERSTITIAL_DELAY_MS, shouldShowInterstitialPaywall } from '@/utils/paywall';
+import { useManagedTimeout } from '@/hooks/useManagedTimeout';
 
 const STREAK_MILESTONE_TRIGGER = 'streak_milestone';
 
@@ -28,17 +29,21 @@ function useStreakMilestonePaywallTrigger() {
   const currentStreak = useStreakCacheStore((s) => s.currentStreak);
   const { isPremium } = useRevenueCat();
   const promptedRef = useRef(false);
+  const schedule = useManagedTimeout();
 
   useEffect(() => {
     if (promptedRef.current || isPremium || !STREAK_MILESTONES.includes(currentStreak)) return;
-    const { lastShownAt, markShown } = usePaywallPromptStore.getState();
-    const now = Date.now();
-    if (!shouldShowInterstitialPaywall({ lastShownAt, lastTrigger: null }, isPremium, now)) return;
+    const { lastShownAt } = usePaywallPromptStore.getState();
+    if (!shouldShowInterstitialPaywall({ lastShownAt, lastTrigger: null }, isPremium, Date.now())) return;
 
+    // The result screen gets its moment first; hitting "Bitir" inside the delay
+    // unmounts this and cancels the prompt, unspent.
     promptedRef.current = true;
-    markShown(STREAK_MILESTONE_TRIGGER, now);
-    router.push({ pathname: '/paywall', params: { trigger: STREAK_MILESTONE_TRIGGER } });
-  }, [isPremium, currentStreak, router]);
+    schedule(() => {
+      usePaywallPromptStore.getState().markShown(STREAK_MILESTONE_TRIGGER, Date.now());
+      router.push({ pathname: '/paywall', params: { trigger: STREAK_MILESTONE_TRIGGER } });
+    }, INTERSTITIAL_DELAY_MS);
+  }, [isPremium, currentStreak, router, schedule]);
 }
 
 /**
@@ -65,7 +70,7 @@ export function ExerciseCompletionActions({ exerciseType, onFinish }: ExerciseCo
   useStreakMilestonePaywallTrigger();
   const { t } = useTranslation('dailyPlan');
   const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
-  const completedTypes = useDailyPlanStore((s) => s.completedTypes);
+  const completedIndices = useDailyPlanStore((s) => s.completedIndices);
   const activeFlowType = useDailyPlanStore((s) => s.activeFlowType);
   const setActiveFlowType = useDailyPlanStore((s) => s.setActiveFlowType);
   const markStepCompleted = useDailyPlanStore((s) => s.markStepCompleted);
@@ -76,8 +81,7 @@ export function ExerciseCompletionActions({ exerciseType, onFinish }: ExerciseCo
 
   const isPlanStep =
     activeFlowType === exerciseType &&
-    exerciseTypes.includes(exerciseType) &&
-    completedTypes.includes(exerciseType);
+    exerciseTypes.some((type, i) => type === exerciseType && completedIndices.includes(i));
 
   if (isPlanStep) {
     return (

@@ -1,12 +1,14 @@
 import React from 'react';
 import { View } from 'react-native';
-import { H1, H4, Text, XStack, YStack, Button, Spinner, ScrollView, useTheme } from 'tamagui';
+import { H2, H4, Text, XStack, YStack, Button, Spinner, ScrollView, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { PerformanceStats, TimeRange } from "@/utils/localStatistics";
 import { CartesianChart, Line, Bar } from 'victory-native';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { StreakWeeklyCalendar } from "@/features/streak/StreakWeeklyCalendar";
+import { exerciseRegistry } from "@/features/exercises/registry";
+import { contentColumn } from '@/constants/layout';
 
 export function formatTime(ms: number, t: TFunction<'progress'>) {
   const mins = Math.floor(ms / 60000);
@@ -32,6 +34,13 @@ export function StatisticsDashboard({
   currentStats
 }: StatisticsDashboardProps) {
   const { t } = useTranslation('progress');
+  const { t: tExercises } = useTranslation('exercises');
+  // The breakdown listed the raw `exerciseType` slug ("Comprehension-Speed")
+  // next to the Turkish names the rest of the app shows for the same thing.
+  const exerciseName = (type: string) => {
+    const definition = exerciseRegistry.getByType(type);
+    return definition ? tExercises(definition.nameKey, type) : type;
+  };
   const theme = useTheme();
 
   if (isLoading) {
@@ -67,9 +76,9 @@ export function StatisticsDashboard({
 
   return (
     <ScrollView flex={1} backgroundColor="$background">
-      <YStack padding="$4" gap="$4">
+      <YStack padding="$4" gap="$4" {...contentColumn}>
         <XStack justifyContent="space-between" alignItems="center">
-          <H1 fontSize="$8">{t('title')}</H1>
+          <H2>{t('title')}</H2>
           <StreakBadge />
         </XStack>
 
@@ -80,10 +89,13 @@ export function StatisticsDashboard({
           {(['7d', '30d', '90d', 'all'] as TimeRange[]).map((range) => (
             <Button
               key={range}
-              size="$3"
+              size="$4.5"
               flex={1}
               theme={timeRange === range ? 'accent' : undefined}
+              variant={timeRange === range ? undefined : 'outlined'}
               onPress={() => onTimeRangeChange(range)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: timeRange === range, checked: timeRange === range }}
             >
               {t(`ranges.${range}`)}
             </Button>
@@ -173,7 +185,7 @@ export function StatisticsDashboard({
                     domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
                   >
                     {({ points }) => (
-                      <Line points={points.y} color={theme.orange10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
+                      <Line points={points.y} color={theme.green10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
                     )}
                   </CartesianChart>
                 ) : (
@@ -200,7 +212,7 @@ export function StatisticsDashboard({
                       <Bar
                         points={points.y}
                         chartBounds={chartBounds}
-                        color={theme.accent10?.val as string}
+                        color={theme.green9?.val as string}
                         roundedCorners={{ topLeft: 4, topRight: 4 }}
                         animate={{ type: "timing", duration: 500 }}
                       />
@@ -218,7 +230,7 @@ export function StatisticsDashboard({
               {currentStats.exerciseStats.map((ex) => (
                 <XStack key={ex.type} backgroundColor="$backgroundHover" padding="$3" borderRadius="$4" justifyContent="space-between" alignItems="center">
                   <YStack>
-                    <Text fontWeight="bold" textTransform="capitalize">{ex.type}</Text>
+                    <Text fontWeight="bold">{exerciseName(ex.type)}</Text>
                     <Text color="$color11" fontSize="$2">{t('breakdown.sessions', { count: ex.attemptCount })}</Text>
                   </YStack>
                   <YStack alignItems="flex-end">

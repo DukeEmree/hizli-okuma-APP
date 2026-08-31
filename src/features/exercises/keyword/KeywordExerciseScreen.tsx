@@ -70,10 +70,10 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('timeUp', 'Süre doldu!')}
+          {t('keyword.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('resultAccuracy', 'Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}', { correct: correctCount, total: totalAttempts, accuracy })}
+          {t('resultAccuracy', { correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="keyword" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -83,9 +83,9 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
+          {t('resultScore')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
       </XStack>
 
@@ -98,7 +98,7 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
           <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
             {session.state === 'running' && currentItem && currentQuestion ? (
               <YStack gap="$6" ai="center" px="$4">
-                <Text color="$color11" fontSize="$3">{t('questionOfTotal', 'Soru {{index}} / {{total}}', { index: questionIndex + 1, total: questionCount })}</Text>
+                <Text color="$color11" fontSize="$3">{t('questionOfTotal', { index: questionIndex + 1, total: questionCount })}</Text>
                 <Text textAlign="center" fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body" mb="$2">
                   {currentQuestion.question}
                 </Text>
@@ -139,7 +139,7 @@ export function KeywordExerciseScreen({ timeLimitMs, onComplete }: KeywordExerci
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

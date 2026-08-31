@@ -61,5 +61,27 @@ mock.module('react-native-purchases', () => ({
     addCustomerInfoUpdateListener: () => {},
     removeCustomerInfoUpdateListener: () => {},
     purchasePackage: () => Promise.resolve({}),
-  }
+    restorePurchases: () => Promise.resolve({}),
+  },
+  // `PACKAGE_TYPE` is a real runtime enum, not just a type: the paywall's
+  // pricing rules compare against its members, so the mock has to carry the
+  // same string values the SDK does or those comparisons silently never match.
+  PERIOD_UNIT: {
+    DAY: 'DAY',
+    WEEK: 'WEEK',
+    MONTH: 'MONTH',
+    YEAR: 'YEAR',
+    UNKNOWN: 'UNKNOWN',
+  },
+  PACKAGE_TYPE: {
+    UNKNOWN: 'UNKNOWN',
+    CUSTOM: 'CUSTOM',
+    LIFETIME: 'LIFETIME',
+    ANNUAL: 'ANNUAL',
+    SIX_MONTH: 'SIX_MONTH',
+    THREE_MONTH: 'THREE_MONTH',
+    TWO_MONTH: 'TWO_MONTH',
+    MONTHLY: 'MONTHLY',
+    WEEKLY: 'WEEKLY',
+  },
 }));

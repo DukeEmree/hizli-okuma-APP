@@ -24,16 +24,46 @@ export interface TrackProps {
   live?: boolean;
   /** Show the streak baseline strip below the bars. */
   showBaseline?: boolean;
+  /**
+   * Spoken summary of what the bars say. A Skia canvas exposes nothing to
+   * TalkBack on its own, so without this the Track is silent - pass a label
+   * wherever the Track is the only carrier of a fact, and omit it where the
+   * Track is decoration or where an ancestor already speaks for it (the
+   * weekly-summary card folds the trend into its own button label). Omitting
+   * it hides the canvas from the accessibility tree rather than leaving an
+   * unlabelled node for the screen reader to stop on.
+   */
+  accessibilityLabel?: string;
 }
 
-export function Track({ data, size = "expanded", height, live = false, showBaseline = true }: TrackProps) {
+export function Track({
+  data,
+  size = "expanded",
+  height,
+  live = false,
+  showBaseline = true,
+  accessibilityLabel,
+}: TrackProps) {
   const theme = useTheme();
   const trackHeight = height ?? SIZE_PRESETS[size].height;
   const bars = computeTrackLayout(data);
 
-  const accentColor = (theme.accent9?.val ?? theme.accent2?.val) as string;
+  // `$green9` is the mineral ramp's solid step and is authored to be identical
+  // to `accent2`, so this is exactly the green of every primary button - but it
+  // is reached through the Radix-ordered scale. The accent ramp is inverted
+  // (accent2 is the solid, accent9/10 are its palest end, because Tamagui
+  // resolves a themed Button's background to accent2), so `accent9` here was
+  // rendering the comprehension fill at 1.65:1 on a light card. See the note on
+  // `accentLight` in src/config/tamagui/themes.ts.
+  const accentColor = theme.green9?.val as string;
   const emberColor = theme.orange9?.val as string;
-  const trackColor = theme.borderColor?.val as string;
+  // Bar height is the WPM channel - half of the two-tone encoding - and the
+  // empty-day sliver is what makes a gap read as "no session". Both were drawn
+  // in `$borderColor`, a hairline tone at 1.27:1 against the card in either
+  // theme, so neither was visible: the Track showed one channel, not two.
+  // `$color8` reads as a mark (2.7:1 light / 3.2:1 dark) while staying clearly
+  // subordinate to the fill above it.
+  const trackColor = theme.color8?.val as string;
 
   // One bar per day, drawn in two layers on the same column: a full
   // WPM-height "track" bar underneath, and a shorter accent "fill" bar on
@@ -45,8 +75,15 @@ export function Track({ data, size = "expanded", height, live = false, showBasel
     fillY: bar.empty ? 0 : bar.heightRatio * bar.fillRatio,
   }));
 
+  const a11yProps = accessibilityLabel
+    ? ({ accessible: true, accessibilityRole: "image" as const, accessibilityLabel })
+    : ({
+        accessibilityElementsHidden: true,
+        importantForAccessibility: "no-hide-descendants" as const,
+      });
+
   return (
-    <YStack gap="$2">
+    <YStack gap="$2" {...a11yProps}>
       <View style={{ height: trackHeight, width: "100%" }}>
         <CartesianChart
           data={chartData}
@@ -54,6 +91,10 @@ export function Track({ data, size = "expanded", height, live = false, showBasel
           yKeys={["trackY", "fillY"]}
           domain={{ y: [0, 1] }}
           domainPadding={{ left: 6, right: 6, top: 2, bottom: 0 }}
+          // Victory renders a default Y axis even when no `yAxis` prop is
+          // passed, which drew tick gridlines across the bars. The Track is a
+          // texture, not a plotted chart - no axis, no grid, no legend.
+          yAxis={[{ lineWidth: 0, lineColor: "transparent", labelColor: "transparent" }]}
         >
           {({ points, chartBounds }) => (
             <>

@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalHistoryStore } from '@/stores/localHistoryStore';
 import { useDailyPlanStore } from '@/stores/dailyPlanStore';
-import { selectDailyPlan, ExercisePerformance } from '@/utils/dailyPlan';
+import {
+  selectDailyPlan,
+  estimatePlanMinutes,
+  medianDurationByType,
+  ExercisePerformance,
+} from '@/utils/dailyPlan';
 import { getLocalDateString } from '@/utils/streak';
 import { buildLocalStats } from '@/utils/localStatistics';
 
@@ -13,7 +18,7 @@ import { buildLocalStats } from '@/utils/localStatistics';
 export function useDailyPlan() {
   const localSessions = useLocalHistoryStore((s) => s.sessions);
   const exerciseTypes = useDailyPlanStore((s) => s.exerciseTypes);
-  const completedTypes = useDailyPlanStore((s) => s.completedTypes);
+  const completedIndices = useDailyPlanStore((s) => s.completedIndices);
   const lastPlanTypes = useDailyPlanStore((s) => s.lastPlanTypes);
   const ensureTodayPlan = useDailyPlanStore((s) => s.ensureTodayPlan);
   const setActiveFlowType = useDailyPlanStore((s) => s.setActiveFlowType);
@@ -23,30 +28,36 @@ export function useDailyPlan() {
   const [now] = useState(() => Date.now());
   const today = getLocalDateString(now, timeZone);
 
-  const performanceByType = useMemo(() => {
-    const exerciseStats = buildLocalStats(localSessions, '30d', now, timeZone).exerciseStats;
+  const { performanceByType, medianMsByType, todayMinutes } = useMemo(() => {
+    const stats = buildLocalStats(localSessions, '30d', now, timeZone);
 
     const map: Record<string, ExercisePerformance> = {};
-    for (const entry of exerciseStats) {
+    for (const entry of stats.exerciseStats) {
       map[entry.type] = { averageScore: entry.averageScore, attemptCount: entry.attemptCount };
     }
-    return map;
-  }, [localSessions, timeZone, now]);
+    const todayTrend = stats.dailyTrends.find((d) => d.date === today);
+    return {
+      performanceByType: map,
+      medianMsByType: medianDurationByType(localSessions),
+      todayMinutes: Math.round((todayTrend?.durationMs ?? 0) / 60_000),
+    };
+  }, [localSessions, timeZone, now, today]);
 
   useEffect(() => {
     ensureTodayPlan(today, () => selectDailyPlan({ dateSeed: today, performanceByType, lastPlanTypes }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
-  const completedCount = completedTypes.length;
-  const isAllDone = exerciseTypes.length > 0 && completedCount >= exerciseTypes.length;
-  const firstPendingType = exerciseTypes.find((type) => !completedTypes.includes(type));
+  const isAllDone = exerciseTypes.length > 0 && completedIndices.length >= exerciseTypes.length;
+  const firstPendingIndex = exerciseTypes.findIndex((_, i) => !completedIndices.includes(i));
 
   return {
     exerciseTypes,
-    completedTypes,
+    completedIndices,
     isAllDone,
-    firstPendingType,
+    firstPendingIndex,
     setActiveFlowType,
+    estimatedMinutes: estimatePlanMinutes(exerciseTypes, medianMsByType),
+    todayMinutes,
   };
 }

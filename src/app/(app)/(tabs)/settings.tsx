@@ -5,6 +5,7 @@ import { Alert, ScrollView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Button,
+  type ColorTokens,
   Separator,
   Sheet,
   SizableText,
@@ -46,7 +47,7 @@ import {
   FileText,
 } from "lucide-react-native";
 import { requestNotificationPermissions, rescheduleAllReminders, scheduleWeeklySummaryNotification } from '@/services/notifications';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
 import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
 import { captureException } from "@/lib/sentry";
@@ -100,7 +101,7 @@ export default function SettingsScreen() {
     scheduleWeeklySummaryNotification().catch(console.error);
   };
 
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
+  const handleTimeChange = (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
     if (Platform.OS === 'android') {
       setShowTimePicker(false);
     }
@@ -369,7 +370,7 @@ export default function SettingsScreen() {
           },
         ]}
         currentValue={theme}
-        onSelect={(v: any) => handleThemeChange(v as ThemeType)}
+        onSelect={(v) => handleThemeChange(v as ThemeType)}
       />
 
       {/* Language Sheet */}
@@ -385,7 +386,7 @@ export default function SettingsScreen() {
           },
         ]}
         currentValue={language}
-        onSelect={(v: any) => handleLangChange(v as LanguageType)}
+        onSelect={(v) => handleLangChange(v as LanguageType)}
       />
 
       {/* Reset Stats Confirmation */}
@@ -414,7 +415,7 @@ function SettingsSection({
   children,
 }: {
   title: string;
-  titleColor?: any;
+  titleColor?: ColorTokens;
   children: React.ReactNode;
 }) {
   return (
@@ -425,7 +426,7 @@ function SettingsSection({
         color={titleColor || "$color10"}
         marginBottom={8}
         marginLeft={8}
-        textTransform="uppercase"
+        letterSpacing={0.4}
         fontWeight="bold"
       >
         {title}
@@ -445,7 +446,7 @@ function SettingsSection({
 interface SettingsRowProps {
   icon: React.ReactNode;
   title: string;
-  titleColor?: string;
+  titleColor?: ColorTokens;
   subtitle?: string;
   value?: string;
   actionText?: string;
@@ -487,7 +488,7 @@ function SettingsRow({
       <YStack flex={1} minWidth={0}>
         <SizableText
           size="$5"
-          color={(titleColor || "$color") as any}
+          color={titleColor ?? "$color"}
           fontFamily="$body"
         >
           {title}
@@ -507,10 +508,10 @@ function SettingsRow({
         <Spinner size="small" color={theme.color?.val} />
       ) : isSwitch ? (
         <Switch
-          size="$3"
+          size="$3" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           checked={switchValue}
           onCheckedChange={onSwitchChange}
-          backgroundColor={switchValue ? "$accent10" : "$backgroundHover"}
+          backgroundColor={switchValue ? "$green9" : "$backgroundHover"}
         >
           <Switch.Thumb backgroundColor="$background" />
         </Switch>
@@ -523,11 +524,8 @@ function SettingsRow({
         </XStack>
       ) : actionText ? (
         <Button
-          size="$3"
-          backgroundColor="$green10"
-          color="white"
-          hoverStyle={{ backgroundColor: '$green11' }}
-          pressStyle={{ backgroundColor: '$green9' }}
+          size="$4.5"
+          theme="accent"
           onPress={onPress}
         >
           {actionText}
@@ -543,6 +541,21 @@ function SettingsRow({
 // Sheets
 // -------------------------------------------------------------
 
+interface SelectionOption {
+  value: string;
+  label: string;
+  icon?: React.JSX.Element;
+}
+
+interface SelectionSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  options: SelectionOption[];
+  currentValue: string;
+  onSelect: (value: string) => void;
+}
+
 function SelectionSheet({
   open,
   onOpenChange,
@@ -550,7 +563,7 @@ function SelectionSheet({
   options,
   currentValue,
   onSelect,
-}: any) {
+}: SelectionSheetProps) {
   const theme = useTheme();
   return (
     <Sheet
@@ -573,34 +586,54 @@ function SelectionSheet({
           >
             {title}
           </Text>
-          {options.map((opt: any) => (
-            <Button
-              key={opt.value}
-              onPress={() => onSelect(opt.value)}
-              backgroundColor={
-                currentValue === opt.value ? "$backgroundHover" : "transparent"
-              }
-              justifyContent="flex-start"
-              padding="$3"
-              borderWidth={0}
-              icon={opt.icon}
-            >
-              <XStack
-                flex={1}
-                alignItems="center"
-                justifyContent="space-between"
+          {options.map((opt) => {
+            const isSelected = currentValue === opt.value;
+            return (
+              <Button
+                key={opt.value}
+                size="$4.5"
+                onPress={() => onSelect(opt.value)}
+                backgroundColor={isSelected ? "$backgroundHover" : "transparent"}
+                justifyContent="flex-start"
+                padding="$3"
+                borderWidth={0}
+                icon={opt.icon}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isSelected, checked: isSelected }}
+                accessibilityLabel={opt.label}
               >
-                <Text fontSize="$5" color="$color" fontFamily="$body">{opt.label}</Text>
-                {currentValue === opt.value && (
-                  <Check size={20} color={theme.accent10?.val || theme.primary?.val} />
-                )}
-              </XStack>
-            </Button>
-          ))}
+                <XStack
+                  flex={1}
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  <Text fontSize="$5" color="$color" fontFamily="$body">{opt.label}</Text>
+                  {/* $green11 is the low-contrast text step, authored to read on
+                      the 1-5 grounds this row sits on. accent10 is the light end
+                      of the accent ramp and washed out on a light background. */}
+                  {isSelected && (
+                    <Check size={20} color={theme.green11?.val as string} />
+                  )}
+                </XStack>
+              </Button>
+            );
+          })}
         </YStack>
       </Sheet.Frame>
     </Sheet>
   );
+}
+
+interface ConfirmationSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  isProcessing?: boolean;
+  destructive?: boolean;
 }
 
 function ConfirmationSheet({
@@ -613,7 +646,7 @@ function ConfirmationSheet({
   onConfirm,
   isProcessing,
   destructive,
-}: any) {
+}: ConfirmationSheetProps) {
   const theme = useTheme();
   return (
     <Sheet
@@ -653,25 +686,38 @@ function ConfirmationSheet({
           </Text>
 
           <YStack gap="$3">
+            {/* Destructive confirm is a tonal alert surface, not a solid brick:
+                the alert ramp's step 9 is deliberately muted, and neither white
+                nor $red1 clears 4.5:1 on it in both themes. The 3/12 pair is the
+                scale's own readable combination (~10:1 light, ~12:1 dark) and is
+                also Material's error-container / on-error-container role.
+                The affirmative branch stays `theme="accent"` so it picks up the
+                solved on-accent color instead of a hardcoded white. */}
             <Button
-              backgroundColor={destructive ? "$red10" : "$green10"}
-              color="white"
-              hoverStyle={{ backgroundColor: '$green11' }}
-              pressStyle={{ backgroundColor: '$green9' }}
+              size="$4.5"
+              theme={destructive ? undefined : "accent"}
+              backgroundColor={destructive ? "$red3" : undefined}
+              color={destructive ? "$red12" : undefined}
+              pressStyle={destructive ? { backgroundColor: "$red4" } : undefined}
               onPress={onConfirm}
               disabled={isProcessing}
+              opacity={isProcessing ? 0.7 : 1}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !!isProcessing, busy: !!isProcessing }}
             >
-              {isProcessing ? <Spinner color={theme.background?.val} /> : confirmText}
+              {isProcessing ? (
+                <Spinner color={(destructive ? theme.red12?.val : theme.accent11?.val) as string} />
+              ) : (
+                confirmText
+              )}
             </Button>
             <Button
-              backgroundColor="transparent"
-              color="$green10"
-              borderWidth={1}
-              borderColor="$green10"
-              hoverStyle={{ backgroundColor: '$green11' }}
-              pressStyle={{ backgroundColor: '$green9' }}
+              size="$4.5"
+              variant="outlined"
+              color="$color11"
               onPress={() => onOpenChange(false)}
               disabled={isProcessing}
+              accessibilityRole="button"
             >
               {cancelText}
             </Button>

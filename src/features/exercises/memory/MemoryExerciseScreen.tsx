@@ -69,10 +69,10 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
     return (
       <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
         <Text fontSize="$8" fontWeight="bold" color="$green10">
-          {t('timeUp', 'Süre doldu!')}
+          {t('memory.completed', { ns: 'exercises' })}
         </Text>
         <Text fontSize="$4" color="$color11">
-          {t('resultAccuracy', 'Doğru: {{correct}} / {{total}} | Doğruluk: %{{accuracy}}', { correct: correctCount, total: totalAttempts, accuracy })}
+          {t('resultAccuracy', { correct: correctCount, total: totalAttempts, accuracy })}
         </Text>
         <ExerciseCompletionActions exerciseType="memory" onFinish={() => onComplete ? onComplete() : router.back()} />
       </YStack>
@@ -82,9 +82,9 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
   return (
     <YStack f={1} bg="$background" jc="space-between" ai="center" p="$4" pt="$8" pb="$8">
       <XStack w="100%" jc="space-between" ai="center">
-        <Button size="$3" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
+        <Button size="$4.5" circular variant="outlined" onPress={handleExit} icon={X} accessibilityLabel={t('exit', { ns: 'common' })} accessibilityRole="button" />
         <Text color="$color11" fontSize="$3">
-          {t('resultScore', 'Skor:')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
+          {t('resultScore')} <Text fontWeight="bold" color="$color">{correctCount}/{totalAttempts}</Text>
         </Text>
       </XStack>
 
@@ -97,7 +97,7 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
           <YStack f={1} w="100%" jc="center" ai="center">
             {phase === 'memorize' && session.state === 'running' ? (
               <YStack gap="$4" ai="center">
-                <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">{t('memory.recallPrompt', 'Bu kelimeleri hatırla:', { ns: 'exercises' })}</Text>
+                <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">{t('memory.recallPrompt', { ns: 'exercises' })}</Text>
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {targetWords.map((word, i) => (
                     <Text key={i} fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">{word}</Text>
@@ -106,7 +106,7 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
               </YStack>
             ) : phase === 'recall' && session.state === 'running' ? (
               <YStack w="100%" gap="$6" ai="center">
-                <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">{t('memory.selectPrompt', 'Hatırladığınız kelimeleri seçin ({{selected}}/{{total}}):', { ns: 'exercises', selected: selectedWords.length, total: targetWords.length })}</Text>
+                <Text textAlign="center" fontSize="$4" fontFamily="$body" color="$color11" mb="$2">{t('memory.selectPrompt', { ns: 'exercises', selected: selectedWords.length, total: targetWords.length })}</Text>
                 <XStack flexWrap="wrap" jc="center" gap="$3">
                   {options.map((opt, i) => {
                     const isSelected = selectedWords.includes(opt);
@@ -122,7 +122,7 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
                         }}
                         minWidth={120}
                         size="$4"
-                        bg={isSelected ? '$green8' : '$backgroundHover'}
+                        bg={isSelected ? '$green9' : '$backgroundHover'}
                       >
                         {opt}
                       </Button>
@@ -142,7 +142,7 @@ export function MemoryExerciseScreen({ timeLimitMs, onComplete }: MemoryExercise
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} color="white" /> : <Play size={24} color="white" />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );
