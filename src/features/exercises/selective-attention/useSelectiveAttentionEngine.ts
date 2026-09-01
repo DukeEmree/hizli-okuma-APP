@@ -131,16 +131,6 @@ export function useSelectiveAttentionEngine(config: SelectiveAttentionConfig, on
     
   }, [engine, isCompleted, selectedWords, correctWordsInGrid, generateNewRound, scheduleTimeout]);
 
-  const getCategoryName = (cat: keyof typeof categoryWords) => {
-      switch(cat) {
-          case 'animals': return 'Hayvanlar';
-          case 'fruits': return 'Meyveler';
-          case 'colors': return 'Renkler';
-          case 'objects': return 'Eşyalar';
-          default: return cat;
-      }
-  }
-
   const reset = useCallback(() => {
     engine.reset();
     setCorrectCount(0);
@@ -153,7 +143,7 @@ export function useSelectiveAttentionEngine(config: SelectiveAttentionConfig, on
   return {
     ...engine,
     reset,
-    targetCategoryName: getCategoryName(targetCategory),
+    targetCategory,
     gridWords,
     selectedWords,
     correctWordsInGrid,

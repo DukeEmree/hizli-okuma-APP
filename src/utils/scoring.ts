@@ -49,8 +49,8 @@ export function calculateReadingScore(
 }
 
 /**
- * Attention/Focus exercises (Schulte, Scanning) scoring logic.
- * Score primarily depends on reaction time and accuracy.
+ * Attention/Focus exercises (Schulte, Scanning, Memory, Main Idea) scoring logic.
+ * Score primarily depends on reaction time (if applicable) and accuracy.
  */
 export function calculateAttentionScore(
   metrics: ExerciseMetrics,
@@ -62,19 +62,23 @@ export function calculateAttentionScore(
     avgReactionTime = sum / metrics.reactionTimeMs.length;
   }
 
-  // If reaction time is 0 (impossible or error), we cap it to a logical minimum (e.g. 100ms) to avoid infinity
+  // If reaction time is 0 (impossible, question-answering, or error), we cap it to a logical minimum (100ms)
   const safeReactionTime = Math.max(avgReactionTime, 100);
 
-  // Speed Score: 1000 / reaction time (e.g. 500ms -> 2 points, 250ms -> 4 points)
+  // Speed Score: 1000 / reaction time (e.g. 500ms -> 2 points, 250ms -> 4 points, 100ms -> 10 points)
   let rawScore = 1000 / safeReactionTime;
 
   // Accuracy
   let accuracy = 1;
-  const correct = metrics.correctCount || 0;
-  const error = metrics.errorCount || 0;
-  const total = correct + error;
-  if (total > 0) {
-    accuracy = correct / total;
+  if (typeof metrics.comprehensionAccuracy === 'number') {
+    accuracy = metrics.comprehensionAccuracy;
+  } else {
+    const correct = metrics.correctCount || 0;
+    const error = metrics.errorCount || 0;
+    const total = correct + error;
+    if (total > 0) {
+      accuracy = correct / total;
+    }
   }
 
   const difficultyMultiplier = 1 + ((difficulty - 1) * 0.1);
@@ -101,10 +105,17 @@ export function calculateExerciseScore(
   durationMs: number,
   difficulty: DifficultyLevel
 ): ExerciseScore {
-  if (category === 'reading' || category === 'comprehension') {
+  if (category === 'reading') {
     return calculateReadingScore(metrics, durationMs, difficulty);
+  } else if (category === 'comprehension') {
+    // If comprehension exercise measures WPM (e.g. comprehension-speed), use reading score.
+    // Otherwise (e.g. main-idea questions), score by accuracy.
+    if (typeof metrics.wpm === 'number' && metrics.wpm > 0) {
+      return calculateReadingScore(metrics, durationMs, difficulty);
+    }
+    return calculateAttentionScore(metrics, difficulty);
   } else {
-    // vision, memory, focus defaults to attention logic for now
+    // vision, memory, focus defaults to attention logic
     return calculateAttentionScore(metrics, difficulty);
   }
 }

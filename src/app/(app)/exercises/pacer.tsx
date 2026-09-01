@@ -23,7 +23,7 @@ export default function PacerRoute() {
       wpm={wpm}
       text={pickedText ? pickedText.content : DEFAULT_TEXT}
       onComplete={() => {
-        if (markStepCompleted('pacer')) return;
+        markStepCompleted('pacer');
         router.replace('/(app)/(tabs)/exercises');
       }}
     />

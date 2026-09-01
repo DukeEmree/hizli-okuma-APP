@@ -70,10 +70,29 @@ describe('Scoring Utilities', () => {
   describe('calculateExerciseScore (Router)', () => {
     test('Kategoriye göre doğru fonksiyonu seçmeli', () => {
       const reading = calculateExerciseScore('reading', { wpm: 250 }, 60000, 1);
-      expect(reading.rawScore).toBe(2500); // Based on reading logic
+      expect(reading.rawScore).toBe(2500);
 
       const attention = calculateExerciseScore('focus', { reactionTimeMs: [250], correctCount: 1, errorCount: 0 }, 0, 1);
-      expect(attention.rawScore).toBe(400); // Based on attention logic
+      expect(attention.rawScore).toBe(400);
+    });
+
+    test('Kavrama (comprehension) WPM içeriyorsa okuma skoru hesaplanmalı', () => {
+      const comprehensionWithWpm = calculateExerciseScore('comprehension', { wpm: 300, comprehensionAccuracy: 0.8 }, 60000, 2);
+      // (300 / 10) * 1 dk = 30 -> 3000 base
+      // accuracy 0.8 -> 2400
+      // diff 2 (1.1x) -> 2640
+      expect(comprehensionWithWpm.rawScore).toBe(3000);
+      expect(comprehensionWithWpm.finalScore).toBe(2640);
+    });
+
+    test('Kavrama (comprehension) WPM içermiyorsa (örn. main-idea) doğruluk skoru hesaplanmalı', () => {
+      const comprehensionNoWpm = calculateExerciseScore('comprehension', { correctCount: 3, errorCount: 1 }, 30000, 1);
+      // RT safe limit 100ms -> raw = 1000
+      // accuracy 3/4 = 0.75
+      // diff 1 -> final = 750
+      expect(comprehensionNoWpm.rawScore).toBe(1000);
+      expect(comprehensionNoWpm.accuracy).toBe(0.75);
+      expect(comprehensionNoWpm.finalScore).toBe(750);
     });
   });
 });

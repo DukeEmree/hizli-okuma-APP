@@ -35,11 +35,11 @@
     "chunkSize": "Grup Büyüklüğü (Kelime)"
   },
   "rsvp": {
-    "name": "Hızlı Kelime Akışı",
-    "description": "Kelimeler ekranda belirlenen hızda akar. Okuma hızını ve odaklanmayı artırır.",
-    "completed": "Tebrikler!",
+    "name": "Hızlı Seri Görsel Sunum (RSVP)",
+    "description": "Kelimeleri tek bir odak noktasında hızla göstererek göz sıçramalarını ortadan kaldırır.",
+    "completed": "Tebrikler, egzersizi tamamladın!",
     "wpmLabel": "WPM: {{wpm}}",
-    "purpose": "Kelimeleri iç ses olmadan hızlıca görüp anlamanı sağlar ve gözünün bir kelimede kalma süresini kısaltır.",
+    "purpose": "Gözünün satır boyunca gezinirken kaybettiği zamanı sıfırlar, kelimeyi gördüğün anda algılama yeteneğini hızlandırır.",
     "howItWorks": "1. Ekrana odaklan.\n2. Kelimeler belirlediğin hızda sırayla akar.\n3. Kelimeleri okumak yerine görmeye ve kavramaya çalış."
   },
   "chunking": {
@@ -131,6 +131,12 @@
     "resultLine": "Doğru {{correct}} · Hatalı {{incorrect}} · Doğruluk %{{accuracy}}",
     "categoryLabel": "Kategori: {{category}}",
     "categoryPrompt": "Aşağıdaki kelimelerden bu kategoriye ait olanları seç.",
+    "categories": {
+      "animals": "Hayvanlar",
+      "fruits": "Meyveler",
+      "colors": "Renkler",
+      "objects": "Eşyalar"
+    },
     "purpose": "Dikkat dağıtıcılar varken hedefe odaklanma süreni ve doğruluğunu artırır.",
     "howItWorks": "1. Hedef kategoriyi oku.\n2. Aşağıdaki kelimelerden sadece o kategoriye ait olanları bul ve seç."
   },
@@ -159,6 +165,16 @@
     "finishReading": "Okumayı Bitirdim",
     "purpose": "Hem okuma hızını hem de okuduğunu anlama oranını aynı anda yükseltmeyi hedefler.",
     "howItWorks": "1. Metni olabildiğince hızlı ama anlayarak oku.\n2. \"Okumayı Bitirdim\" butonuna dokun.\n3. Ardından gelen soruları cevapla."
+  },
+  "comprehensionFlow": {
+    "notFound": "Metin veya sonuç bulunamadı.",
+    "back": "Geri Dön",
+    "questionProgress": "Soru {{current}} / {{total}}",
+    "completedTitle": "Sonuç",
+    "readingSpeed": "Okuma Hızı",
+    "comprehensionRate": "Anlama Oranı",
+    "wpmUnit": "{{wpm}} WPM",
+    "percentUnit": "%{{score}}"
   },
   "a11y": {
     "exerciseCard": "{{name}}, {{category}}",

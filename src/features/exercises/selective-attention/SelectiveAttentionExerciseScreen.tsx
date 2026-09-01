@@ -19,7 +19,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
 
   const {
     session,
-    targetCategoryName,
+    targetCategory,
     gridWords,
     selectedWords,
     correctWordsInGrid,
@@ -31,6 +31,8 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
     resume,
     handleSelection
   } = useSelectiveAttentionEngine({ timeLimitMs }, () => {});
+
+  const categoryName = t(`selectiveAttention.categories.${targetCategory}`, { ns: 'exercises' });
 
   useEffect(() => {
     if (countdown === null) return;
@@ -99,7 +101,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
             {session.state === 'running' && gridWords.length > 0 ? (
               <YStack gap="$4" ai="center" w="100%">
                 <Text fontSize="$8" fontWeight="bold" color="$green10" fontFamily="$body">
-                  {t('selectiveAttention.categoryLabel', { ns: 'exercises', category: targetCategoryName })}
+                  {t('selectiveAttention.categoryLabel', { ns: 'exercises', category: categoryName })}
                 </Text>
                 <Text fontSize="$4" color="$color11" fontFamily="$body" mb="$2">
                   {t('selectiveAttention.categoryPrompt', { ns: 'exercises' })}
@@ -153,7 +155,7 @@ export function SelectiveAttentionExerciseScreen({ timeLimitMs, onComplete }: Se
           theme="accent"
           onPress={handleTogglePlay}
           disabled={countdown !== null}
-         icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
+          icon={session.state === 'running' ? <Pause size={24} /> : <Play size={24} />} accessibilityLabel={t(session.state === 'running' ? 'pause' : 'start', { ns: 'common' })} accessibilityRole="button" />
       </XStack>
     </YStack>
   );

@@ -13,20 +13,30 @@ import { useSettingsStore } from '@/stores/settingsStore';
 // difficulty change.
 let difficultyChangePlayer: AudioPlayer | null = null;
 
-function getDifficultyChangePlayer(): AudioPlayer {
+function getDifficultyChangePlayer(): AudioPlayer | null {
   if (!difficultyChangePlayer) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createAudioPlayer } = require('expo-audio');
-    difficultyChangePlayer = createAudioPlayer(require('@/assets/audio/zorluk.wav'));
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { createAudioPlayer } = require('expo-audio');
+      difficultyChangePlayer = createAudioPlayer(require('@/assets/audio/zorluk.wav'));
+    } catch {
+      difficultyChangePlayer = null;
+    }
   }
-  return difficultyChangePlayer as AudioPlayer;
+  return difficultyChangePlayer;
 }
 
 export const sounds = {
   difficultyChanged: () => {
     if (!useSettingsStore.getState().soundEnabled) return;
-    const player = getDifficultyChangePlayer();
-    player.seekTo(0);
-    player.play();
+    try {
+      const player = getDifficultyChangePlayer();
+      if (player) {
+        player.seekTo(0);
+        player.play();
+      }
+    } catch {
+      // Audio playback failure should never crash session creation or UI flow
+    }
   },
 };

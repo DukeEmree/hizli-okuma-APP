@@ -21,7 +21,7 @@ export default function ScanningRoute() {
       targetSymbol={targetSymbol}
       distractorSymbol={distractorSymbol}
       onComplete={() => {
-        if (markStepCompleted('scanning')) return;
+        markStepCompleted('scanning');
         router.replace('/(app)/(tabs)/exercises');
       }}
     />

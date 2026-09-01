@@ -15,7 +15,7 @@ export default function SchulteRoute() {
       gridSize={gridSize}
       timeLimitMs={timeLimitMs}
       onComplete={() => {
-        if (markStepCompleted('schulte')) return;
+        markStepCompleted('schulte');
         router.replace('/(app)/(tabs)/exercises');
       }}
     />

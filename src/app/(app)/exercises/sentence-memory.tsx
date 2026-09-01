@@ -12,7 +12,7 @@ export default function Route() {
   const timeLimitMs = params.timeLimitMs ? parseInt(params.timeLimitMs as string, 10) : 60000;
 
   const handleComplete = () => {
-    if (markStepCompleted('sentence-memory')) return;
+    markStepCompleted('sentence-memory');
     router.back();
   };
   

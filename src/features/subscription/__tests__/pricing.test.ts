@@ -97,3 +97,27 @@ describe('defaultSelection', () => {
     expect(defaultSelection([])).toBeNull();
   });
 });
+
+describe('the prices actually configured in Play Console', () => {
+  // Nothing in the app hardcodes a price - the paywall renders whatever
+  // `product.priceString` the store returns. What it *does* compute is the
+  // saving badge and the monthly-equivalent line, and those are claims made to
+  // a user before they pay. These pin them to the real numbers.
+  test('Türkiye: ₺89,99 monthly vs ₺899,99 annual reads as 17%', () => {
+    const tryMonthly = pkg('$rc_monthly', PACKAGE_TYPE.MONTHLY, 89.99);
+    const tryAnnual = pkg('$rc_annual', PACKAGE_TYPE.ANNUAL, 899.99, {
+      pricePerMonth: 899.99 / 12,
+    });
+    expect(annualSavingPercent(tryAnnual, tryMonthly)).toBe(17);
+    expect(defaultSelection([tryMonthly, tryAnnual])?.identifier).toBe('$rc_annual');
+  });
+
+  test('a euro monthly with no euro annual yet claims no saving at all', () => {
+    // €4.99 is configured on the monthly base plan only. Until an annual price
+    // exists in the same currency there is nothing to compare, and the badge
+    // must stay off rather than compare across currencies.
+    const eurMonthly = pkg('$rc_monthly', PACKAGE_TYPE.MONTHLY, 4.99, { currencyCode: 'EUR' });
+    const tryAnnual = pkg('$rc_annual', PACKAGE_TYPE.ANNUAL, 899.99, { currencyCode: 'TRY' });
+    expect(annualSavingPercent(tryAnnual, eurMonthly)).toBeNull();
+  });
+});

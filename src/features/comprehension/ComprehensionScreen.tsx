@@ -1,13 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { YStack, Text, Button, XStack, ScrollView, Progress } from 'tamagui';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useComprehensionStore } from "@/stores/useComprehensionStore";
 import { useCreateSession } from "@/hooks/useCreateSession";
 import { calculateReadingScore, CURRENT_ALGORITHM_VERSION } from "@/utils/scoring";
 import { AppCard } from '@/components/ui/AppCard';
+import { ExerciseCompletionActions } from '@/features/exercises/shared/ExerciseCompletionActions';
 
 export function ComprehensionScreen() {
   const router = useRouter();
+  const { t } = useTranslation('exercises');
+
   const activeText = useComprehensionStore(state => state.activeText);
   const pendingResult = useComprehensionStore(state => state.pendingResult);
   const clearComprehensionContext = useComprehensionStore(state => state.clearComprehensionContext);
@@ -18,57 +22,19 @@ export function ComprehensionScreen() {
   const [isFinished, setIsFinished] = useState(false);
   const isAnsweringRef = useRef(false);
 
-  // Eğer store'da veri yoksa hata ekranı göster
-  if (!activeText || !pendingResult) {
-    return (
-      <YStack f={1} ai="center" jc="center" p="$4" bg="$background">
-        <Text color="$color" fontSize="$5" mb="$4">
-          Metin veya sonuç bulunamadı.
-        </Text>
-        <Button size="$4.5" onPress={() => router.replace('/(app)/(tabs)/exercises')}>
-          Geri Dön
-        </Button>
-      </YStack>
-    );
-  }
+  const finishComprehension = useCallback(async (finalAnswers: number[]) => {
+    if (!activeText || !pendingResult) return;
 
-  const questions = activeText.questions;
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = (currentQuestionIndex / questions.length) * 100;
-
-  const handleAnswer = (optionIndex: number) => {
-    // Guards against a rapid double-tap firing this twice before the
-    // re-render that would normally disable/advance past these buttons -
-    // without it, two taps on the last question create two exercise
-    // sessions, and two taps on an earlier question silently drop one
-    // answer (both calls read the same stale `answers` closure).
-    if (isAnsweringRef.current) return;
-    isAnsweringRef.current = true;
-
-    const newAnswers = [...answers, optionIndex];
-    setAnswers(newAnswers);
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      isAnsweringRef.current = false;
-    } else {
-      finishComprehension(newAnswers);
-    }
-  };
-
-  const finishComprehension = async (finalAnswers: number[]) => {
-    // Doğru cevapları hesapla
     let correctCount = 0;
     finalAnswers.forEach((ans, idx) => {
-      if (ans === questions[idx].correctAnswerIndex) {
+      if (ans === activeText.questions[idx]?.correctAnswerIndex) {
         correctCount++;
       }
     });
 
-    const accuracy = correctCount / questions.length;
+    const accuracy = activeText.questions.length > 0 ? correctCount / activeText.questions.length : 0;
     const comprehensionScore = Math.round(accuracy * 100);
 
-    // Recalculate score using updated metrics
     const updatedMetrics = {
       ...pendingResult.metrics,
       comprehensionScore,
@@ -88,7 +54,6 @@ export function ComprehensionScreen() {
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
     };
 
-    // Yerel geçmişe kaydet
     try {
       await createSession({
         // eslint-disable-next-line react-hooks/purity
@@ -108,6 +73,39 @@ export function ComprehensionScreen() {
     }
 
     setIsFinished(true);
+  }, [activeText, pendingResult, createSession]);
+
+  // Eğer store'da veri yoksa hata ekranı göster
+  if (!activeText || !pendingResult) {
+    return (
+      <YStack f={1} ai="center" jc="center" p="$4" bg="$background">
+        <Text color="$color" fontSize="$5" mb="$4">
+          {t('comprehensionFlow.notFound')}
+        </Text>
+        <Button size="$4.5" onPress={() => router.replace('/(app)/(tabs)/exercises')}>
+          {t('comprehensionFlow.back')}
+        </Button>
+      </YStack>
+    );
+  }
+
+  const questions = activeText.questions;
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = (currentQuestionIndex / questions.length) * 100;
+
+  const handleAnswer = (optionIndex: number) => {
+    if (isAnsweringRef.current) return;
+    isAnsweringRef.current = true;
+
+    const newAnswers = [...answers, optionIndex];
+    setAnswers(newAnswers);
+
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      isAnsweringRef.current = false;
+    } else {
+      finishComprehension(newAnswers);
+    }
   };
 
   const handleFinish = () => {
@@ -116,30 +114,40 @@ export function ComprehensionScreen() {
   };
 
   if (isFinished) {
-    // Doğruluk oranını hesapla (tekrar) UI için
     let correctCount = 0;
     answers.forEach((ans, idx) => {
-      if (ans === questions[idx].correctAnswerIndex) correctCount++;
+      if (ans === questions[idx]?.correctAnswerIndex) correctCount++;
     });
     const comprehensionScore = Math.round((correctCount / questions.length) * 100);
 
     return (
       <YStack f={1} bg="$background" p="$4" ai="center" jc="center" gap="$4">
-        <Text fontSize="$8" fontWeight="bold" color="$color">Sonuç</Text>
+        <Text fontSize="$8" fontWeight="bold" color="$color">
+          {t('comprehensionFlow.completedTitle')}
+        </Text>
         
         <AppCard w="100%" maxWidth={400} ai="center">
-          <Text fontSize="$6" mb="$2" color="$color">Okuma Hızı</Text>
-          <Text fontSize="$8" fontWeight="bold" color="$green10">{pendingResult.metrics.wpm || 0} WPM</Text>
+          <Text fontSize="$6" mb="$2" color="$color">
+            {t('comprehensionFlow.readingSpeed')}
+          </Text>
+          <Text fontSize="$8" fontWeight="bold" color="$green10">
+            {t('comprehensionFlow.wpmUnit', { wpm: pendingResult.metrics.wpm || 0 })}
+          </Text>
         </AppCard>
 
         <AppCard w="100%" maxWidth={400} ai="center">
-          <Text fontSize="$6" mb="$2" color="$color">Anlama Oranı</Text>
-          <Text fontSize="$8" fontWeight="bold" color="$green10">% {comprehensionScore}</Text>
+          <Text fontSize="$6" mb="$2" color="$color">
+            {t('comprehensionFlow.comprehensionRate')}
+          </Text>
+          <Text fontSize="$8" fontWeight="bold" color="$green10">
+            {t('comprehensionFlow.percentUnit', { score: comprehensionScore })}
+          </Text>
         </AppCard>
         
-        <Button size="$5" mt="$4" theme="accent" onPress={handleFinish}>
-          Tamamla
-        </Button>
+        <ExerciseCompletionActions
+          exerciseType={pendingResult.exerciseType}
+          onFinish={handleFinish}
+        />
       </YStack>
     );
   }
@@ -147,7 +155,9 @@ export function ComprehensionScreen() {
   return (
     <YStack f={1} bg="$background" p="$4" gap="$4">
       <XStack ai="center" jc="space-between">
-        <Text color="$color11">Soru {currentQuestionIndex + 1} / {questions.length}</Text>
+        <Text color="$color11">
+          {t('comprehensionFlow.questionProgress', { current: currentQuestionIndex + 1, total: questions.length })}
+        </Text>
         <Progress value={progress} max={100} width={150}>
           <Progress.Indicator transition="quick" />
         </Progress>

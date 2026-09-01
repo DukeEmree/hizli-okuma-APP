@@ -40,6 +40,7 @@ interface DailyPlanState {
    */
   markStepCompleted: (type: string) => boolean;
   setActiveFlowType: (type: string | null) => void;
+  resetPlan: () => void;
 }
 
 function hasDuplicate(types: string[]): boolean {
@@ -79,6 +80,7 @@ export const useDailyPlanStore = create<DailyPlanState>()(
         return true;
       },
       setActiveFlowType: (type) => set({ activeFlowType: type }),
+      resetPlan: () => set({ date: "", exerciseTypes: [], completedIndices: [], activeFlowType: null, lastPlanTypes: [] }),
     }),
     {
       name: "daily-plan-store",

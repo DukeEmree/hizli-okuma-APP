@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "sentry": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.sentry.dev/mcp"
+      ]
+    },
+    "buoy": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@buoy-gg/mcp@latest"
+      ],
+      "env": {
+        "BUOY_VERIFY": "auto"
+      }
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    }
+  }
+}

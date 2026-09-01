@@ -26,7 +26,8 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
   const [wpm, setWpm] = useState(0);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
-    const _accuracy = totalAttempts > 0 ? correctCount / totalAttempts : 0;
+    const finalWpm = (result.metrics?.wpm as number) || wpm;
+    const finalAccuracy = (result.metrics?.comprehensionAccuracy as number) ?? (totalAttempts > 0 ? correctCount / totalAttempts : 0);
 
     createSession({
       clientSessionId: result.exerciseId + '-' + Date.now(),
@@ -39,13 +40,11 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
       score: result.score.finalScore,
       metrics: {
         ...result.metrics,
-        wpm: wpm,
-        comprehensionScore: _accuracy * 100,
+        wpm: finalWpm,
+        comprehensionScore: Math.round(finalAccuracy * 100),
         // Scoring, adaptive difficulty and the comprehension statistics all
-        // read `comprehensionAccuracy` (0-1); sending only the 0-100
-        // `comprehensionScore` left this exercise invisible to every one
-        // of them.
-        comprehensionAccuracy: _accuracy,
+        // read `comprehensionAccuracy` (0-1)
+        comprehensionAccuracy: finalAccuracy,
         errorCount: totalAttempts - correctCount,
         correctCount: correctCount,
       },
@@ -80,44 +79,64 @@ export function useComprehensionSpeedEngine(config: ComprehensionSpeedConfig, on
     if (!isCompleted && engine.elapsedMs >= config.timeLimitMs) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCompleted(true);
-      engine.updateMetrics({ completionRate: 1 });
+      const acc = totalAttempts > 0 ? correctCount / totalAttempts : 0;
+      engine.updateMetrics({
+        completionRate: 1,
+        wpm,
+        comprehensionAccuracy: acc,
+        correctCount,
+        errorCount: totalAttempts - correctCount,
+      });
       engine.complete();
     }
-  }, [engine, config.timeLimitMs, isCompleted]);
+  }, [engine, config.timeLimitMs, isCompleted, correctCount, totalAttempts, wpm]);
 
   const handleFinishedReading = useCallback(() => {
     if (engine.session.state !== 'running' || phase !== 'read' || !currentItem) return;
     
-    const duration = Date.now() - readStartTime;
+    // Guard against instant tap (minimum 500ms)
+    const duration = Math.max(500, Date.now() - readStartTime);
 
-    const wordCount = currentItem.text.split(' ').length;
-    const currentWpm = Math.round((wordCount / duration) * 60000);
+    const wordCount = currentItem.text.trim().split(/\s+/).length;
+    // Bound WPM to sane human limits [50, 2000]
+    const currentWpm = Math.min(2000, Math.max(50, Math.round((wordCount / duration) * 60000)));
     setWpm(currentWpm);
+    engine.updateMetrics({ wpm: currentWpm });
     
     setPhase('questions');
-  }, [engine.session.state, phase, readStartTime, currentItem]);
+  }, [engine, phase, readStartTime, currentItem]);
 
   const handleSelection = useCallback((selectedIndex: number) => {
     if (engine.session.state !== 'running' || isCompleted || phase !== 'questions' || !currentItem) return;
 
-    setTotalAttempts(prev => prev + 1);
-    
+    const totalAtt = totalAttempts + 1;
     const currentQuestion = currentItem.questions[currentQuestionIndex];
-    if (selectedIndex === currentQuestion.correctIndex) {
-      setCorrectCount(prev => prev + 1);
+    const isCorrect = selectedIndex === currentQuestion.correctIndex;
+    const newCorrect = isCorrect ? correctCount + 1 : correctCount;
+
+    setTotalAttempts(totalAtt);
+    if (isCorrect) {
+      setCorrectCount(newCorrect);
     }
     
     if (currentQuestionIndex < currentItem.questions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex(prev => prev + 1);
     } else {
-        // Exercise complete
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+      // Exercise complete
+      const acc = totalAtt > 0 ? newCorrect / totalAtt : 0;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCompleted(true);
-        engine.updateMetrics({ completionRate: 1 });
-        engine.complete();
+      engine.updateMetrics({
+        completionRate: 1,
+        wpm,
+        comprehensionAccuracy: acc,
+        correctCount: newCorrect,
+        errorCount: totalAtt - newCorrect,
+      });
+      engine.complete();
     }
     
-  }, [engine, isCompleted, phase, currentItem, currentQuestionIndex]);
+  }, [engine, isCompleted, phase, currentItem, currentQuestionIndex, totalAttempts, correctCount, wpm]);
 
   const reset = useCallback(() => {
     engine.reset();

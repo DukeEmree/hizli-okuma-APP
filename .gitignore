@@ -54,3 +54,9 @@ graphify-out/
 
 # Impeccable design-system sidecar
 .impeccable/
+
+# Local agent symlinks & internal caches
+.claude/skills/
+.graphify/
+.scratch/
+*.log

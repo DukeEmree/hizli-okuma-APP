@@ -12,7 +12,7 @@ export default function Route() {
   const timeLimitMs = params.timeLimitMs ? parseInt(params.timeLimitMs as string, 10) : 60000;
 
   const handleComplete = () => {
-    if (markStepCompleted('comprehension-speed')) return;
+    markStepCompleted('comprehension-speed');
     router.back();
   };
   

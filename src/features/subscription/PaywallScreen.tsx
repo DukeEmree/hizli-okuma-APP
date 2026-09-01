@@ -29,7 +29,19 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
-import { Button, H2, H4, Separator, Spinner, Text, XStack, YStack, useTheme } from 'tamagui';
+import {
+  Button,
+  H2,
+  H4,
+  Separator,
+  Spinner,
+  Text,
+  XStack,
+  YStack,
+  useTheme,
+  useThemeName,
+  type ColorTokens,
+} from 'tamagui';
 import { PACKAGE_TYPE, type PurchasesPackage } from 'react-native-purchases';
 
 import { analytics } from '@/lib/analytics';
@@ -50,6 +62,66 @@ import { usePaywallOffering } from './usePaywallOffering';
 
 const TRACK_DAYS = 14;
 
+/**
+ * The colours of the lower field, composed once per theme.
+ *
+ * A ramp step is a distance from its own theme's ground, not a brightness.
+ * `$green9` is the brand solid, and it is L31% against a white page in light
+ * but L51% against a near-black page in dark. At badge size that reads as one
+ * colour. At half a screen it does not: measured, the field came out 4.0×
+ * darker than the page in light and 8.5× brighter in dark — a calm mineral
+ * block in one theme and a glare in the other. It also could not carry text:
+ * even pure white on `$green9` light is 4.01:1, under the 4.5:1 body minimum,
+ * and `$green3` on it was 3.42:1.
+ *
+ * So the field is picked per theme instead of per step. `$green11` (light) and
+ * `$green6` (dark) land at almost the same absolute luminance — 0.119 and
+ * 0.096 — so the region weighs the same in both, and every pair below clears
+ * 4.5:1 on it. `solid`/`onSolid` are the one bright thing inside: the CTA and
+ * the selected plan, which is what the brightness is for.
+ */
+interface FieldPalette {
+  bg: ColorTokens;
+  /** Heading. */
+  title: ColorTokens;
+  /** Body copy. */
+  body: ColorTokens;
+  /** Fine print and links. */
+  quiet: ColorTokens;
+  /** Separator. */
+  hairline: ColorTokens;
+  /** Unselected plan-card border. */
+  cardBorder: ColorTokens;
+  /** CTA and selected-plan ground, plus its text. */
+  solid: ColorTokens;
+  onSolid: ColorTokens;
+  onSolidQuiet: ColorTokens;
+}
+
+const FIELD_LIGHT: FieldPalette = {
+  bg: '$green11',
+  title: '$green1',
+  body: '$green2',
+  quiet: '$green3',
+  hairline: '$green8',
+  cardBorder: '$green7',
+  solid: '$green1',
+  onSolid: '$green12',
+  onSolidQuiet: '$green11',
+};
+
+const FIELD_DARK: FieldPalette = {
+  bg: '$green6',
+  title: '$green12',
+  body: '$green11',
+  quiet: '$green11',
+  hairline: '$green8',
+  cardBorder: '$green8',
+  solid: '$green12',
+  onSolid: '$green2',
+  onSolidQuiet: '$green4',
+};
+
 function PlanCard({
   pkg,
   saving,
@@ -57,6 +129,7 @@ function PlanCard({
   showTrialBadge,
   isSelected,
   onSelect,
+  field,
 }: {
   pkg: PurchasesPackage;
   saving: number | null;
@@ -64,6 +137,7 @@ function PlanCard({
   showTrialBadge: boolean;
   isSelected: boolean;
   onSelect: () => void;
+  field: FieldPalette;
 }) {
   const { t } = useTranslation('subscription');
   const label = t(`plan.${pkg.packageType}`, { defaultValue: t('plan.other') });
@@ -86,9 +160,9 @@ function PlanCard({
       padding="$3"
       borderRadius="$4"
       gap="$1"
-      backgroundColor={isSelected ? '$green1' : 'transparent'}
+      backgroundColor={isSelected ? field.solid : 'transparent'}
       borderWidth={1}
-      borderColor={isSelected ? '$green1' : '$green7'}
+      borderColor={isSelected ? field.solid : field.cardBorder}
       onPress={onSelect}
       pressStyle={{ scale: 0.98 }}
       accessible
@@ -103,23 +177,23 @@ function PlanCard({
         .filter(Boolean)
         .join(', ')}
     >
-      <Text fontSize="$2" fontWeight="bold" color={isSelected ? '$green11' : '$green3'}>
+      <Text fontSize="$2" fontWeight="bold" color={isSelected ? field.onSolidQuiet : field.quiet}>
         {label}
       </Text>
-      <Text fontSize="$7" fontWeight="bold" color={isSelected ? '$green12' : '$green1'}>
+      <Text fontSize="$7" fontWeight="bold" color={isSelected ? field.onSolid : field.title}>
         {pkg.product.priceString}
       </Text>
       {perMonth ? (
-        <Text fontSize="$1" color={isSelected ? '$green11' : '$green3'}>
+        <Text fontSize="$1" color={isSelected ? field.onSolidQuiet : field.quiet}>
           {perMonth}
         </Text>
       ) : null}
       {badge ? (
-        <Text fontSize="$1" fontWeight="bold" color={isSelected ? '$green11' : '$green2'}>
+        <Text fontSize="$1" fontWeight="bold" color={isSelected ? field.onSolidQuiet : field.body}>
           {badge}
         </Text>
       ) : !trialPeriod && saving !== null ? (
-        <Text fontSize="$1" fontWeight="bold" color={isSelected ? '$green11' : '$green2'}>
+        <Text fontSize="$1" fontWeight="bold" color={isSelected ? field.onSolidQuiet : field.body}>
           {t('plan.saving', { percent: saving })}
         </Text>
       ) : null}
@@ -147,6 +221,7 @@ export default function PaywallScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { isPremium } = useRevenueCat();
+  const field = useThemeName().startsWith('dark') ? FIELD_DARK : FIELD_LIGHT;
 
   const { status, packages, selected, select, purchase, restore, isBusy, outcome, retry } =
     usePaywallOffering();
@@ -305,93 +380,107 @@ export default function PaywallScreen() {
           {/* ── the fold: colour owns this region, and only this one ── */}
           <YStack
             flex={1}
-            backgroundColor="$green9"
+            backgroundColor={field.bg}
             padding="$4"
-            paddingBottom={insets.bottom + 24}
             gap="$4"
             borderTopLeftRadius="$6"
             borderTopRightRadius="$6"
           >
             <YStack gap="$2">
-              <H4 color="$green1">{t('offer.title')}</H4>
-              <Text color="$green2" fontSize="$3" lineHeight={22}>
+              <H4 color={field.title}>{t('offer.title')}</H4>
+              <Text color={field.body} fontSize="$3" lineHeight={22}>
                 {t('offer.body')}
               </Text>
             </YStack>
-
-            <XStack gap="$3">
-              {packages.map((pkg) => (
-                <PlanCard
-                  key={pkg.identifier}
-                  pkg={pkg}
-                  saving={annualSavingPercent(pkg, monthly)}
-                  trial={trialsByPackage.get(pkg.identifier) ?? null}
-                  showTrialBadge={trialBadgeDiscriminates}
-                  isSelected={selected?.identifier === pkg.identifier}
-                  onSelect={() => select(pkg)}
-                />
-              ))}
-            </XStack>
-
-            {outcome.kind === 'failed' || outcome.kind === 'nothingToRestore' ? (
-              <Text color="$green1" fontSize="$2" fontWeight="bold">
-                {t(outcome.kind === 'failed' ? 'states.failed' : 'states.nothingToRestore')}
-              </Text>
-            ) : null}
-
-            <Button
-              size="$5"
-              backgroundColor="$green1"
-              color="$green12"
-              borderRadius="$4"
-              pressStyle={{ scale: 0.98, backgroundColor: '$green2' }}
-              onPress={handlePurchase}
-              disabled={isBusy || !selected}
-              opacity={isBusy ? 0.7 : 1}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: isBusy, busy: isBusy }}
-            >
-              {isBusy ? (
-                <Spinner color={theme.green12?.val as string} />
-              ) : selectedTrialPeriod ? (
-                t('trial.cta', { period: selectedTrialPeriod })
-              ) : (
-                t('offer.cta')
-              )}
-            </Button>
-
-            {/* Play requires the terms of a trial-to-paid conversion to be
-                visible before purchase, not only in the store sheet. */}
-            <Text color="$green3" fontSize="$1" textAlign="center" lineHeight={16}>
-              {selectedTrialPeriod && selected
-                ? t('trial.renewNote', {
-                    period: selectedTrialPeriod,
-                    price: selected.product.priceString,
-                  })
-                : t('offer.renewNote')}
-            </Text>
-
-            <Separator borderColor="$green8" />
-
-            <XStack justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$2">
-              <Text
-                fontSize="$2"
-                color="$green2"
-                fontWeight="bold"
-                onPress={handleRestore}
-                accessibilityRole="button"
-                accessibilityLabel={t('offer.restore')}
-              >
-                {t('offer.restore')}
-              </Text>
-              <XStack gap="$3">
-                <LegalLink label={t('offer.terms')} url={LEGAL_URLS.termsOfService} />
-                <LegalLink label={t('offer.privacy')} url={LEGAL_URLS.privacyPolicy} />
-              </XStack>
-            </XStack>
           </YStack>
         </YStack>
       </ScrollView>
+
+      {/* The decision stays on screen: the prices and the button. Inside the
+          scroll, both fell below the fold at font_scale 1.3 - a paywall showing
+          neither a price nor its own button is not a paywall. Same ground as
+          the field above, so the two read as one region and only the argument
+          scrolls. */}
+      <YStack
+        {...contentColumn}
+        backgroundColor={field.bg}
+        paddingHorizontal="$4"
+        paddingTop="$3"
+        paddingBottom={insets.bottom + 16}
+        gap="$3"
+      >
+        <XStack gap="$3">
+          {packages.map((pkg) => (
+            <PlanCard
+              key={pkg.identifier}
+              pkg={pkg}
+              saving={annualSavingPercent(pkg, monthly)}
+              trial={trialsByPackage.get(pkg.identifier) ?? null}
+              showTrialBadge={trialBadgeDiscriminates}
+              isSelected={selected?.identifier === pkg.identifier}
+              onSelect={() => select(pkg)}
+              field={field}
+            />
+          ))}
+        </XStack>
+
+        {outcome.kind === 'failed' || outcome.kind === 'nothingToRestore' ? (
+          <Text color={field.title} fontSize="$2" fontWeight="bold">
+            {t(outcome.kind === 'failed' ? 'states.failed' : 'states.nothingToRestore')}
+          </Text>
+        ) : null}
+
+        <Button
+          size="$5"
+          backgroundColor={field.solid}
+          color={field.onSolid}
+          borderRadius="$4"
+          pressStyle={{ scale: 0.98, opacity: 0.9 }}
+          onPress={handlePurchase}
+          disabled={isBusy || !selected}
+          opacity={isBusy ? 0.7 : 1}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isBusy, busy: isBusy }}
+        >
+          {isBusy ? (
+            <Spinner color={field.onSolid} />
+          ) : selectedTrialPeriod ? (
+            t('trial.cta', { period: selectedTrialPeriod })
+          ) : (
+            t('offer.cta')
+          )}
+        </Button>
+
+        {/* Play requires the terms of a trial-to-paid conversion to be
+            visible before purchase, not only in the store sheet. */}
+        <Text color={field.quiet} fontSize="$1" textAlign="center" lineHeight={16}>
+          {selectedTrialPeriod && selected
+            ? t('trial.renewNote', {
+                period: selectedTrialPeriod,
+                price: selected.product.priceString,
+              })
+            : t('offer.renewNote')}
+        </Text>
+
+        <Separator borderColor={field.hairline} />
+
+        <XStack justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$2">
+          <Text
+            fontSize="$2"
+            color={field.body}
+            fontWeight="bold"
+            onPress={handleRestore}
+            accessibilityRole="button"
+            accessibilityLabel={t('offer.restore')}
+          >
+            {t('offer.restore')}
+          </Text>
+          <XStack gap="$3">
+            <LegalLink label={t('offer.terms')} url={LEGAL_URLS.termsOfService} color={field.quiet} />
+            <LegalLink label={t('offer.privacy')} url={LEGAL_URLS.privacyPolicy} color={field.quiet} />
+          </XStack>
+        </XStack>
+      </YStack>
     </YStack>
   );
 }
@@ -437,7 +526,7 @@ function ExerciseRoster() {
   );
 }
 
-function LegalLink({ label, url }: { label: string; url: string }) {
+function LegalLink({ label, url, color }: { label: string; url: string; color: ColorTokens }) {
   // Same in-app browser Settings uses: Play requires these reachable from the
   // purchase screen, and losing the user to an external app mid-purchase is
   // the one navigation this screen cannot afford.
@@ -452,7 +541,7 @@ function LegalLink({ label, url }: { label: string; url: string }) {
   return (
     <Text
       fontSize="$2"
-      color="$green3"
+      color={color}
       textDecorationLine="underline"
       onPress={open}
       accessibilityRole="link"

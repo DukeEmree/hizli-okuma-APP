@@ -28,6 +28,8 @@ import {
 import { useStreakCacheStore } from "@/stores/streakCacheStore";
 import { useLocalHistoryStore } from "@/stores/localHistoryStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
+import { useDailyPlanStore } from "@/stores/dailyPlanStore";
+import { usePaywallPromptStore } from "@/stores/paywallPromptStore";
 
 import {
   Check,
@@ -150,6 +152,10 @@ export default function SettingsScreen() {
       useStreakCacheStore.getState().resetCache();
       useGamificationStore.getState().resetProgress();
       useLocalHistoryStore.getState().clear();
+      useDailyPlanStore.getState().resetPlan();
+      usePaywallPromptStore.getState().resetPrompts();
+      useSettingsStore.setState({ notifiedMilestones: [] });
+      rescheduleAllReminders().catch(() => {});
 
       setResetStatsSheetOpen(false);
       Alert.alert(t("dangerZone.successTitle"), t("dangerZone.successReset"));

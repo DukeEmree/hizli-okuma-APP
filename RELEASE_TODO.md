@@ -19,7 +19,34 @@ formu gerektiriyor. Kod tarafı hazır: `bun run typecheck`, `bun run lint`,
 
 ---
 
-## 1. Gerçek Play Store'da eksik olan Lifetime ürünü
+## 1. Fiyatlandırma — Play Console
+
+Hedef fiyatlar:
+
+| Plan | Türkiye | Diğer ülkeler |
+|---|---|---|
+| Aylık (`premium:aylik-abonelik`) | ₺89,99 | €4,99 |
+| Yıllık (`premium:yillik`) | ₺899,99 | **henüz belirlenmedi** |
+
+Bunlar **kodda değil**, Play Console'da yaşıyor: Monetize → Products →
+Subscriptions → ilgili base plan → bölgesel fiyatlandırma. Paywall hiçbir
+fiyatı sabitlemez; ne yazarsan `product.priceString` olarak onu gösterir, ve
+"ayda X" ile "%N tasarruf" satırlarını o rakamlardan kendisi hesaplar.
+
+Bu fiyatlarla ekranın ne diyeceği (`pricing.test.ts` bunu sabitliyor):
+
+- Türkiye: yıllık kart "ayda ₺75,00" ve "%17 tasarruf" gösterir, ve varsayılan
+  seçim yıllık olur.
+- Yıllığa euro fiyatı girilmediği sürece euro bölgesinde tasarruf rozeti hiç
+  çıkmaz — `annualSavingPercent` farklı para birimlerini karşılaştırmayı
+  reddediyor. Rozet istiyorsan yıllık base plan'a da bir euro fiyatı gir.
+
+14 günlük deneme yalnızca `aylik-abonelik` base plan'ında. Yıllığa da
+eklenirse deneme rozeti kendiliğinden gizlenir (bkz. `FEATURE_BACKLOG.md` § 6).
+
+---
+
+## 2. Gerçek Play Store'da eksik olan Lifetime ürünü
 
 Gerçek Play Store app'inde (`app0fad1bdb19`) Monthly/Yearly artık çalışıyor,
 ama Lifetime (tek seferlik ürün) hâlâ sadece Test Store'da var
@@ -37,7 +64,7 @@ Adımlar (Monthly/Yearly'de izlenen yolun aynısı):
 
 ---
 
-## 2. Play Console — mağaza listelemesi
+## 3. Play Console — mağaza listelemesi
 
 ### Gizlilik politikası URL'i
 
@@ -78,7 +105,7 @@ Uygulamanın gerçekte ne topladığı (gizlilik politikasıyla birebir uyumlu):
 
 ---
 
-## 3. Yasal sitenin ilk `wrangler deploy`'u
+## 4. Yasal sitenin ilk `wrangler deploy`'u
 
 Site şu an canlı ama içeriği bir Worker script'inin içine gömülü olarak
 Cloudflare API üzerinden yüklendi — `legal/public/` dosyaları henüz canlı
@@ -95,7 +122,7 @@ değişmez. Detay: `legal/README.md`.
 
 ---
 
-## 4. Vercel'de kalan boş proje
+## 5. Vercel'de kalan boş proje
 
 `dukeofsoftwares-projects` altında `hizli-okuma-legal` adında yarım kalmış bir
 proje var (sadece `index.html`, Deployment Protection arkasında). Yasal site
@@ -103,7 +130,7 @@ Cloudflare'e taşındığı için gereksiz — Vercel dashboard'dan sil.
 
 ---
 
-## 5. Cihaz turu
+## 6. Cihaz turu
 
 Elde zaten bir production build var (version code 3, build
 `ea81aaa4-95e4-421e-86b0-690924e210e5`) — Monthly/Yearly sandbox satın alma

@@ -222,7 +222,11 @@ export async function sendMilestoneNotification(days: number) {
     // Immediate, but still routed to the progress channel so Android honours
     // the channel's importance/settings instead of dropping it in the default
     // channel the user can't distinguish from reminders.
-    trigger: { channelId: CHANNELS.PROGRESS },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 1,
+      channelId: CHANNELS.PROGRESS,
+    },
   });
 
   settings.addNotifiedMilestone(days);

@@ -6,6 +6,7 @@ interface PaywallPromptStoreState {
   lastShownAt: number;
   lastTrigger: string | null;
   markShown: (trigger: string, now: number) => void;
+  resetPrompts: () => void;
 }
 
 export const usePaywallPromptStore = create<PaywallPromptStoreState>()(
@@ -14,6 +15,7 @@ export const usePaywallPromptStore = create<PaywallPromptStoreState>()(
       lastShownAt: 0,
       lastTrigger: null,
       markShown: (trigger, now) => set({ lastShownAt: now, lastTrigger: trigger }),
+      resetPrompts: () => set({ lastShownAt: 0, lastTrigger: null }),
     }),
     {
       name: "paywall-prompt-store",

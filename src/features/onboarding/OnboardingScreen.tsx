@@ -16,21 +16,35 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Track } from "@/components/ui/track/Track";
 import { AppCard } from '@/components/ui/AppCard';
 
-function OptionRow({ label, onPress }: { label: string; onPress: () => void }) {
+function OptionRow({
+  label,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
   return (
     <XStack
       minHeight={56}
       paddingHorizontal="$4"
+      paddingVertical="$3"
       borderRadius="$5"
       backgroundColor="$backgroundHover"
       borderWidth={1}
       borderColor="$borderColor"
       alignItems="center"
       justifyContent="space-between"
+      gap="$3"
+      opacity={disabled ? 0.5 : 1}
       pressStyle={{ borderColor: "$green9" }}
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ disabled: !!disabled, checked: false }}
+      accessibilityLabel={label}
     >
-      <Text fontSize="$5" fontWeight="500">{label}</Text>
+      <Text flex={1} fontSize="$5" fontWeight="500">{label}</Text>
       <YStack width={18} height={18} borderRadius={999} borderWidth={1.5} borderColor="$borderColor" />
     </XStack>
   );
@@ -114,8 +128,8 @@ export function OnboardingScreen() {
 
     // Calculate WPM
     const wordCount = ASSESSMENT_TEXT.trim().split(/\s+/).length;
-    const durationSeconds = (readDurationMs || 10000) / 1000;
-    const initialWpm = Math.round((wordCount / durationSeconds) * 60);
+    const durationSeconds = Math.max(2, (readDurationMs || 10000) / 1000);
+    const initialWpm = Math.min(1000, Math.max(50, Math.round((wordCount / durationSeconds) * 60)));
 
     try {
       setDailyGoalMinutes(goal || 10);
@@ -202,7 +216,9 @@ export function OnboardingScreen() {
 
       {step === 3 && !showQuestion && (
         <YStack flex={1} gap="$4">
-          <H4 color="$green11">{t('assessment.title')}</H4>
+          {/* No colour: green means "there is an action here", and a heading
+              is not one. The only green on this step is the button below. */}
+          <H4>{t('assessment.title')}</H4>
           <Text color="$color11">{t('assessment.instructions')}</Text>
 
           <ScrollView>
@@ -226,16 +242,17 @@ export function OnboardingScreen() {
             {ASSESSMENT_QUESTION.question}
           </Text>
 
+          {/* The same OptionRow the first two steps use. As plain Buttons these
+              read as grey-on-grey and looked disabled - the one question in the
+              flow the user has to answer did not look answerable. */}
           <YStack gap="$3">
             {ASSESSMENT_QUESTION.options.map((opt, i) => (
-              <Button
+              <OptionRow
                 key={i}
-                size="$5"
+                label={opt}
                 disabled={isSubmitting}
                 onPress={() => handleAnswer(i)}
-              >
-                <Text>{opt}</Text>
-              </Button>
+              />
             ))}
           </YStack>
         </YStack>
