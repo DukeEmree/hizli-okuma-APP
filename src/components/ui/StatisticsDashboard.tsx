@@ -4,11 +4,12 @@ import { H2, H4, Text, XStack, YStack, Button, Spinner, ScrollView, useTheme } f
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { PerformanceStats, TimeRange } from "@/utils/localStatistics";
-import { CartesianChart, Line, Bar } from 'victory-native';
+import { SafeLineChart, SafeBarChart } from '@/components/ui/charts/SafeCharts';
 import { StreakBadge } from "@/features/streak/StreakBadge";
 import { StreakWeeklyCalendar } from "@/features/streak/StreakWeeklyCalendar";
 import { exerciseRegistry } from "@/features/exercises/registry";
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, TAB_BAR_INSET } from '@/constants/layout';
+
 
 export function formatTime(ms: number, t: TFunction<'progress'>) {
   const mins = Math.floor(ms / 60000);
@@ -75,8 +76,9 @@ export function StatisticsDashboard({
     : 0;
 
   return (
-    <ScrollView flex={1} backgroundColor="$background">
+    <ScrollView flex={1} backgroundColor="$background" contentContainerStyle={{ paddingBottom: TAB_BAR_INSET }}>
       <YStack padding="$4" gap="$4" {...contentColumn}>
+
         <XStack justifyContent="space-between" alignItems="center">
           <H2>{t('title')}</H2>
           <StreakBadge />
@@ -134,18 +136,19 @@ export function StatisticsDashboard({
             {/* WPM Trend Chart */}
             <YStack gap="$2">
               <H4>{t('charts.wpmTitle')}</H4>
-              <View style={{ height: 250, width: '100%' }}>
+              <View
+                style={{ height: 250, width: '100%' }}
+                accessible
+                accessibilityRole="image"
+                accessibilityLabel={t('charts.wpmTitle')}
+              >
                 {currentStats.dailyTrends.length > 1 ? (
-                  <CartesianChart
+                  <SafeLineChart
                     data={chartDataWpm}
-                    xKey="x"
-                    yKeys={["y"]}
-                    domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
-                  >
-                    {({ points }) => (
-                      <Line points={points.y} color={theme.green10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
-                    )}
-                  </CartesianChart>
+                    color={theme.green10?.val as string}
+                    height={250}
+                    emptyText={t('charts.needMoreDays')}
+                  />
                 ) : (
                   <Text padding="$4" textAlign="center" color="$color11">{t('charts.needMoreDays')}</Text>
                 )}
@@ -155,18 +158,19 @@ export function StatisticsDashboard({
             {/* Comprehension Chart */}
             <YStack gap="$2">
               <H4>{t('charts.comprehensionTitle')}</H4>
-              <View style={{ height: 250, width: '100%' }}>
+              <View
+                style={{ height: 250, width: '100%' }}
+                accessible
+                accessibilityRole="image"
+                accessibilityLabel={t('charts.comprehensionTitle')}
+              >
                 {currentStats.dailyTrends.length > 1 ? (
-                  <CartesianChart
+                  <SafeLineChart
                     data={chartDataComp}
-                    xKey="x"
-                    yKeys={["y"]}
-                    domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
-                  >
-                    {({ points }) => (
-                      <Line points={points.y} color={theme.green10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
-                    )}
-                  </CartesianChart>
+                    color={theme.green10?.val as string}
+                    height={250}
+                    emptyText={t('charts.needMoreDays')}
+                  />
                 ) : (
                   <Text padding="$4" textAlign="center" color="$color11">{t('charts.needMoreDays')}</Text>
                 )}
@@ -176,18 +180,19 @@ export function StatisticsDashboard({
             {/* Accuracy Trend Chart */}
             <YStack gap="$2">
               <H4>{t('charts.accuracyTitle')}</H4>
-              <View style={{ height: 250, width: '100%' }}>
+              <View
+                style={{ height: 250, width: '100%' }}
+                accessible
+                accessibilityRole="image"
+                accessibilityLabel={t('charts.accuracyTitle')}
+              >
                 {currentStats.dailyTrends.length > 1 ? (
-                  <CartesianChart
+                  <SafeLineChart
                     data={chartDataAcc}
-                    xKey="x"
-                    yKeys={["y"]}
-                    domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
-                  >
-                    {({ points }) => (
-                      <Line points={points.y} color={theme.green10?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
-                    )}
-                  </CartesianChart>
+                    color={theme.green10?.val as string}
+                    height={250}
+                    emptyText={t('charts.needMoreDays')}
+                  />
                 ) : (
                   <Text padding="$4" textAlign="center" color="$color11">{t('charts.needMoreDays')}</Text>
                 )}
@@ -197,32 +202,25 @@ export function StatisticsDashboard({
             {/* Per-Exercise Best Score Bar Chart */}
             <YStack gap="$2">
               <H4>{t('charts.exerciseScoreTitle')}</H4>
-              <View style={{ height: 220, width: '100%' }}>
+              <View
+                style={{ height: 220, width: '100%' }}
+                accessible
+                accessibilityRole="image"
+                accessibilityLabel={t('charts.exerciseScoreTitle')}
+              >
                 {currentStats.exerciseStats.length > 0 ? (
-                  <CartesianChart
+                  <SafeBarChart
                     data={chartDataExercise}
-                    xKey="x"
-                    yKeys={["y"]}
-                    domainPadding={{ left: 30, right: 30, top: 20, bottom: 20 }}
-                    axisOptions={{
-                      formatXLabel: (v) => currentStats.exerciseStats[v as number]?.type ?? '',
-                    }}
-                  >
-                    {({ points, chartBounds }) => (
-                      <Bar
-                        points={points.y}
-                        chartBounds={chartBounds}
-                        color={theme.green9?.val as string}
-                        roundedCorners={{ topLeft: 4, topRight: 4 }}
-                        animate={{ type: "timing", duration: 500 }}
-                      />
-                    )}
-                  </CartesianChart>
+                    color={theme.green9?.val as string}
+                    height={220}
+                    emptyText={t('charts.noExerciseStats')}
+                  />
                 ) : (
                   <Text padding="$4" textAlign="center" color="$color11">{t('charts.noExerciseStats')}</Text>
                 )}
               </View>
             </YStack>
+
 
             {/* Per-Exercise Breakdown */}
             <YStack gap="$3" marginTop="$4">

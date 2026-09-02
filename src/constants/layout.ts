@@ -12,9 +12,13 @@
  */
 export const CONTENT_MAX_WIDTH = 560;
 
+/** Inset in dp to ensure scroll content clears the floating bottom tab bar. */
+export const TAB_BAR_INSET = 96;
+
 /** Centres a content column and caps its width. Spread onto the column's root. */
 export const contentColumn = {
   width: '100%',
   maxWidth: CONTENT_MAX_WIDTH,
   alignSelf: 'center',
 } as const;
+

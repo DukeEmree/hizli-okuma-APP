@@ -163,6 +163,12 @@
       "skillPath": "skills/sentry-react-native-sdk/SKILL.md",
       "computedHash": "e3fdf618d50b38ea457987bdcf4a928f9afe999c8e5e7180b814bceb723f0e52"
     },
+    "tamagui": {
+      "source": "tamagui/tamagui",
+      "sourceType": "github",
+      "skillPath": "plans/tamagui-skill/skills/tamagui/SKILL.md",
+      "computedHash": "c16ef17b45cf188289a72600898110f6245c295c41cf5493b8ead3fd45027544"
+    },
     "upgrade-react-native": {
       "source": "react-native-community/skills",
       "sourceType": "github",

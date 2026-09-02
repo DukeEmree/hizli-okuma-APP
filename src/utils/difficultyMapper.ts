@@ -1,10 +1,11 @@
 import { DifficultyLevel } from "@/types/exercise";
-import { RSVPConfig } from "@/features/exercises/rsvp/useRSVPEngine";
-import { ChunkingConfig } from "@/features/exercises/chunking/useChunkingEngine";
-import { PacerConfig } from "@/features/exercises/pacer/usePacerEngine";
-import { SchulteConfig } from "@/features/exercises/schulte/useSchulteEngine";
-import { ScanningConfig } from "@/features/exercises/scanning/useScanningEngine";
+import type { RSVPConfig } from "@/features/exercises/rsvp/useRSVPEngine";
+import type { ChunkingConfig } from "@/features/exercises/chunking/useChunkingEngine";
+import type { PacerConfig } from "@/features/exercises/pacer/usePacerEngine";
+import type { SchulteConfig } from "@/features/exercises/schulte/useSchulteEngine";
+import type { ScanningConfig } from "@/features/exercises/scanning/useScanningEngine";
 import { RSVP_ID } from "@/features/exercises/rsvp";
+
 
 // Exercises that can't measure their own difficulty (no right/wrong answer
 // to score) borrow the progression of an exercise that can, keyed by

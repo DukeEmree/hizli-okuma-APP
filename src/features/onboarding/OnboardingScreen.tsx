@@ -3,7 +3,6 @@ import { captureException } from "@/lib/sentry";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView } from "react-native";
 import { useKeepAwake } from "expo-keep-awake";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useUserProgressStore } from "@/stores/userProgressStore";
@@ -11,7 +10,8 @@ import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
 import { startingLevelFromWpm } from "@/utils/onboarding";
 import { RSVP_ID } from "@/features/exercises/rsvp";
 import { CHUNKING_ID } from "@/features/exercises/chunking";
-import { Button, H2, H4, Text, XStack, YStack } from "tamagui";
+import { Button, H2, H4, Text, XStack, YStack, ScrollView } from "tamagui";
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Track } from "@/components/ui/track/Track";
 import { AppCard } from '@/components/ui/AppCard';
@@ -177,42 +177,47 @@ export function OnboardingScreen() {
       </YStack>
 
       {step === 1 && (
-        <YStack flex={1} gap="$4">
-          <H2>{t('reasonStep.title')}</H2>
-          <Text color="$color11" marginBottom="$4">
-            {t('reasonStep.subtitle')}
-          </Text>
+        <ScrollView flex={1} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+          <YStack flex={1} gap="$4">
+            <H2>{t('reasonStep.title')}</H2>
+            <Text color="$color11" marginBottom="$4">
+              {t('reasonStep.subtitle')}
+            </Text>
 
-          <YStack gap="$3">
-            {REASON_KEYS.map((key) => (
-              <OptionRow
-                key={key}
-                label={t(`reasonStep.options.${key}`)}
-                onPress={handleReasonSelect}
-              />
-            ))}
+            <YStack gap="$3">
+              {REASON_KEYS.map((key) => (
+                <OptionRow
+                  key={key}
+                  label={t(`reasonStep.options.${key}`)}
+                  onPress={handleReasonSelect}
+                />
+              ))}
+            </YStack>
           </YStack>
-        </YStack>
+        </ScrollView>
       )}
 
       {step === 2 && (
-        <YStack flex={1} gap="$4">
-          <H2>{t('goalStep.title')}</H2>
-          <Text color="$color11" marginBottom="$4">
-            {t('goalStep.subtitle')}
-          </Text>
+        <ScrollView flex={1} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+          <YStack flex={1} gap="$4">
+            <H2>{t('goalStep.title')}</H2>
+            <Text color="$color11" marginBottom="$4">
+              {t('goalStep.subtitle')}
+            </Text>
 
-          <YStack gap="$3">
-            {GOALS.map((g) => (
-              <OptionRow
-                key={g}
-                label={t('goalStep.option', { minutes: g })}
-                onPress={() => handleGoalSelect(g)}
-              />
-            ))}
+            <YStack gap="$3">
+              {GOALS.map((g) => (
+                <OptionRow
+                  key={g}
+                  label={t('goalStep.option', { minutes: g })}
+                  onPress={() => handleGoalSelect(g)}
+                />
+              ))}
+            </YStack>
           </YStack>
-        </YStack>
+        </ScrollView>
       )}
+
 
       {step === 3 && !showQuestion && (
         <YStack flex={1} gap="$4">
@@ -230,8 +235,9 @@ export function OnboardingScreen() {
           </ScrollView>
 
           <Button size="$5" theme="accent" onPress={handleFinishReading}>
-            <Text color="$color">{t('assessment.finishReading')}</Text>
+            {t('assessment.finishReading')}
           </Button>
+
         </YStack>
       )}
 

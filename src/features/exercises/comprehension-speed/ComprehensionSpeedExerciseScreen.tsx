@@ -118,7 +118,12 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
                   {currentItem.questions[currentQuestionIndex].options.map((opt, i) => (
                     <Button 
                       key={i} 
-                      onPress={() => handleSelection(i)} 
+                      onPress={() => {
+                        const isCorrect = i === currentItem.questions[currentQuestionIndex].correctIndex;
+                        if (isCorrect) haptics.light();
+                        else haptics.error();
+                        handleSelection(i);
+                      }} 
                       size="$5"
                       height="auto"
                       paddingVertical="$3"
@@ -127,6 +132,7 @@ export function ComprehensionSpeedExerciseScreen({ timeLimitMs, onComplete }: Co
                         {opt}
                       </Text>
                     </Button>
+
                   ))}
                 </YStack>
               </YStack>

@@ -16,7 +16,8 @@ import { exerciseRegistry } from '@/features/exercises/registry';
 
 import { ExerciseDefinition } from '@/types/exercise';
 import { AppCard } from '@/components/ui/AppCard';
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, TAB_BAR_INSET } from '@/constants/layout';
+
 
 const CATEGORY_ICONS: Record<string, any> = {
   reading: BookOpen,
@@ -85,9 +86,11 @@ export default function ExercisesScreen() {
         ref={scrollRef}
         flex={1}
         backgroundColor="$background"
+        contentContainerStyle={{ paddingBottom: TAB_BAR_INSET }}
         scrollEventThrottle={16}
         onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => { savedExercisesScrollY = e.nativeEvent.contentOffset.y; }}
       >
+
         <YStack padding="$4" gap="$4" {...contentColumn}>
           
           <YStack gap="$2">

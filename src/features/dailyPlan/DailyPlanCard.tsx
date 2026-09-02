@@ -106,9 +106,17 @@ export function DailyPlanCard() {
 
         {steps}
 
-        <Button size="$5" theme="accent" fontWeight="bold" onPress={handlePress}>
+        <Button
+          size="$5"
+          theme="accent"
+          fontWeight="bold"
+          onPress={handlePress}
+          accessibilityRole="button"
+          accessibilityLabel={completedCount === 0 ? t('card.start') : t('card.continue')}
+        >
           {completedCount === 0 ? t('card.start') : t('card.continue')}
         </Button>
+
       </YStack>
     </AppCard>
   );

@@ -4,8 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { YStack, XStack, H2, H4, Text, Button, Slider, Separator, View, Paragraph, useTheme } from 'tamagui';
 import { useTranslation } from 'react-i18next';
-import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock, TrendingUp, type LucideIcon } from 'lucide-react-native';
-import { CartesianChart, Line } from 'victory-native';
+import { Play, Settings2, Info, BookOpen, Eye, Brain, Zap, Target, Lock, TrendingUp, ChevronLeft, type LucideIcon } from 'lucide-react-native';
+
+import { SafeLineChart } from '@/components/ui/charts/SafeCharts';
 
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { useExerciseSettingsStore } from '@/stores/useExerciseSettingsStore';
@@ -137,7 +138,19 @@ export default function ExerciseInfoScreen() {
       <ScrollView style={{ flex: 1, backgroundColor: theme.background?.val as string }}>
         <YStack padding="$4" gap="$5" paddingBottom="$10" {...contentColumn}>
           
+          <Button
+            size="$4.5"
+            circular
+            chromeless
+            alignSelf="flex-start"
+            icon={<ChevronLeft size={24} color={theme.color11?.val as string} />}
+            onPress={() => router.back()}
+            accessibilityLabel={tCommon('back')}
+            accessibilityRole="button"
+          />
+
           {/* Header Section */}
+
           <XStack alignItems="center" gap="$3">
             <View backgroundColor="$green4" padding="$4" borderRadius="$4">
               <IconComponent color={theme.green11?.val as string} size={32} />
@@ -186,18 +199,11 @@ export default function ExerciseInfoScreen() {
               <H4>{t('labels.progressHistory')}</H4>
             </XStack>
             {chartData.length > 1 ? (
-              <View style={{ height: 180, width: '100%' }}>
-                <CartesianChart
-                  data={chartData}
-                  xKey="x"
-                  yKeys={["y"]}
-                  domainPadding={{ left: 20, right: 20, top: 20, bottom: 20 }}
-                >
-                  {({ points }) => (
-                    <Line points={points.y} color={theme.green9?.val as string} strokeWidth={3} animate={{ type: "timing", duration: 500 }} />
-                  )}
-                </CartesianChart>
-              </View>
+              <SafeLineChart
+                data={chartData}
+                color={theme.green9?.val as string}
+                height={180}
+              />
             ) : (
               <Text color="$color11">
                 {progressionState

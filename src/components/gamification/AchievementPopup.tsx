@@ -61,6 +61,14 @@ export function AchievementPopupGlobal() {
     showNext();
   }, [showNext]);
 
+  useEffect(() => {
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(opacity);
+    };
+  }, [opacity, translateY]);
+
+
   // A celebration that only leaves on a timer is a celebration you cannot get
   // out of the way of. Tapping cancels the queued exit and runs a short one.
   const handleDismiss = useCallback(() => {

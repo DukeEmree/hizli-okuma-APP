@@ -39,9 +39,7 @@ export function WeeklySummaryCard() {
       <Text fontSize="$1" color="$color11" letterSpacing={0.6} fontWeight="bold">
         {t('track.rangeLabel', { days: TRACK_DAYS })}
       </Text>
-      {/* `live` so the bar for a session finished this minute grows into place
-          instead of appearing between renders - the visible "today counted". */}
-      <Track data={trackData} size="expanded" live />
+      <Track data={trackData} size="expanded" />
     </YStack>
   );
 

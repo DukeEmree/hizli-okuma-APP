@@ -470,6 +470,8 @@ export default function PaywallScreen() {
             color={field.body}
             fontWeight="bold"
             onPress={handleRestore}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            pressStyle={{ opacity: 0.7 }}
             accessibilityRole="button"
             accessibilityLabel={t('offer.restore')}
           >
@@ -480,6 +482,7 @@ export default function PaywallScreen() {
             <LegalLink label={t('offer.privacy')} url={LEGAL_URLS.privacyPolicy} color={field.quiet} />
           </XStack>
         </XStack>
+
       </YStack>
     </YStack>
   );
@@ -544,6 +547,8 @@ function LegalLink({ label, url, color }: { label: string; url: string; color: C
       color={color}
       textDecorationLine="underline"
       onPress={open}
+      hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+      pressStyle={{ opacity: 0.7 }}
       accessibilityRole="link"
       accessibilityLabel={label}
     >
@@ -551,3 +556,4 @@ function LegalLink({ label, url, color }: { label: string; url: string; color: C
     </Text>
   );
 }
+

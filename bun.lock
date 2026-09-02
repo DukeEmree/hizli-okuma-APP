@@ -6,6 +6,14 @@
       "name": "hizli-okuma",
       "dependencies": {
         "@amplitude/analytics-react-native": "^1.6.8",
+        "@buoy-gg/console": "^7.0.31",
+        "@buoy-gg/core": "^7.0.31",
+        "@buoy-gg/events": "^7.0.31",
+        "@buoy-gg/network": "^7.0.31",
+        "@buoy-gg/perf-monitor": "^7.0.31",
+        "@buoy-gg/route-events": "^7.0.31",
+        "@buoy-gg/storage": "^7.0.31",
+        "@buoy-gg/zustand": "^7.0.31",
         "@react-native-community/datetimepicker": "9.1.0",
         "@sentry/react-native": "~7.11.0",
         "@shopify/react-native-skia": "2.6.2",
@@ -221,6 +229,30 @@
     "@babel/traverse": ["@babel/traverse@7.29.8", "", { "dependencies": { "@babel/code-frame": "^7.29.7", "@babel/generator": "^7.29.8", "@babel/helper-globals": "^7.29.7", "@babel/parser": "^7.29.8", "@babel/template": "^7.29.7", "@babel/types": "^7.29.8", "debug": "^4.3.1" } }, "sha512-I5z7H3bf/41ktsNVLtpN0wAa336HkqIHQ5BuPLEhTkt1jVSyZpeNKIzTgEWmlxjdg81R0IgUCcaE+Ok3NvrfZg=="],
 
     "@babel/types": ["@babel/types@7.29.8", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg=="],
+
+    "@buoy-gg/console": ["@buoy-gg/console@7.0.31", "", { "dependencies": { "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-XZ06NwlRvrVeR+P4PhB8y9jnTA3rAOFhcl0rmMzMVxQhK87pSQqnIUhE8v2MJrWrZ6KPJ5Ri4R5vnV71fz1Yvg=="],
+
+    "@buoy-gg/core": ["@buoy-gg/core@7.0.31", "", { "dependencies": { "@buoy-gg/floating-tools-core": "^7.0.31", "@buoy-gg/floating-tools-react": "^7.0.31", "@buoy-gg/license": "^7.0.31", "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "react": "*", "react-native": "*" }, "bin": { "buoy": "bin/buoy.js" } }, "sha512-JHjEenrQ6fsYtYJ7ek2s/aHl71/1pRlTBHhGY3X8OCFWOWAQG3VKmqxWGcknArQRN2pXWKBgvq7YCFNBzRUbyw=="],
+
+    "@buoy-gg/events": ["@buoy-gg/events@7.0.31", "", { "dependencies": { "@buoy-gg/floating-tools-core": "^7.0.31", "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "@buoy-gg/highlight-updates": "*", "@buoy-gg/jotai": "*", "@buoy-gg/network": "*", "@buoy-gg/react-query": "*", "@buoy-gg/redux": "*", "@buoy-gg/route-events": "*", "@buoy-gg/storage": "*", "@buoy-gg/zustand": "*", "@tanstack/react-query": "*", "react": "*", "react-native": "*" }, "optionalPeers": ["@buoy-gg/highlight-updates", "@buoy-gg/jotai", "@buoy-gg/network", "@buoy-gg/react-query", "@buoy-gg/redux", "@buoy-gg/route-events", "@buoy-gg/storage", "@buoy-gg/zustand", "@tanstack/react-query"] }, "sha512-O6RNrFHKQDdwc/T3Y+RyBXjo+D+HA5dX2+hN4GZN8DNbzoRVgp6oSF6J8Z+8ygjFcLHbewAG+qAoBDGGr09swQ=="],
+
+    "@buoy-gg/floating-tools-core": ["@buoy-gg/floating-tools-core@7.0.31", "", { "peerDependencies": { "react": "*", "react-native": "*" }, "optionalPeers": ["react-native"] }, "sha512-+I0J+AecQR0NJbIy58lpSlr8tgcxxPFWr1WHLcT2J+zo4mvUqqfPdqWLV1tRVByKt0FSVZ9cmg5l6bumUsabfA=="],
+
+    "@buoy-gg/floating-tools-react": ["@buoy-gg/floating-tools-react@7.0.31", "", { "dependencies": { "@buoy-gg/floating-tools-core": "^7.0.31" }, "peerDependencies": { "react": ">=17.0.0" } }, "sha512-9vY5qUHTTiWybehSa5f4c7a+IBO1UO4pXQXYC2y9yIL96GR6Uqoej40E4RrZhtIp5WVzHL9ieBzojQKd3AVy9g=="],
+
+    "@buoy-gg/license": ["@buoy-gg/license@7.0.31", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-ttRR49RkDHYaEImyPRdFN76w6WHR3qOsTvnEcms3tp8UqH+9gKQmwR64KA6+1DYKOz1uzKFi5mlYfKjPxuG8Qg=="],
+
+    "@buoy-gg/network": ["@buoy-gg/network@7.0.31", "", { "dependencies": { "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-FQIkzmlebTq1vHByxmUJthct+TcdybMi9zjhtmb6tVh1FM8lY9GS/PIFXOB7iIaKdseQ/5pAzH5wsRiFg7S2YQ=="],
+
+    "@buoy-gg/perf-monitor": ["@buoy-gg/perf-monitor@7.0.31", "", { "dependencies": { "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "react": "*", "react-native": ">=0.76.0", "react-native-nitro-modules": ">=0.35.0", "react-native-performance-toolkit": ">=0.3.1", "react-native-reanimated": ">=4.0.0", "react-native-worklets": ">=0.7.0" }, "optionalPeers": ["react-native-nitro-modules", "react-native-performance-toolkit"] }, "sha512-zrjh+NgNR2SwMowWluc9t4zImYj2YtTmqQxlVzSeUfhUhOigr+k9rtpaklm9ICIoq+kbqqQqF1UCB3DQudR7eQ=="],
+
+    "@buoy-gg/route-events": ["@buoy-gg/route-events@7.0.31", "", { "dependencies": { "@buoy-gg/floating-tools-core": "^7.0.31", "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "@buoy-gg/license": "7.0.31", "@react-native-async-storage/async-storage": "^2.0.0 || ^3.1.0", "@react-navigation/native": "*", "expo-router": "*", "react": "*", "react-native": "*" }, "optionalPeers": ["@react-navigation/native", "expo-router"] }, "sha512-4QbrGABTzYAyE9446Ef/CPftq50f8CiYKivSv7dAVVfzFYT/TLSQrIImiJQCfFk1+dJFxFFPmk3KHYZ4N0DsbA=="],
+
+    "@buoy-gg/shared-ui": ["@buoy-gg/shared-ui@7.0.31", "", { "dependencies": { "@buoy-gg/floating-tools-core": "^7.0.31" }, "peerDependencies": { "@buoy-gg/license": "7.0.31", "@react-native-clipboard/clipboard": "*", "expo-clipboard": "*", "expo-file-system": "*", "react": "*", "react-native": "*", "react-native-safe-area-context": "*" }, "optionalPeers": ["@react-native-clipboard/clipboard", "expo-clipboard", "expo-file-system", "react-native-safe-area-context"] }, "sha512-4rHIk3IarrXWp2ZndnHbjVpwaWtXftDeqBW+GmnJexKJxPL4ZLeDks6DwviyrO5zB96C0DtpwmWGqIADnWXThA=="],
+
+    "@buoy-gg/storage": ["@buoy-gg/storage@7.0.31", "", { "dependencies": { "@buoy-gg/floating-tools-core": "^7.0.31", "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "@buoy-gg/license": "7.0.31", "@react-native-async-storage/async-storage": "^2.0.0 || ^3.1.0", "react": "*", "react-native": "*" } }, "sha512-uXvXCaj5DII7Ru2L2zALCDcLBONmVr80lmqkyWQSBts3PpNYdQ7/FcoAwy3tq6U93Qs9v5cV7CR+XND30rS04g=="],
+
+    "@buoy-gg/zustand": ["@buoy-gg/zustand@7.0.31", "", { "dependencies": { "@buoy-gg/license": "^7.0.31", "@buoy-gg/shared-ui": "^7.0.31" }, "peerDependencies": { "react": "*", "react-native": "*", "zustand": ">=4.0.0" } }, "sha512-TZ4gIK0rZy8D95k8AAKPHMv3D4YTD+MOkYMF5nOBpjmhxOU7gH1jGsvQpOEjxjQmiivXXH6Nn9XOW/pEvTT8cQ=="],
 
     "@egjs/hammerjs": ["@egjs/hammerjs@2.0.17", "", { "dependencies": { "@types/hammerjs": "^2.0.36" } }, "sha512-XQsZgjm2EcVUiZQf11UBJQfmZeEmOW8DpI1gsFeln6w0ae0ii4dMQEQ0kjl6DspdWX1aGY1/loyXnP0JS06e/A=="],
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { YStack, Text, H2, Button } from 'tamagui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { YStack, Text, H2, Button, ScrollView } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
@@ -12,6 +13,8 @@ import { useManagedTimeout } from '@/hooks/useManagedTimeout';
 import { XP_SOURCES } from '@/constants/gamification';
 import { analytics } from '@/lib/analytics';
 import { AppCard } from '@/components/ui/AppCard';
+import { contentColumn } from '@/constants/layout';
+
 
 const DAILY_PLAN_COMPLETE_TRIGGER = 'daily_plan_complete';
 
@@ -67,38 +70,52 @@ export function DailyPlanCompleteScreen() {
   }, [localSessions, exerciseTypes]);
 
   return (
-    <YStack f={1} bg="$background" jc="center" ai="center" p="$4" gap="$4">
-      <H2 textAlign="center">{t('complete.title')}</H2>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
+      <ScrollView
+        flex={1}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 16,
+        }}
+      >
+        <YStack w="100%" gap="$4" ai="center" {...contentColumn}>
+          <H2 textAlign="center">{t('complete.title')}</H2>
 
-      {isPremium ? (
-        <YStack ai="center" gap="$1">
-          <Text fontSize="$6" fontWeight="bold" color="$green10">
-            {t('complete.premiumSummary', { xp: XP_SOURCES.DAILY_GOAL_COMPLETED })}
-          </Text>
-          {currentStreak > 0 && (
-            <Text color="$color11">{t('complete.streakLabel', { days: currentStreak })}</Text>
+          {isPremium ? (
+            <YStack ai="center" gap="$1">
+              <Text fontSize="$6" fontWeight="bold" color="$green10">
+                {t('complete.premiumSummary', { xp: XP_SOURCES.DAILY_GOAL_COMPLETED })}
+              </Text>
+              {currentStreak > 0 && (
+                <Text color="$color11">{t('complete.streakLabel', { days: currentStreak })}</Text>
+              )}
+            </YStack>
+          ) : (
+            <Text color="$color11" textAlign="center">
+              {t('complete.freeSummary', { minutes: todaysMinutes, count: exerciseTypes.length })}
+            </Text>
           )}
+
+          {!isPremium && (
+            <AppCard backgroundColor="$green3" borderColor="$green7" onPress={openPaywall}>
+              <YStack gap="$2" ai="center">
+                <Text color="$green11" textAlign="center">{t('complete.premiumTeaser')}</Text>
+                <Button size="$4.5" theme="accent" onPress={openPaywall}>
+                  {t('complete.premiumTeaserCta')}
+                </Button>
+              </YStack>
+            </AppCard>
+          )}
+
+          <Button size="$5" theme="accent" onPress={() => router.replace('/(app)/(tabs)')}>
+            {t('complete.backHome')}
+          </Button>
         </YStack>
-      ) : (
-        <Text color="$color11" textAlign="center">
-          {t('complete.freeSummary', { minutes: todaysMinutes, count: exerciseTypes.length })}
-        </Text>
-      )}
-
-      {!isPremium && (
-        <AppCard backgroundColor="$green3" borderColor="$green7" onPress={openPaywall}>
-          <YStack gap="$2" ai="center">
-            <Text color="$green11" textAlign="center">{t('complete.premiumTeaser')}</Text>
-            <Button size="$4.5" theme="accent" onPress={openPaywall}>
-              {t('complete.premiumTeaserCta')}
-            </Button>
-          </YStack>
-        </AppCard>
-      )}
-
-      <Button size="$5" theme="accent" onPress={() => router.replace('/(app)/(tabs)')}>
-        {t('complete.backHome')}
-      </Button>
-    </YStack>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+

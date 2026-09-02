@@ -44,7 +44,13 @@ mock.module('react-native', () => ({
   AppState: {
     addEventListener: () => ({ remove: () => {} }),
   },
+  TurboModuleRegistry: {
+    get: () => null,
+    getEnforcing: () => null,
+  },
+  NativeModules: {},
 }));
+
 
 mock.module('@sentry/react-native', () => ({
   init: () => {},
@@ -85,3 +91,28 @@ mock.module('react-native-purchases', () => ({
     WEEKLY: 'WEEKLY',
   },
 }));
+
+mock.module('expo-notifications', () => ({
+  setNotificationHandler: () => {},
+  setNotificationChannelAsync: () => Promise.resolve(),
+  scheduleNotificationAsync: () => Promise.resolve('mock-id'),
+  cancelAllScheduledNotificationsAsync: () => Promise.resolve(),
+  cancelScheduledNotificationAsync: () => Promise.resolve(),
+  getAllScheduledNotificationsAsync: () => Promise.resolve([]),
+
+  SchedulableTriggerInputTypes: {
+    TIME_INTERVAL: 'timeInterval',
+    DAILY: 'daily',
+    CALENDAR: 'calendar',
+  },
+  AndroidImportance: {
+    DEFAULT: 3,
+    HIGH: 4,
+  },
+}));
+
+mock.module('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'tr' }],
+}));
+
+

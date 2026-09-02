@@ -24,6 +24,18 @@ import "../i18n";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
+import { FloatingDevTools } from "@buoy-gg/core";
+import { watchStores } from "@buoy-gg/zustand";
+import { useDailyPlanStore } from "@/stores/dailyPlanStore";
+import { useExerciseProgressStore } from "@/stores/exerciseProgressStore";
+import { useGamificationStore } from "@/stores/gamificationStore";
+import { useLocalHistoryStore } from "@/stores/localHistoryStore";
+import { usePaywallPromptStore } from "@/stores/paywallPromptStore";
+import { useStreakCacheStore } from "@/stores/streakCacheStore";
+import { useExerciseSettingsStore } from "@/stores/useExerciseSettingsStore";
+import { useComprehensionStore } from "@/stores/useComprehensionStore";
+import { useUserProgressStore } from "@/stores/userProgressStore";
+
 function RootNavigation() {
   const segments = useSegments();
   const router = useRouter();
@@ -62,6 +74,21 @@ SplashScreen.preventAutoHideAsync();
 initSentry();
 analytics.init();
 setupDevMenu();
+
+if (__DEV__) {
+  watchStores({
+    settings: useSettingsStore,
+    dailyPlan: useDailyPlanStore,
+    exerciseProgress: useExerciseProgressStore,
+    gamification: useGamificationStore,
+    localHistory: useLocalHistoryStore,
+    paywallPrompt: usePaywallPromptStore,
+    streakCache: useStreakCacheStore,
+    exerciseSettings: useExerciseSettingsStore,
+    comprehension: useComprehensionStore,
+    userProgress: useUserProgressStore,
+  });
+}
 
 /**
  * Expo Router renders this instead of the tree below when a descendant
@@ -109,6 +136,7 @@ function RootLayout() {
               <AppNotificationProvider>
                 <RootNavigation />
                 <AchievementPopupGlobal />
+                {__DEV__ && <FloatingDevTools />}
               </AppNotificationProvider>
             </ThemeProvider>
           </Theme>

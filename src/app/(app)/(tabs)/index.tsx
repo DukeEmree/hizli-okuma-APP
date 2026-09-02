@@ -14,19 +14,13 @@ import { useDailyPlanStore } from '@/stores/dailyPlanStore';
 import { DailyPlanCard } from '@/features/dailyPlan/DailyPlanCard';
 import { WeeklySummaryCard } from '@/features/weeklySummary/WeeklySummaryCard';
 import { AppCard } from '@/components/ui/AppCard';
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, TAB_BAR_INSET } from '@/constants/layout';
 import { exerciseRegistry } from '@/features/exercises/registry';
 import { buildLocalStats } from '@/utils/localStatistics';
 import { buildTodaySnapshot, paragraphSeconds, EXAM_PARAGRAPH_WORDS } from '@/utils/todayStats';
 import { getLocalDateString } from '@/utils/streak';
 import { formatDateTime } from '@/utils/datetime';
 
-// The tab bar is drawn over the scroll view and expo-router's tab navigator
-// isn't a declared dependency here, so its height is a constant rather than a
-// measurement. Generous on purpose: at font_scale 1.5 the last card used to
-// end up underneath the bar.
-// ponytail: fixed inset; measure the real bar if a custom tab bar ever ships.
-const TAB_BAR_INSET = 96;
 
 /** Keeps a number and its unit on one line at any font scale. */
 const STAT_VALUE_PROPS = {

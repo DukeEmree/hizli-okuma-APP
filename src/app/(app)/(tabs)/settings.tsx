@@ -54,7 +54,9 @@ import RevenueCatUI from "react-native-purchases-ui";
 import { SUBSCRIPTION_CONSTANTS } from "@/constants/subscription";
 import { captureException } from "@/lib/sentry";
 import { LEGAL_URLS } from "@/constants/legal";
+import { TAB_BAR_INSET } from "@/constants/layout";
 import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
+
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation("settings");
@@ -197,8 +199,9 @@ export default function SettingsScreen() {
       style={{ flex: 1, backgroundColor: themeContext.background?.val }}
       edges={["top"]}
     >
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_INSET }}>
         {/* Header */}
+
         <YStack gap="$2" marginBottom="$6">
           <Text fontSize="$8" fontWeight="bold" color="$color" fontFamily="$body">{t("title")}</Text>
           <Text fontSize="$2" color="$color10" fontFamily="$body">
